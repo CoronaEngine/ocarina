@@ -8,6 +8,10 @@ namespace ocarina {
 
 OC_MAKE_INSTANCE_FUNC_DEF(Env, s_env)
 
+void clear_global_vars() noexcept {
+    Env::instance().clear_global_vars();
+}
+
 namespace detail {
 [[nodiscard]] Var<uint> correct_index(Var<uint> index, Var<uint> size, const string &desc,
                                       const string &tb) noexcept {
