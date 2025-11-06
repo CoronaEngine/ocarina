@@ -123,7 +123,7 @@ public:
     }
     oc_quaternion operator*(oc_float<p> f) const {
         oc_quaternion ret = *this;
-        ret.v *= f;
+        ret.v() *= f;
         return ret;
     }
     oc_quaternion &operator/=(oc_float<p> f) {
@@ -132,7 +132,7 @@ public:
     }
     oc_quaternion operator/(oc_float<p> f) const {
         oc_quaternion ret = *this;
-        ret.v /= f;
+        ret.v() /= f;
         return ret;
     }
 };
