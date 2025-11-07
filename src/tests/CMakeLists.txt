@@ -6,10 +6,26 @@ function(ocarina_add_test name)
     target_link_libraries(${name} ocarina-native)
     set_target_properties(${name} PROPERTIES
             PUBLIC_HEADER "${HEADER_FILES}"
-            LIBRARY_OUTPUT_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             WINDOWS_EXPORT_ALL_SYMBOLS ON
             FOLDER "ocarina/test")
+    ocarina_copy_multiple_target_outputs(
+        DEST_TARGET ${name}
+        SOURCE_TARGETS 
+        ocarina-ext 
+        ocarina-core 
+        ocarina-ast
+        ocarina-generator
+        ocarina-rhi
+        ocarina-dsl
+        ocarina-GUI
+        ocarina-framework
+        EASTL
+        SDL3-shared
+        ocarina-ext-stb
+        ocarina-ext-tinyexr
+        ocarina-GUI_impl-imGui
+        ocarina-backend-cuda
+    )
 endfunction()
 
 
