@@ -120,12 +120,19 @@ requires is_vector3_expr_v<T>
     return select((p < 0), (p + 2 * Pi), p);
 }
 
+template<EPort p = D>
+[[nodiscard]] oc_bool<p> is_right_hand(const oc_float3<p> &x, const oc_float3<p> &y,
+                                       const oc_float3<p> &z) noexcept {
+    return dot(cross(x, y), z) > 0;
+}
+
 template<typename T, bool normalized = true>
 requires is_vector3_expr_v<T>
 struct Frame {
 public:
     using vec_ty = T;
     vec_ty x, y, z;
+    static constexpr EPort port = is_dsl_v<T> ? D : H;
 
 public:
     [[nodiscard]] vec_ty nx() const noexcept {
@@ -166,6 +173,10 @@ public:
         x = x_;
         y = y_;
         z = z_;
+    }
+
+    [[nodiscard]] auto is_right_hand() const noexcept {
+        return ocarina::is_right_hand(x, y, z);
     }
 
     template<typename TVec>
