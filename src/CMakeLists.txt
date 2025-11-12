@@ -36,7 +36,7 @@ add_library(ocarina SHARED main.cpp)
 target_link_libraries(ocarina ocarina-native)
 
 
-option(OCARINA_BUILD_TESTS "Build tests" TRUE)
+option(OCARINA_BUILD_TESTS "Build tests" ${PROJECT_IS_TOP_LEVEL})
 
 if(${OCARINA_BUILD_TESTS})
     add_subdirectory(tests)
