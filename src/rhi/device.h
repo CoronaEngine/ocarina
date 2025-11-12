@@ -104,6 +104,10 @@ public:
         virtual RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept = 0;
         virtual DescriptorSet *get_global_descriptor_set(const string &name) noexcept = 0;
         virtual void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept = 0;
+#if _WIN32 || _WIN64
+        virtual handle_ty import_handle(handle_ty handle, size_t size) { return 0; }
+        virtual uint64_t export_handle(handle_ty handle_) { return 0; }
+#endif
     };
 
     using Creator = Device::Impl *(RHIContext *);

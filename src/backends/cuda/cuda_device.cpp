@@ -206,7 +206,7 @@ CommandVisitor *CUDADevice::command_visitor() noexcept {
 }
 
 #if _WIN32 || _WIN64
-handle_ty CUDADevice::import_handle(handle_ty handle, uint64_t size) {
+handle_ty CUDADevice::import_handle(handle_ty handle, size_t size) {
     //CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc = {};
     //externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32;
     //externalMemoryHandleDesc.handle.win32.handle = reinterpret_cast<void *>(handle);
