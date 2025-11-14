@@ -152,6 +152,14 @@ public:
         impl_->destroy_buffer(handle);
     }
 
+    handle_ty import_handle(handle_ty handle, size_t size) noexcept {
+        return impl_->import_handle(handle, size);
+    }
+
+    uint64_t export_handle(handle_ty handle) noexcept {
+        return impl_->export_handle(handle);
+    }
+
     template<typename T = std::byte>
     [[nodiscard]] Managed<T> create_managed(size_t size) noexcept {
         return Managed<T>(impl_.get(), size);
