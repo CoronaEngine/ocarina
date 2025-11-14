@@ -40,11 +40,96 @@ void CUDADevice::init_hardware_info() {
     compute_capability_ = 10u * compute_cap_major + compute_cap_minor;
 }
 
-handle_ty CUDADevice::create_buffer(size_t size, const string &desc) noexcept {
+
+void CUDADevice::memory_allocate(handle_ty *handle, size_t size, bool exported) {
+    if (!exported) {
+            OC_CU_CHECK(cuMemAlloc(handle, size));
+    } else {
+            size_t granularity = 0;
+            CUmemAllocationProp prop = {};
+            prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
+            prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+            prop.location.id = cu_device_;
+
+            OC_CU_CHECK(cuMemGetAllocationGranularity(&granularity, &prop,
+                                                      CU_MEM_ALLOC_GRANULARITY_MINIMUM));
+
+            size_t aligned_size = ((size * sizeof(std::byte) + granularity - 1) / granularity) * granularity;
+
+            prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_WIN32;
+
+#if _WIN32 || _WIN64
+            SECURITY_ATTRIBUTES secAttr = {};
+            secAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+            secAttr.lpSecurityDescriptor = NULL;
+            secAttr.bInheritHandle = FALSE;
+
+            CUmemAllocationHandleType handleType = CU_MEM_HANDLE_TYPE_WIN32;
+            prop.win32HandleMetaData = &secAttr;
+#else
+            prop.win32HandleMetaData = nullptr;
+            prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_NONE;
+#endif
+
+            CUmemGenericAllocationHandle alloc_handle;
+            OC_CU_CHECK(cuMemCreate(&alloc_handle, aligned_size, &prop, 0));
+
+            CUdeviceptr ptr;
+            OC_CU_CHECK(cuMemAddressReserve(&ptr, aligned_size, 0, 0, 0));
+            OC_CU_CHECK(cuMemMap(ptr, aligned_size, 0, alloc_handle, 0));
+
+            CUmemAccessDesc access_desc = {};
+            access_desc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+            access_desc.location.id = cu_device_;
+            access_desc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
+            OC_CU_CHECK(cuMemSetAccess(ptr, aligned_size, &access_desc, 1));
+
+            {
+                std::lock_guard<std::mutex> lock(allocation_mutex_);
+                allocation_handles_[static_cast<handle_ty>(ptr)] = alloc_handle;
+                allocation_sizes_[static_cast<handle_ty>(ptr)] = aligned_size;
+            }
+            *handle = static_cast<handle_ty>(ptr);
+    }
+}
+
+void CUDADevice::memory_free(handle_ty *handle) {
+    CUmemGenericAllocationHandle alloc_handle = 0;
+    size_t size = 0;
+    bool found = false;
+
+    {
+        std::lock_guard<std::mutex> lock(allocation_mutex_);
+        auto handle_it = allocation_handles_.find(*handle);
+        auto size_it = allocation_sizes_.find(*handle);
+
+        if (handle_it != allocation_handles_.end() && size_it != allocation_sizes_.end()) {
+            alloc_handle = handle_it->second;
+            size = size_it->second;
+            found = true;
+
+            allocation_handles_.erase(handle_it);
+            allocation_sizes_.erase(size_it);
+        }
+    }
+
+    if (found) {
+        OC_CU_CHECK(cuMemUnmap(*handle, size));
+
+        OC_CU_CHECK(cuMemAddressFree(*handle, size));
+
+        OC_CU_CHECK(cuMemRelease(alloc_handle));
+    } else {
+        OC_CU_CHECK(cuMemFree(*handle));
+    }
+}
+
+
+handle_ty CUDADevice::create_buffer(size_t size, const string &desc, bool exported) noexcept {
     OC_ASSERT(size > 0);
     return use_context([&] {
         handle_ty handle{};
-        OC_CU_CHECK(cuMemAlloc(&handle, size));
+        memory_allocate(&handle, size, exported);
         MemoryStats::instance().on_buffer_allocate(handle, size, desc);
         return handle;
     });
@@ -173,8 +258,10 @@ void CUDADevice::unregister_shared(void *&shared_handle) noexcept {
 
 void CUDADevice::destroy_buffer(handle_ty handle) noexcept {
     if (handle != 0) {
-        MemoryStats::instance().on_buffer_free(handle);
-        OC_CU_CHECK(cuMemFree(handle));
+        use_context([&] {
+            MemoryStats::instance().on_buffer_free(handle);
+            memory_free(&handle);
+        });
     }
 }
 
@@ -207,51 +294,75 @@ CommandVisitor *CUDADevice::command_visitor() noexcept {
 
 #if _WIN32 || _WIN64
 handle_ty CUDADevice::import_handle(handle_ty handle, size_t size) {
-    //CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc = {};
-    //externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32;
-    //externalMemoryHandleDesc.handle.win32.handle = reinterpret_cast<void *>(handle);
-    //externalMemoryHandleDesc.size = size;
-    //externalMemoryHandleDesc.flags = 0;
+    return use_context([&] {
+        CUDA_EXTERNAL_MEMORY_HANDLE_DESC externalMemoryHandleDesc = {};
+        externalMemoryHandleDesc.type = CU_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32;
+        externalMemoryHandleDesc.handle.win32.handle = reinterpret_cast<void *>(handle);
+        externalMemoryHandleDesc.size = size;
+        externalMemoryHandleDesc.flags = 0;
 
-    //CUexternalMemory externalMemory;
-    //CUresult res = cuImportExternalMemory(&externalMemory, &externalMemoryHandleDesc);
-    //if (res != CUDA_SUCCESS) {
-    //    const char *error_str;
-    //    cuGetErrorString(res, &error_str);
-    //    throw std::runtime_error(std::string("Failed to import external memory: ") + error_str);
-    //}
+        CUexternalMemory externalMemory;
+        CUresult res = cuImportExternalMemory(&externalMemory, &externalMemoryHandleDesc);
+        if (res != CUDA_SUCCESS) {
+            const char *error_str = nullptr;
+            cuGetErrorString(res, &error_str);
+            OC_ERROR_FORMAT("Failed to import external memory: {} (error code: {})",
+                            error_str ? error_str : "Unknown error", res);
+            throw std::runtime_error(std::string("Failed to import external memory: ") +
+                                     (error_str ? error_str : "Unknown error"));
+        }
 
-    //CUDA_EXTERNAL_MEMORY_BUFFER_DESC bufferDesc = {};
-    //bufferDesc.offset = 0;
-    //bufferDesc.size = size;
-    //bufferDesc.flags = 0;
+        CUDA_EXTERNAL_MEMORY_BUFFER_DESC bufferDesc = {};
+        bufferDesc.offset = 0;
+        bufferDesc.size = size;
+        bufferDesc.flags = 0;
 
-    CUdeviceptr devicePtr;
-    //res = cuExternalMemoryGetMappedBuffer(&devicePtr, externalMemory, &bufferDesc);
-    //if (res != CUDA_SUCCESS) {
-    //    const char *error_str;
-    //    cuGetErrorString(res, &error_str);
-    //    throw std::runtime_error(std::string("Failed to get mapped buffer: ") + error_str);
-    //}
+        CUdeviceptr devicePtr = 0;
+        res = cuExternalMemoryGetMappedBuffer(&devicePtr, externalMemory, &bufferDesc);
+        if (res != CUDA_SUCCESS) {
+            const char *error_str = nullptr;
+            cuGetErrorString(res, &error_str);
+            cuDestroyExternalMemory(externalMemory);
+            OC_ERROR_FORMAT("Failed to get mapped buffer: {} (error code: {})",
+                            error_str ? error_str : "Unknown error", res);
+            throw std::runtime_error(std::string("Failed to get mapped buffer: ") +
+                                     (error_str ? error_str : "Unknown error"));
+        }
 
-    return static_cast<handle_ty>(devicePtr);
+        return static_cast<handle_ty>(devicePtr);
+    });
 }
 
 uint64_t CUDADevice::export_handle(handle_ty handle_) {
-    void *exported_win32_handle = nullptr;
-    //CUresult res = cuMemExportToShareableHandle(
-    //    &exported_win32_handle,
-    //    reinterpret_cast<CUmemGenericAllocationHandle>(handle_),
-    //    CU_MEM_HANDLE_TYPE_WIN32,
-    //    0);
+    return use_context([&] {
+        CUmemGenericAllocationHandle alloc_handle;
+        {
+            std::lock_guard<std::mutex> lock(allocation_mutex_);
+            auto it = allocation_handles_.find(handle_);
+            if (it == allocation_handles_.end()) {
+                throw std::runtime_error("Invalid handle: allocation handle not found");
+            }
+            alloc_handle = it->second;
+        }
 
-    //if (res != CUDA_SUCCESS) {
-    //    const char *error_str;
-    //    cuGetErrorString(res, &error_str);
-    //    throw std::runtime_error(std::string("Failed to export shareable handle: ") + error_str);
-    //}
+        void *exported_win32_handle = nullptr;
+        CUresult res = cuMemExportToShareableHandle(
+            &exported_win32_handle,
+            alloc_handle,
+            CU_MEM_HANDLE_TYPE_WIN32,
+            0);
 
-    return reinterpret_cast<uint64_t>(exported_win32_handle);
+        if (res != CUDA_SUCCESS) {
+            const char *error_str = nullptr;
+            cuGetErrorString(res, &error_str);
+            OC_ERROR_FORMAT("Failed to export shareable handle: {} (error code: {})",
+                            error_str ? error_str : "Unknown error", res);
+            throw std::runtime_error(std::string("Failed to export shareable handle: ") +
+                                     (error_str ? error_str : "Unknown error"));
+        }
+
+        return reinterpret_cast<uint64_t>(exported_win32_handle);
+    });
 }
 #endif
 

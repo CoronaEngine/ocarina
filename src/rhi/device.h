@@ -66,7 +66,7 @@ public:
     public:
         explicit Impl(RHIContext *ctx) : file_manager_(ctx) {}
         explicit Impl(RHIContext *ctx, const InstanceCreation &instance_creation) : file_manager_(ctx) {}
-        [[nodiscard]] virtual handle_ty create_buffer(size_t size, const string &desc) noexcept = 0;
+        [[nodiscard]] virtual handle_ty create_buffer(size_t size, const string &desc, bool exported = true) noexcept = 0;
         virtual void destroy_buffer(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_texture(uint3 res, PixelStorage pixel_storage,
                                                        uint level_num, const string &desc) noexcept = 0;
@@ -104,6 +104,10 @@ public:
         virtual RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept = 0;
         virtual DescriptorSet *get_global_descriptor_set(const string &name) noexcept = 0;
         virtual void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept = 0;
+
+        virtual void memory_allocate(handle_ty *handle, size_t size, bool exported = true) {}
+        virtual void memory_free(handle_ty *handle) {}
+
 #if _WIN32 || _WIN64
         virtual handle_ty import_handle(handle_ty handle, size_t size) { return 0; }
         virtual uint64_t export_handle(handle_ty handle_) { return 0; }

@@ -53,27 +53,39 @@ void CUDACommandVisitor::visit(const BufferCopyCommand *cmd) noexcept {
 }
 
 void CUDACommandVisitor::visit(const BufferReallocateCommand *cmd) noexcept {
-    if (cmd->async() && stream_) {
-        RHIResource *rhi_resource = cmd->rhi_resource();
-        if (rhi_resource->handle()) {
-            OC_CU_CHECK(cuMemFreeAsync(rhi_resource->handle(), stream_));
-        }
-        if (cmd->new_size() > 0) {
-            OC_CU_CHECK(cuMemAllocAsync(reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr()),
-                                        cmd->new_size(), stream_));
-        }
-    } else {
+//    if (cmd->async() && stream_) {
+//        RHIResource *rhi_resource = cmd->rhi_resource();
+//        if (rhi_resource->handle()) {
+//            OC_CU_CHECK(cuMemFreeAsync(rhi_resource->handle(), stream_));
+//        }
+//        if (cmd->new_size() > 0) {
+//            OC_CU_CHECK(cuMemAllocAsync(reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr()),
+//                                        cmd->new_size(), stream_));
+//        }
+//    } else {
         device_->use_context([&] {
             RHIResource *rhi_resource = cmd->rhi_resource();
             if (rhi_resource->handle()) {
-                OC_CU_CHECK(cuMemFree(rhi_resource->handle()));
+                bool exportable = false;
+                auto *exportable_resource = dynamic_cast<ExportableResource *>(rhi_resource);
+                if (exportable_resource->exported()) {
+                    exportable = true;
+                }
+                device_->memory_free(reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr()));
+                //OC_CU_CHECK(cuMemFree(rhi_resource->handle()));
             }
             if (cmd->new_size() > 0) {
-                OC_CU_CHECK(cuMemAlloc(reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr()),
-                                       cmd->new_size()));
+                bool exportable = false;
+                auto *exportable_resource = dynamic_cast<ExportableResource *>(rhi_resource);
+                if (exportable_resource->exported()) {
+                    exportable = true;
+                }
+                device_->memory_allocate(reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr()), cmd->new_size(), exportable);
+                //OC_CU_CHECK(cuMemAlloc(reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr()),
+                //                       cmd->new_size()));
             }
         });
-    }
+//    }
 }
 
 void CUDACommandVisitor::visit(const BufferDownloadCommand *cmd) noexcept {

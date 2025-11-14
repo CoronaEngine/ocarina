@@ -48,16 +48,16 @@ void CUDAMesh::build_bvh(const BLASBuildCommand *cmd) noexcept {
 
         OC_INFO_FORMAT("blas : compacted_gas_size is {} byte", compacted_gas_size);
 
-        if (compacted_gas_size < gas_buffer_sizes.outputSizeInBytes) {
-            auto blas_buffer = Buffer<std::byte>(device_, compacted_gas_size, "mesh BLAS compacted buffer");
-            OC_OPTIX_CHECK(optixAccelCompact(device_->optix_device_context(), nullptr,
-                                             blas_handle_,
-                                             blas_buffer.handle(),
-                                             compacted_gas_size,
-                                             &blas_handle_));
-            OC_INFO("blas : optixAccelCompact was executed");
-            blas_buffer_ = ocarina::move(blas_buffer);
-        }
+//        if (compacted_gas_size < gas_buffer_sizes.outputSizeInBytes) {
+//            auto blas_buffer = Buffer<std::byte>(device_, compacted_gas_size, "mesh BLAS compacted buffer");
+//            OC_OPTIX_CHECK(optixAccelCompact(device_->optix_device_context(), nullptr,
+//                                             blas_handle_,
+//                                             blas_buffer.handle(),
+//                                             compacted_gas_size,
+//                                             &blas_handle_));
+//            OC_INFO("blas : optixAccelCompact was executed");
+//            blas_buffer_ = ocarina::move(blas_buffer);
+//        }
         OC_CU_CHECK(cuCtxSynchronize());
     });
 }
