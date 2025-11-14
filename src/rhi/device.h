@@ -133,6 +133,11 @@ public:
         return Buffer<T, Dims...>(impl_.get(), size, name);
     }
 
+    template<typename T = std::byte, int... Dims>
+    [[nodiscard]] Buffer<T, Dims...> create_buffer(size_t size, handle_ty handle) const noexcept {
+        return Buffer<T, Dims...>(impl_.get(), size, handle);
+    }
+
     [[nodiscard]] ByteBuffer create_byte_buffer(size_t size, const string &name = "") const noexcept;
 
     template<typename T, AccessMode mode = AOS>
