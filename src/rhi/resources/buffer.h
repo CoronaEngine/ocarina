@@ -145,6 +145,11 @@ public:
         descriptor_ptr();
     }
 
+    Buffer(Device::Impl *device, size_t size, handle_ty handle)
+        : Super(device, Tag::BUFFER, handle), size_(size) {
+        descriptor_ptr();
+    }
+
     void destroy() override {
         _destroy();
         size_ = 0;
