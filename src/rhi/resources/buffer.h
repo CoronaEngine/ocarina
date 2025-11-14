@@ -111,7 +111,7 @@ public:
 };
 
 template<typename T = std::byte, int... Dims>
-class Buffer : public RHIResource {
+class Buffer : public ExportableResource {
     static_assert(is_valid_buffer_element_v<T>);
     static constexpr bool use_for_dsl = is_dsl_basic_v<T>;
 
@@ -119,6 +119,7 @@ public:
     using element_type = T;
     static constexpr ocarina::array<int, sizeof...(Dims)> dims = {Dims...};
     static constexpr bool has_multi_dim() noexcept { return !dims.empty(); }
+    using Super = ExportableResource;
 
 protected:
     size_t size_{};
@@ -131,7 +132,7 @@ public:
     [[nodiscard]] static constexpr size_t element_size() noexcept { return sizeof(T); }
 
     Buffer(Device::Impl *device, size_t size, const string &desc = "")
-        : RHIResource(device, Tag::BUFFER, device->create_buffer(size * element_size(), desc)),
+        : Super(device, Tag::BUFFER, device->create_buffer(size * element_size(), desc)),
           size_(size), name_(desc) {
         descriptor_ptr();
     }
@@ -139,7 +140,7 @@ public:
     OC_MAKE_MEMBER_GETTER_SETTER(name, )
 
     Buffer(BufferView<T, Dims...> buffer_view)
-        : RHIResource(nullptr, Tag::BUFFER, buffer_view.handle()),
+        : Super(nullptr, Tag::BUFFER, buffer_view.handle()),
           size_(buffer_view.size()) {
         descriptor_ptr();
     }
@@ -169,7 +170,7 @@ public:
 
     // Move constructor
     Buffer(Buffer &&other) noexcept
-        : RHIResource(std::move(other)) {
+        : Super(std::move(other)) {
         this->size_ = other.size_;
         this->name_ = std::move(other.name_);
         this->descriptor_ = other.descriptor_;
@@ -178,7 +179,7 @@ public:
     // Move assignment
     Buffer &operator=(Buffer &&other) noexcept {
         destroy();
-        RHIResource::operator=(std::move(other));
+        Super::operator=(std::move(other));
         this->size_ = other.size_;
         this->name_ = std::move(other.name_);
         this->descriptor_ = other.descriptor_;

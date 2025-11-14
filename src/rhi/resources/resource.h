@@ -75,10 +75,19 @@ public:
     [[nodiscard]] bool valid() const noexcept { return bool(device_); }
     virtual void destroy() { _destroy(); }
     virtual ~RHIResource() { _destroy(); }
+};
 
+class ExportableResource : public RHIResource {
+protected:
+    bool exported_{true};
+
+public:
+    using RHIResource::RHIResource;
 #if _WIN32 || _WIN64
     virtual void import_handle(uint64_t handle) {};
     virtual uint64_t export_handle() { return 0; };
 #endif
+    OC_MAKE_MEMBER_GETTER(exported, )
 };
+
 }// namespace ocarina

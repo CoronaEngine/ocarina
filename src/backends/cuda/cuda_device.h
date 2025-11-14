@@ -62,6 +62,10 @@ private:
     std::unique_ptr<CommandVisitor> cmd_visitor_;
     uint32_t compute_capability_{};
 
+    std::unordered_map<handle_ty, CUmemGenericAllocationHandle> allocation_handles_;
+    std::unordered_map<handle_ty, size_t> allocation_sizes_; 
+    std::mutex allocation_mutex_;
+
     class ContextGuard {
     private:
         CUcontext _ctx{};
@@ -112,7 +116,7 @@ public:
     }
     void init_optix_context() noexcept;
     [[nodiscard]] OptixDeviceContext optix_device_context() const noexcept { return optix_device_context_; }
-    [[nodiscard]] handle_ty create_buffer(size_t size, const string &desc) noexcept override;
+    [[nodiscard]] handle_ty create_buffer(size_t size, const string &desc, bool exported = true) noexcept override;
     void destroy_buffer(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_texture(uint3 res, PixelStorage pixel_storage,
                                            uint level_num,
@@ -150,6 +154,9 @@ public:
     void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept override {}
     void begin_frame() noexcept override {}
     void end_frame() noexcept override {}
+
+    void memory_allocate(handle_ty *handle, size_t size, bool exported = true) override;
+    void memory_free(handle_ty *handle) override;
 
 #if _WIN32 || _WIN64
     handle_ty import_handle(handle_ty handle, size_t size) override;
