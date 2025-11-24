@@ -48,17 +48,33 @@ void CUDAMesh::build_bvh(const BLASBuildCommand *cmd) noexcept {
 
         OC_INFO_FORMAT("blas : compacted_gas_size is {} byte", compacted_gas_size);
 
-        if (compacted_gas_size < gas_buffer_sizes.outputSizeInBytes) {
+//        if (compacted_gas_size < gas_buffer_sizes.outputSizeInBytes) {
             auto blas_buffer = Buffer<std::byte>(device_, compacted_gas_size, "mesh BLAS compacted buffer");
-            OC_OPTIX_CHECK(optixAccelCompact(device_->optix_device_context(), nullptr,
-                                             blas_handle_,
-                                             blas_buffer.handle(),
-                                             compacted_gas_size,
-                                             &blas_handle_));
-            OC_INFO("blas : optixAccelCompact was executed");
-            blas_buffer_ = ocarina::move(blas_buffer);
-        }
-        OC_CU_CHECK(cuCtxSynchronize());
+//            OC_CU_CHECK(cuCtxSynchronize());
+            _sleep(1000);
+            std::vector<char> host;
+            host.resize(compacted_gas_size);
+            auto ehandle = device_->get_shared_handle(blas_buffer.handle());
+            auto esize = device_->get_shared_size(blas_buffer.handle());
+            OC_INFO("asdfasdf  ---",blas_buffer.handle(), " ehandle ", ehandle, " esize ", esize);
+//            OC_CU_CHECK(cuMemFree(blas_buffer.handle()));
+//            device_->download<char>(host.data(), blas_buffer_.handle(), compacted_gas_size);
+//            device_->upload(host.data(), blas_buffer.handle(), 1);
+            device_->copy(blas_buffer.handle(), blas_buffer.handle(), 0);
+//            OC_CU_CHECK(cuCtxSynchronize());
+//            OC_OPTIX_CHECK(optixAccelCompact(device_->optix_device_context(), nullptr,
+//                                             blas_handle_,
+//                                             blas_buffer.handle(),
+//                                             compacted_gas_size,
+//                                             &blas_handle_));
+//            OC_INFO("blas : optixAccelCompact was executed");
+//            blas_buffer_ = ocarina::move(blas_buffer);
+            OC_CU_CHECK(cuCtxSynchronize());
+//        } else {
+//            int i = 0;
+//        }
+//        OC_CU_CHECK(cuCtxSynchronize());
+//        exit(0);
     });
 }
 

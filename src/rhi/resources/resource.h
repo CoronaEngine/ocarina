@@ -80,6 +80,8 @@ public:
 class ExportableResource : public RHIResource {
 protected:
     bool exported_{true};
+    handle_ty exported_handle_;
+    size_t exported_size_;
 
 public:
     using RHIResource::RHIResource;
@@ -88,6 +90,8 @@ public:
     virtual uint64_t export_handle() { return 0; };
 #endif
     OC_MAKE_MEMBER_GETTER(exported, )
+    OC_MAKE_MEMBER_GETTER(exported_handle, &)
+    OC_MAKE_MEMBER_GETTER(exported_size, &)
 };
 
 }// namespace ocarina

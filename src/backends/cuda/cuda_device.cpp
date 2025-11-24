@@ -51,13 +51,15 @@ void CUDADevice::memory_allocate(handle_ty *handle, size_t size, bool exported) 
             prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
             prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
             prop.location.id = cu_device_;
+//            prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_WIN32;
 
             OC_CU_CHECK(cuMemGetAllocationGranularity(&granularity, &prop,
                                                       CU_MEM_ALLOC_GRANULARITY_MINIMUM));
 
             size_t aligned_size = ((size * sizeof(std::byte) + granularity - 1) / granularity) * granularity;
-
             prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_WIN32;
+
+
 
 #if _WIN32 || _WIN64
             SECURITY_ATTRIBUTES secAttr = {};
@@ -72,11 +74,12 @@ void CUDADevice::memory_allocate(handle_ty *handle, size_t size, bool exported) 
             prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_NONE;
 #endif
 
-            CUmemGenericAllocationHandle alloc_handle;
-            OC_CU_CHECK(cuMemCreate(&alloc_handle, aligned_size, &prop, 0));
+
 
             CUdeviceptr ptr;
             OC_CU_CHECK(cuMemAddressReserve(&ptr, aligned_size, 0, 0, 0));
+            CUmemGenericAllocationHandle alloc_handle;
+            OC_CU_CHECK(cuMemCreate(&alloc_handle, aligned_size, &prop, 0));
             OC_CU_CHECK(cuMemMap(ptr, aligned_size, 0, alloc_handle, 0));
 
             CUmemAccessDesc access_desc = {};

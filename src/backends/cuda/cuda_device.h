@@ -102,6 +102,26 @@ public:
         return func();
     }
 
+    handle_ty get_shared_handle(handle_ty handle) const {
+        return allocation_handles_.at(handle);
+    }
+
+    size_t get_shared_size(handle_ty handle) const {
+        return allocation_sizes_.at(handle);
+    }
+
+    void upload(void *host_ptr, CUdeviceptr device_ptr, size_t num = 1, size_t offset = 0) {
+        use_context([&] {
+            cuMemcpyHtoD(device_ptr, host_ptr, num);
+        });
+    }
+
+    void copy(CUdeviceptr dst, CUdeviceptr src, size_t num = 1, size_t offset = 0) {
+        use_context([&] {
+            cuMemcpyDtoD(dst, src, num);
+        });
+    }
+
     template<typename T>
     void download(T *host_ptr, CUdeviceptr device_ptr, size_t num = 1, size_t offset = 0) {
         use_context([&] {
