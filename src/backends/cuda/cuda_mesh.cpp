@@ -56,7 +56,7 @@ void CUDAMesh::build_bvh(const BLASBuildCommand *cmd) noexcept {
             auto esize = device_->get_shared_size(blas_buffer.handle());
             OC_INFO("asdfasdfsdaff//////  ---",blas_buffer.handle(), " ehandle ", ehandle, " esize ", esize);
 //            OC_CU_CHECK(cuMemFree(blas_buffer.handle()));
-//      device_->upload(host.data(), blas_buffer.handle(), compacted_gas_size);
+      device_->upload(host.data(), blas_buffer.handle(), compacted_gas_size);
       device_->download<char>(host.data(), blas_buffer.handle(), compacted_gas_size);
 //            device_->copy(blas_buffer.handle(), blas_buffer.handle(), 1);
 //            OC_CU_CHECK(cuCtxSynchronize());
