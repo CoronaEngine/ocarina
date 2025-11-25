@@ -102,24 +102,24 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
     ocarina::string ptx_fn = fn + ".ptx";
     string cu_fn = fn + ".cu";
     ocarina::string ptx;
-    RHIContext *file_manager = device_->file_manager();
-    if (!file_manager->is_exist_cache(ptx_fn)) {
+    RHIContext *context = device_->context();
+    if (!context->is_exist_cache(ptx_fn)) {
         OC_INFO_FORMAT("miss ptx file {}", ptx_fn);
-        if (!file_manager->is_exist_cache(cu_fn)) {
+        if (!context->is_exist_cache(cu_fn)) {
             CUDACodegen codegen{Env::code_obfuscation()};
             codegen.emit(function);
             const ocarina::string &cu = codegen.scratch().c_str();
-            file_manager->write_global_cache(cu_fn, cu);
+            context->write_global_cache(cu_fn, cu);
             ptx = compile(cu, cu_fn, 75);
-            file_manager->write_global_cache(ptx_fn, ptx);
+            context->write_global_cache(ptx_fn, ptx);
         } else {
-            const ocarina::string &cu = file_manager->read_global_cache(cu_fn);
+            const ocarina::string &cu = context->read_global_cache(cu_fn);
             ptx = compile(cu, cu_fn, sm);
-            file_manager->write_global_cache(ptx_fn, ptx);
+            context->write_global_cache(ptx_fn, ptx);
         }
     } else {
         OC_INFO_FORMAT("find ptx file {}", ptx_fn);
-        ptx = file_manager->read_global_cache(ptx_fn);
+        ptx = context->read_global_cache(ptx_fn);
     }
     return ptx;
 }

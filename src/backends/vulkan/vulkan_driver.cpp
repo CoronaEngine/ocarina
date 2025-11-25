@@ -21,9 +21,9 @@ VulkanDriver::~VulkanDriver() {
    
 }
 
-VulkanDevice* VulkanDriver::create_device(RHIContext* file_manager, const InstanceCreation& instance_creation)
+VulkanDevice* VulkanDriver::create_device(RHIContext* context, const InstanceCreation& instance_creation)
 {
-    vulkan_device_ = ocarina::new_with_allocator<ocarina::VulkanDevice>(file_manager, instance_creation);
+    vulkan_device_ = ocarina::new_with_allocator<ocarina::VulkanDevice>(context, instance_creation);
 
     // Semaphore used to ensures that image presentation is complete before starting to submit again
     VkSemaphoreCreateInfo semaphoreCreateInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};

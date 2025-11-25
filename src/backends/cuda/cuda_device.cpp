@@ -20,8 +20,8 @@
 
 namespace ocarina {
 
-CUDADevice::CUDADevice(RHIContext *file_manager)
-    : Device::Impl(file_manager) {
+CUDADevice::CUDADevice(RHIContext *context)
+    : Device::Impl(context) {
     OC_CU_CHECK(cuInit(0));
     OC_CU_CHECK(cuDeviceGet(&cu_device_, 0));
     OC_CU_CHECK(cuDevicePrimaryCtxRetain(&cu_ctx_, cu_device_));
@@ -377,12 +377,12 @@ uint64_t CUDADevice::export_handle(handle_ty handle_) {
 
 }// namespace ocarina
 
-OC_EXPORT_API ocarina::CUDADevice *create(ocarina::RHIContext *file_manager) {
-    return ocarina::new_with_allocator<ocarina::CUDADevice>(file_manager);
+OC_EXPORT_API ocarina::CUDADevice *create(ocarina::RHIContext *context) {
+    return ocarina::new_with_allocator<ocarina::CUDADevice>(context);
 }
 
-OC_EXPORT_API ocarina::CUDADevice *create_device(ocarina::RHIContext *file_manager) {
-    return ocarina::new_with_allocator<ocarina::CUDADevice>(file_manager);
+OC_EXPORT_API ocarina::CUDADevice *create_device(ocarina::RHIContext *context) {
+    return ocarina::new_with_allocator<ocarina::CUDADevice>(context);
 }
 
 OC_EXPORT_API void destroy(ocarina::CUDADevice *device) {

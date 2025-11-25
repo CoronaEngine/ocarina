@@ -54,9 +54,9 @@ OC_STRUCT(,Onb, tangent, binormal, normal) {
 
 int main(int argc, char *argv[]) {
     fs::path path(argv[0]);
-    RHIContext &file_manager = RHIContext::instance();
-    file_manager.clear_cache();
-    Device device = file_manager.create_device("cuda");
+    RHIContext &context = RHIContext::instance();
+    context.clear_cache();
+    Device device = context.create_device("cuda");
     device.init_rtx();
     Stream stream = device.create_stream();
     tinyobj::ObjReaderConfig obj_reader_config;
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     };
     auto shader = device.compile(raytracing);
 
-    auto window = file_manager.create_window("display", res);
+    auto window = context.create_window("display", res);
 //    window->run([&](double t) {
 
 

@@ -17,8 +17,8 @@
 
 namespace ocarina {
 
-VulkanDevice::VulkanDevice(RHIContext *file_manager, const ocarina::InstanceCreation &instance_creation)
-    : Device::Impl(file_manager), m_instance(instance_creation), m_windowHandle(instance_creation.windowHandle) {
+VulkanDevice::VulkanDevice(RHIContext *context, const ocarina::InstanceCreation &instance_creation)
+    : Device::Impl(context), m_instance(instance_creation), m_windowHandle(instance_creation.windowHandle) {
 
     init_vulkan();
 }
@@ -397,9 +397,9 @@ uint32_t VulkanDevice::get_memory_type(uint32_t typeBits, VkMemoryPropertyFlags 
 
 }// namespace ocarina
 
-OC_EXPORT_API ocarina::VulkanDevice *create_device(ocarina::RHIContext *file_manager, const ocarina::InstanceCreation& instance_creation) {
-    //return ocarina::new_with_allocator<ocarina::VulkanDevice>(file_manager, instance_creation);
-    return ocarina::VulkanDriver::instance().create_device(file_manager, instance_creation);
+OC_EXPORT_API ocarina::VulkanDevice *create_device(ocarina::RHIContext *context, const ocarina::InstanceCreation& instance_creation) {
+    //return ocarina::new_with_allocator<ocarina::VulkanDevice>(context, instance_creation);
+    return ocarina::VulkanDriver::instance().create_device(context, instance_creation);
 }
 
 OC_EXPORT_API void destroy(ocarina::VulkanDevice *device) {

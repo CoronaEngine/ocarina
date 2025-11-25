@@ -33,7 +33,7 @@ public:
         static VulkanDriver s_instance;
         return s_instance;
     }
-    VulkanDevice *create_device(RHIContext *file_manager, const InstanceCreation &instance_creation);
+    VulkanDevice *create_device(RHIContext *context, const InstanceCreation &instance_creation);
     VulkanDevice *get_device() const { return vulkan_device_; }
     void bind_pipeline(const VulkanPipeline &pipeline);
     void terminate();

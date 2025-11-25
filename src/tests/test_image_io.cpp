@@ -16,9 +16,9 @@ using namespace ocarina;
 
 int main(int argc, char *argv[]) {
     fs::path path(argv[0]);
-    RHIContext &file_manager = RHIContext::instance();
-//    file_manager.clear_cache();
-    Device device = file_manager.create_device("cuda");
+    RHIContext &context = RHIContext::instance();
+//    context.clear_cache();
+    Device device = context.create_device("cuda");
     Stream stream = device.create_stream();
     auto path1 = R"(D:\work\engine\Vision\gallery\cbox-sss.png)";
     auto path2 = R"(D:\work\engine\Vision\gallery\cbox-sss.jpg)";

@@ -80,14 +80,14 @@ private:
             OC_CU_CHECK(cuCtxPopCurrent(&ctx));
             if (ctx != _ctx) [[unlikely]] {
                 OC_ERROR_FORMAT(
-                    "Invalid CUDA file_manager {} (expected {}).",
+                    "Invalid CUDA context {} (expected {}).",
                     fmt::ptr(ctx), fmt::ptr(_ctx));
             }
         }
     };
 
 public:
-    explicit CUDADevice(RHIContext *file_manager);
+    explicit CUDADevice(RHIContext *context);
     void init_hardware_info();
     template<typename Func>
     decltype(auto) use_context(Func &&func) noexcept {

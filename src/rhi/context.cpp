@@ -75,7 +75,7 @@ void RHIContext::destroy_instance() {
 }
 
 RHIContext::~RHIContext() noexcept {
-    OC_INFO("file_manager was destructed !");
+    OC_INFO("context was destructed !");
 }
 
 const fs::path &RHIContext::runtime_directory() const noexcept {

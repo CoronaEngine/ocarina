@@ -44,7 +44,7 @@ void CUDAMesh::build_bvh(const BLASBuildCommand *cmd) noexcept {
                                        blas_buffer_.handle(), gas_buffer_sizes.outputSizeInBytes,
                                        &blas_handle_, &emit_desc, 1));
 
-        auto compacted_gas_size = device_->download<size_t>(emit_desc.result);
+        size_t compacted_gas_size = device_->download<size_t>(emit_desc.result);
 
         OC_INFO_FORMAT("blas : compacted_gas_size is {} byte", compacted_gas_size);
 

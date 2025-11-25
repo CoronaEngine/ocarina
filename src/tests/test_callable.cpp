@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
     };
 
     fs::path path(argv[0]);
-    RHIContext &file_manager = RHIContext::instance();
-    Device device = file_manager.create_device("cuda");
+    RHIContext &context = RHIContext::instance();
+    Device device = context.create_device("cuda");
 
     Stream stream = device.create_stream();
 

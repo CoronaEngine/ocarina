@@ -53,9 +53,9 @@ auto get_cube(float x = 1, float y = 1, float z = 1) {
 
 int main(int argc, char *argv[]) {
     fs::path path(argv[0]);
-    RHIContext &file_manager = RHIContext::instance();
-    file_manager.clear_cache();
-    Device device = file_manager.create_device("cuda");
+    RHIContext &context = RHIContext::instance();
+    context.clear_cache();
+    Device device = context.create_device("cuda");
     device.init_rtx();
     Stream stream = device.create_stream();
     auto [vertices, triangle] = get_cube();
