@@ -59,16 +59,11 @@ private:
     CUdevice cu_device_{};
     CUcontext cu_ctx_{};
     OptixDeviceContext optix_device_context_{};
-    OptixPipeline optix_pipeline_{};
     std::unique_ptr<CommandVisitor> cmd_visitor_;
     uint32_t compute_capability_{};
 
-    std::mutex allocation_mutex_;
-    std::unordered_map<handle_ty, CUmemGenericAllocationHandle> allocation_handles_;
-    std::unordered_map<handle_ty, size_t> allocation_sizes_;
-
     thread_safety<std::mutex> memory_guard_;
-    std::unordered_map<handle_ty, ExportableResource> exported_resources;
+    std::unordered_map<handle_ty, ExportableResource::Data> exported_resources;
 
     class ContextGuard {
     private:
@@ -98,13 +93,6 @@ public:
         ContextGuard cg(cu_ctx_);
         return func();
     }
-    template<typename Func>
-    decltype(auto) use_context_sync(Func &&func) noexcept {
-        std::mutex mutex;
-        std::unique_lock lock(mutex);
-        ContextGuard cg(cu_ctx_);
-        return func();
-    }
 
     template<typename T>
     void download(T *host_ptr, CUdeviceptr device_ptr, size_t num = 1, size_t offset = 0) {
@@ -128,7 +116,8 @@ public:
     [[nodiscard]] handle_ty create_texture(Image *image, const TextureViewCreation &texture_view) noexcept override { return 0; }
     void destroy_texture(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_shader(const Function &function) noexcept override;
-    [[nodiscard]] handle_ty create_shader_from_file(const std::string &file_name, ShaderType shader_type, const std::set<string> &options) noexcept override { return InvalidUI64; }
+    [[nodiscard]] handle_ty create_shader_from_file(const std::string &file_name, ShaderType shader_type,
+                                                    const std::set<string> &options) noexcept override { return InvalidUI64; }
     void destroy_shader(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_accel() noexcept override;
     void destroy_accel(handle_ty handle) noexcept override;
@@ -147,26 +136,26 @@ public:
     void init_rtx() noexcept override { init_optix_context(); }
     [[nodiscard]] CommandVisitor *command_visitor() noexcept override;
     void submit_frame() noexcept override {}
-    VertexBuffer *create_vertex_buffer() noexcept override { return nullptr; }
-    IndexBuffer *create_index_buffer(const void *initial_data, uint32_t indices_count, bool bit16) noexcept override { return nullptr; }
-    RHIRenderPass *create_render_pass(const RenderPassCreation &render_pass_creation) noexcept override { return nullptr; }
+    [[nodiscard]] VertexBuffer *create_vertex_buffer() noexcept override { return nullptr; }
+    [[nodiscard]] IndexBuffer *create_index_buffer(const void *initial_data, uint32_t indices_count, bool bit16) noexcept override { return nullptr; }
+    [[nodiscard]] RHIRenderPass *create_render_pass(const RenderPassCreation &render_pass_creation) noexcept override { return nullptr; }
     void destroy_render_pass(RHIRenderPass *render_pass) noexcept override {}
     std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> create_descriptor_set_layout(void **shaders, uint32_t shaders_count) noexcept override { return {}; }
     void bind_pipeline(const handle_ty pipeline) noexcept override {}
-    RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept override { return nullptr; }
-    DescriptorSet *get_global_descriptor_set(const string &name) noexcept override { return nullptr; }
+    [[nodiscard]] RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept override { return nullptr; }
+    [[nodiscard]] DescriptorSet *get_global_descriptor_set(const string &name) noexcept override { return nullptr; }
     void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept override {}
     void begin_frame() noexcept override {}
     void end_frame() noexcept override {}
 
-    void memory_allocate(handle_ty *handle, size_t size, bool exported = true) override;
+    void memory_allocate(handle_ty *handle, size_t size, bool exported) override;
     void memory_free(handle_ty *handle) override;
 
-    uint64_t get_aligned_memory_size(handle_ty handle) override;
+    [[nodiscard]] uint64_t get_aligned_memory_size(handle_ty handle) const override;
 
 #if _WIN32 || _WIN64
-    handle_ty import_handle(handle_ty handle, size_t size) override;
-    uint64_t export_handle(handle_ty handle_) override;
+    [[nodiscard]] handle_ty import_handle(handle_ty handle, size_t size) override;
+    [[nodiscard]] uint64_t export_handle(handle_ty handle_) override;
 #endif
 };
 }// namespace ocarina

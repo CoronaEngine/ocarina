@@ -40,60 +40,52 @@ void CUDADevice::init_hardware_info() {
     compute_capability_ = 10u * compute_cap_major + compute_cap_minor;
 }
 
-
 void CUDADevice::memory_allocate(handle_ty *handle, size_t size, bool exported) {
     if (!exported) {
         OC_CU_CHECK(cuMemAlloc(handle, size));
-        allocation_sizes_[*handle] = size;
     } else {
-            size_t granularity = 0;
-            CUmemAllocationProp prop = {};
-            prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
-            prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-            prop.location.id = cu_device_;
-            prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_WIN32;
+        size_t granularity = 0;
+        CUmemAllocationProp prop = {};
+        prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
+        prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+        prop.location.id = cu_device_;
+        prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_WIN32;
 
-            OC_CU_CHECK(cuMemGetAllocationGranularity(&granularity, &prop,
-                                                      CU_MEM_ALLOC_GRANULARITY_MINIMUM));
+        OC_CU_CHECK(cuMemGetAllocationGranularity(&granularity, &prop,
+                                                  CU_MEM_ALLOC_GRANULARITY_MINIMUM));
 
-            size_t aligned_size = ((size * sizeof(std::byte) + granularity - 1) / granularity) * granularity;
-            prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_WIN32;
-
- 
+        size_t aligned_size = ((size * sizeof(std::byte) + granularity - 1) / granularity) * granularity;
+        prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_WIN32;
 
 #if _WIN32 || _WIN64
-            SECURITY_ATTRIBUTES secAttr = {};
-            secAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-            secAttr.lpSecurityDescriptor = NULL;
-            secAttr.bInheritHandle = FALSE;
+        SECURITY_ATTRIBUTES secAttr = {};
+        secAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+        secAttr.lpSecurityDescriptor = NULL;
+        secAttr.bInheritHandle = FALSE;
 
-            CUmemAllocationHandleType handleType = CU_MEM_HANDLE_TYPE_WIN32;
-            prop.win32HandleMetaData = &secAttr;
+        CUmemAllocationHandleType handleType = CU_MEM_HANDLE_TYPE_WIN32;
+        prop.win32HandleMetaData = &secAttr;
 #else
-            prop.win32HandleMetaData = nullptr;
-            prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_NONE;
+        prop.win32HandleMetaData = nullptr;
+        prop.requestedHandleTypes = CU_MEM_HANDLE_TYPE_NONE;
 #endif
 
+        CUdeviceptr ptr;
+        OC_CU_CHECK(cuMemAddressReserve(&ptr, aligned_size, 0, 0, 0));
+        CUmemGenericAllocationHandle alloc_handle;
+        OC_CU_CHECK(cuMemCreate(&alloc_handle, aligned_size, &prop, 0));
+        OC_CU_CHECK(cuMemMap(ptr, aligned_size, 0, alloc_handle, 0));
 
+        CUmemAccessDesc access_desc = {};
+        access_desc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+        access_desc.location.id = cu_device_;
+        access_desc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
+        OC_CU_CHECK(cuMemSetAccess(ptr, aligned_size, &access_desc, 1));
 
-            CUdeviceptr ptr;
-            OC_CU_CHECK(cuMemAddressReserve(&ptr, aligned_size, 0, 0, 0));
-            CUmemGenericAllocationHandle alloc_handle;
-            OC_CU_CHECK(cuMemCreate(&alloc_handle, aligned_size, &prop, 0));
-            OC_CU_CHECK(cuMemMap(ptr, aligned_size, 0, alloc_handle, 0));
-
-            CUmemAccessDesc access_desc = {};
-            access_desc.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
-            access_desc.location.id = cu_device_;
-            access_desc.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
-            OC_CU_CHECK(cuMemSetAccess(ptr, aligned_size, &access_desc, 1));
-
-            {
-                std::lock_guard<std::mutex> lock(allocation_mutex_);
-                allocation_handles_[static_cast<handle_ty>(ptr)] = alloc_handle;
-                allocation_sizes_[static_cast<handle_ty>(ptr)] = aligned_size;
-            }
-            *handle = static_cast<handle_ty>(ptr);
+        memory_guard_.with_lock([&] {
+            exported_resources[static_cast<handle_ty>(ptr)] = {alloc_handle, aligned_size};
+        });
+        *handle = static_cast<handle_ty>(ptr);
     }
 }
 
@@ -102,20 +94,13 @@ void CUDADevice::memory_free(handle_ty *handle) {
     size_t size = 0;
     bool found = false;
 
-    {
-        std::lock_guard<std::mutex> lock(allocation_mutex_);
-        auto handle_it = allocation_handles_.find(*handle);
-        auto size_it = allocation_sizes_.find(*handle);
-
-        if (handle_it != allocation_handles_.end() && size_it != allocation_sizes_.end()) {
-            alloc_handle = handle_it->second;
-            size = size_it->second;
+    memory_guard_.with_lock([&] {
+        auto iter = exported_resources.find(*handle);
+        if (iter != exported_resources.cend()) {
+            exported_resources.erase(iter);
             found = true;
-
-            allocation_handles_.erase(handle_it);
-            allocation_sizes_.erase(size_it);
         }
-    }
+    });
 
     if (found) {
         OC_CU_CHECK(cuMemUnmap(*handle, size));
@@ -128,15 +113,15 @@ void CUDADevice::memory_free(handle_ty *handle) {
     }
 }
 
-uint64_t CUDADevice::get_aligned_memory_size(handle_ty handle) {
-    std::lock_guard<std::mutex> lock(CUDADevice::allocation_mutex_);
-    auto size_it = CUDADevice::allocation_sizes_.find(handle);
-    if (size_it != CUDADevice::allocation_sizes_.end()) {
-        return size_it->second;
-    }
-    return 0;
+uint64_t CUDADevice::get_aligned_memory_size(handle_ty handle) const {
+    return memory_guard_.with_lock([&]() -> size_t {
+        auto iter = exported_resources.find(handle);
+        if (iter != exported_resources.cend()) {
+            return iter->second.size;
+        }
+        return 0ull;
+    });
 }
-
 
 handle_ty CUDADevice::create_buffer(size_t size, const string &desc, bool exported) noexcept {
     OC_ASSERT(size > 0);
@@ -345,14 +330,14 @@ handle_ty CUDADevice::import_handle(handle_ty handle, size_t size) {
 uint64_t CUDADevice::export_handle(handle_ty handle_) {
     return use_context([&] {
         CUmemGenericAllocationHandle alloc_handle;
-        {
-            std::lock_guard<std::mutex> lock(allocation_mutex_);
-            auto it = allocation_handles_.find(handle_);
-            if (it == allocation_handles_.end()) {
+
+        memory_guard_.with_lock([&] {
+            auto iter = exported_resources.find(handle_);
+            if (iter == exported_resources.cend()) {
                 throw std::runtime_error("Invalid handle: allocation handle not found");
             }
-            alloc_handle = it->second;
-        }
+            alloc_handle = iter->second.handle;
+        });
 
         void *exported_win32_handle = nullptr;
         CUresult res = cuMemExportToShareableHandle(
