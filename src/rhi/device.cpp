@@ -46,22 +46,22 @@ Device Device::create_device(const string &backend_name, const ocarina::Instance
     RHIContext &rhi_context = RHIContext::instance();
     return rhi_context.create_device(backend_name, instance_creation);
     //std::string full_backend_name = detail::backend_full_name(backend_name);
-    //auto d = file_manager.obtain_module(dynamic_module_name(full_backend_name));
+    //auto d = context.obtain_module(dynamic_module_name(full_backend_name));
     //using Constructor = Device::Impl *(RHIContext *, const InstanceCreation &instance_creation);
     //auto create_device = reinterpret_cast<Constructor *>(d->function_ptr("create_device"));
     //auto destroy_func = reinterpret_cast<Device::Deleter *>(d->function_ptr("destroy"));
-    //return Device{Device::Handle{create_device(&file_manager, instance_creation), destroy_func}};
+    //return Device{Device::Handle{create_device(&context, instance_creation), destroy_func}};
 }
 
 Device Device::create_device(const string &backend_name) {
     RHIContext &rhi_context = RHIContext::instance();
     return rhi_context.create_device(backend_name);
     //std::string full_backend_name = detail::backend_full_name(backend_name);
-    //auto d = file_manager.obtain_module(dynamic_module_name(full_backend_name));
+    //auto d = context.obtain_module(dynamic_module_name(full_backend_name));
     //using Constructor = Device::Impl *(RHIContext *, const InstanceCreation &instance_creation);
     //auto create_device = reinterpret_cast<Constructor *>(d->function_ptr("create_device"));
     //auto destroy_func = reinterpret_cast<Device::Deleter *>(d->function_ptr("destroy"));
-    //return Device{Device::Handle{create_device(&file_manager, instance_creation), destroy_func}};
+    //return Device{Device::Handle{create_device(&context, instance_creation), destroy_func}};
 }
 
 }// namespace ocarina

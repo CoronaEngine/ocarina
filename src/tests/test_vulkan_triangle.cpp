@@ -5,7 +5,7 @@
 
 #include "core/stl.h"
 #include "dsl/dsl.h"
-//#include "util/file_manager.h"
+//#include "util/context.h"
 #include "rhi/common.h"
 #include "rhi/context.h"
 #include <windows.h>
@@ -184,15 +184,15 @@ int main(int argc, char *argv[]) {
     }
 
     fs::path path(argv[0]);
-    //FileManager &file_manager = FileManager::instance();
-    RHIContext &file_manager = RHIContext::instance();
+    //FileManager &context = FileManager::instance();
+    RHIContext &context = RHIContext::instance();
 
-    auto window = file_manager.create_window("display", make_uint2(800, 600), WindowLibrary::SDL3);
+    auto window = context.create_window("display", make_uint2(800, 600), WindowLibrary::SDL3);
 
     InstanceCreation instanceCreation = {};
     //instanceCreation.instanceExtentions =
     instanceCreation.windowHandle = window->get_window_handle();
-    Device device = file_manager.create_device("vulkan", instanceCreation);//Device::create_device("vulkan", instanceCreation);
+    Device device = context.create_device("vulkan", instanceCreation);//Device::create_device("vulkan", instanceCreation);
 
     //Shader
     std::set<string> options;

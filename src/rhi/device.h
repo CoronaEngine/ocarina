@@ -60,13 +60,13 @@ class OC_RHI_API Device : public concepts::Noncopyable {
 public:
     class Impl : public concepts::Noncopyable {
     protected:
-        RHIContext *file_manager_{};
+        RHIContext *context_{};
         friend class Device;
 
     public:
-        explicit Impl(RHIContext *ctx) : file_manager_(ctx) {}
-        explicit Impl(RHIContext *ctx, const InstanceCreation &instance_creation) : file_manager_(ctx) {}
-        [[nodiscard]] virtual handle_ty create_buffer(size_t size, const string &desc, bool exported = true) noexcept = 0;
+        explicit Impl(RHIContext *ctx) : context_(ctx) {}
+        explicit Impl(RHIContext *ctx, const InstanceCreation &instance_creation) : context_(ctx) {}
+        [[nodiscard]] virtual handle_ty create_buffer(size_t size, const string &desc, bool exported = false) noexcept = 0;
         virtual void destroy_buffer(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_texture(uint3 res, PixelStorage pixel_storage,
                                                        uint level_num, const string &desc) noexcept = 0;
@@ -89,7 +89,7 @@ public:
         virtual void mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept = 0;
         virtual void unmapping_shared(void *&shared_handle) noexcept = 0;
         virtual void unregister_shared(void *&shared_handle) noexcept = 0;
-        [[nodiscard]] RHIContext *file_manager() noexcept { return file_manager_; }
+        [[nodiscard]] RHIContext *context() noexcept { return context_; }
         virtual void init_rtx() noexcept = 0;
         [[nodiscard]] virtual CommandVisitor *command_visitor() noexcept = 0;
         virtual void submit_frame() noexcept = 0;
@@ -125,7 +125,7 @@ private:
 
 public:
     explicit Device(Handle impl) : impl_(std::move(impl)) {}
-    [[nodiscard]] RHIContext *file_manager() const noexcept { return impl_->file_manager_; }
+    [[nodiscard]] RHIContext *context() const noexcept { return impl_->context_; }
     template<typename T, typename... Args>
     [[nodiscard]] auto create(Args &&...args) const noexcept {
         return T(this->impl_.get(), std::forward<Args>(args)...);

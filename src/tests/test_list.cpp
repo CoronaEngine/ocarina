@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
     cout << to_str(h) << endl;
     return 0;
     fs::path path(argv[0]);
-    RHIContext &file_manager = RHIContext::instance();
+    RHIContext &context = RHIContext::instance();
 
     /**
      * Conventional scheme
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
      * stream used for process some command,e.g buffer upload and download, dispatch shader
      * default is asynchronous operation
      */
-    Device device = file_manager.create_device("cuda");
+    Device device = context.create_device("cuda");
     Stream stream = device.create_stream();
     Env::printer().init(device);
     Env::debugger().init(device);

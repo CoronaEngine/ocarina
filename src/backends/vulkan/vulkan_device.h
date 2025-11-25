@@ -34,7 +34,7 @@ private:
     std::vector<const char *> m_enableExtensions;
 
 public:
-    explicit VulkanDevice(RHIContext *file_manager, const ocarina::InstanceCreation &instance_creation);
+    explicit VulkanDevice(RHIContext *context, const ocarina::InstanceCreation &instance_creation);
     ~VulkanDevice();
     void init_hardware_info();
 

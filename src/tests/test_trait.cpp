@@ -161,9 +161,9 @@ int main(int argc, char *argv[]) {
     log_level_debug();
 
     fs::path path(argv[0]);
-    RHIContext &file_manager = RHIContext::instance();
-    //    file_manager.clear_cache();
-    Device device = file_manager.create_device("cuda");
+    RHIContext &context = RHIContext::instance();
+    //    context.clear_cache();
+    Device device = context.create_device("cuda");
     Stream stream = device.create_stream();
     Env::printer().init(device);
 

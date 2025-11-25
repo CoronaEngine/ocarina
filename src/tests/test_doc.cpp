@@ -606,7 +606,7 @@ int main(int argc, char *argv[]) {
     auto m3 = (float4x2()* float2x3());
     cout << to_str(m3) << endl;
     fs::path path(argv[0]);
-    RHIContext &file_manager = RHIContext::instance();
+    RHIContext &context = RHIContext::instance();
 
     /**
      * Conventional scheme
@@ -614,7 +614,7 @@ int main(int argc, char *argv[]) {
      * stream used for process some command,e.g buffer upload and download, dispatch shader
      * default is asynchronous operation
      */
-    Device device = file_manager.create_device("cuda");
+    Device device = context.create_device("cuda");
     Stream stream = device.create_stream();
     Env::printer().init(device);
     Env::debugger().init(device);
@@ -622,7 +622,7 @@ int main(int argc, char *argv[]) {
     //    Env::set_code_obfuscation(true);
     Env::set_valid_check(false);
 
-    /// create rtx file_manager if need
+    /// create rtx context if need
     device.init_rtx();
 
     //    ocarina::detail::Vector<float, 3> aaaaa;
