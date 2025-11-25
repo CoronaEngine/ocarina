@@ -129,9 +129,11 @@ public:
         });
     }
     template<typename T>
-    [[nodiscard]] T download(CUdeviceptr device_ptr, size_t offset = 0) {
-        T ret;
-        download<T>(&ret, device_ptr, 1, offset);
+    [[nodiscard]] T download(CUdeviceptr device_ptr, size_t offset = 0, size_t size = 1) {
+        T ret{};
+        vector<size_t> v;
+        v.resize(size);
+        download<T>(v.data(), device_ptr, size, offset);
         return ret;
     }
     void init_optix_context() noexcept;

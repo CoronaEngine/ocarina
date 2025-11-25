@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 
     Accel accel = device.create_accel();
     accel.add_instance(ocarina::move(cube), make_float4x4(1.f));
-    stream << accel.build_bvh();
+//    stream << accel.build_bvh();
 
     Callable cb = [&](Var<Triangle> t) {
         print("{},{},{}--", t.i,t.j,t.k);

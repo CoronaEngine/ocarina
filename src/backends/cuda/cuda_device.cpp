@@ -42,6 +42,7 @@ void CUDADevice::init_hardware_info() {
 
 
 void CUDADevice::memory_allocate(handle_ty *handle, size_t size, bool exported) {
+//    exported = false;
     if (!exported) {
         OC_CU_CHECK(cuMemAlloc(handle, size));
         allocation_sizes_[*handle] = size;
@@ -94,6 +95,8 @@ void CUDADevice::memory_allocate(handle_ty *handle, size_t size, bool exported) 
                 allocation_sizes_[static_cast<handle_ty>(ptr)] = aligned_size;
             }
             *handle = static_cast<handle_ty>(ptr);
+//            std::cout << "dasfasdfdsa ---------  sda " << std::hex << ptr << std::endl;
+//            std::cout << traceback_string() << std::endl;
     }
 }
 

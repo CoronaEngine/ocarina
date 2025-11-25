@@ -54,7 +54,7 @@ set_property(TARGET SDL_uclibc PROPERTY FOLDER "ocarina/ext/SDL3")
 set_property(TARGET SDL3_test PROPERTY FOLDER "ocarina/ext/SDL3")
 set_property(TARGET SDL3-shared PROPERTY FOLDER "ocarina/ext/SDL3")
 
-cmake_policy(SET CMP0148 NEW)
+#cmake_policy(SET CMP0148 NEW)
 
 if (${OCARINA_PY})
     add_subdirectory(pybind11)
