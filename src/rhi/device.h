@@ -108,7 +108,7 @@ public:
         virtual void memory_allocate(handle_ty *handle, size_t size, bool exported = true) {}
         virtual void memory_free(handle_ty *handle) {}
 
-        virtual uint64_t get_aligned_memory_size(handle_ty handle) { return 0; }
+        virtual uint64_t get_aligned_memory_size(handle_ty handle) const { return 0; }
 
 #if _WIN32 || _WIN64
         virtual handle_ty import_handle(handle_ty handle, size_t size) { return 0; }
@@ -159,15 +159,15 @@ public:
         impl_->destroy_buffer(handle);
     }
 
-    handle_ty import_handle(handle_ty handle, size_t size) noexcept {
+    [[nodiscard]] handle_ty import_handle(handle_ty handle, size_t size) noexcept {
         return impl_->import_handle(handle, size);
     }
 
-    uint64_t export_handle(handle_ty handle) noexcept {
+    [[nodiscard]] uint64_t export_handle(handle_ty handle) noexcept {
         return impl_->export_handle(handle);
     }
 
-    uint64_t get_aligned_memory_size(handle_ty handle) noexcept {
+    [[nodiscard]] uint64_t get_aligned_memory_size(handle_ty handle) const noexcept {
         return impl_->get_aligned_memory_size(handle);
     }
 

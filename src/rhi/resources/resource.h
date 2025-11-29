@@ -61,7 +61,7 @@ public:
     [[nodiscard]] Tag tag() const noexcept { return tag_; }
     [[nodiscard]] virtual handle_ty handle() const noexcept { return handle_; }
     virtual void set_device(Device::Impl *device) noexcept { device_ = device; }
-    OC_MAKE_MEMBER_GETTER(device,)
+    OC_MAKE_MEMBER_GETTER(device, )
     [[nodiscard]] virtual const void *handle_ptr() const noexcept { return &handle_; }
     [[nodiscard]] virtual void *handle_ptr() noexcept { return &handle_; }
     // size of data on device side
@@ -80,12 +80,24 @@ public:
 class ExportableResource : public RHIResource {
 protected:
     bool exported_{true};
+    explicit ExportableResource(Device::Impl *device, Tag tag,
+                                handle_ty handle, bool exported)
+        : RHIResource(device, tag, handle), exported_(exported) {}
 
 public:
     using RHIResource::RHIResource;
+
+    struct Data {
+        handle_ty handle;
+        size_t size;
+    };
+
 #if _WIN32 || _WIN64
-    virtual void import_handle(uint64_t handle) {};
-    virtual uint64_t export_handle() { return 0; };
+    virtual void import_handle(uint64_t handle) { OC_ASSERT(0); };
+    virtual uint64_t export_handle() {
+        OC_ASSERT(0);
+        return 0;
+    };
 #endif
     OC_MAKE_MEMBER_GETTER(exported, )
 };

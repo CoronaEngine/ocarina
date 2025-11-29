@@ -131,8 +131,8 @@ public:
 
     [[nodiscard]] static constexpr size_t element_size() noexcept { return sizeof(T); }
 
-    Buffer(Device::Impl *device, size_t size, const string &desc = "")
-        : Super(device, Tag::BUFFER, device->create_buffer(size * element_size(), desc)),
+    Buffer(Device::Impl *device, size_t size, const string &desc = "", bool exported = false)
+        : Super(device, Tag::BUFFER, device->create_buffer(size * element_size(), desc, exported), exported),
           size_(size), name_(desc) {
         descriptor_ptr();
     }
