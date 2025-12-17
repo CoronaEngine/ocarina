@@ -48,10 +48,11 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, resizable);
 
-    // Create window with graphics context
+    monitor_ =glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor_);
     handle_ = glfwCreateWindow(
-        static_cast<int>(initial_size.x),
-        static_cast<int>(initial_size.y),
+        static_cast<int>(mode->width),
+        static_cast<int>(mode->height),
         name, nullptr, nullptr);
     if (handle_ == nullptr) {
         const char *error = nullptr;
@@ -120,6 +121,12 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
 GLWindow::GLWindow(const char *name, uint2 initial_size, bool resizable) noexcept
     : Window(resizable), context_{GLFWContext::retain()} {
     init(name, initial_size, resizable);
+
+    glfwGetWindowPos(handle_, &windowedX, &windowedY);
+    glfwGetWindowSize(handle_, &windowedWidth, &windowedHeight);
+
+    lastF11Toggle = std::chrono::steady_clock::now();
+    constexpr auto f11Cooldown = std::chrono::milliseconds(100);
 }
 
 GLWindow::~GLWindow() noexcept {
@@ -135,6 +142,8 @@ GLWindow::~GLWindow() noexcept {
 uint2 GLWindow::size() const noexcept {
     auto width = 0;
     auto height = 0;
+//    const GLFWvidmode* mode = glfwGetVideoMode(monitor_);
+//    return make_uint2(mode->width, mode->height);
     glfwGetWindowSize(handle_, &width, &height);
     return make_uint2(
         static_cast<uint>(width),
@@ -143,6 +152,23 @@ uint2 GLWindow::size() const noexcept {
 
 bool GLWindow::should_close() const noexcept {
     return glfwWindowShouldClose(handle_);
+}
+
+void GLWindow::full_screen() {
+                auto now = std::chrono::steady_clock::now();
+                if (now - lastF11Toggle > std::chrono::milliseconds(100)) {
+                    lastF11Toggle = now;
+                    static bool isFullscreen = false;
+                    if (isFullscreen) {
+                        glfwSetWindowMonitor(handle_, NULL, windowedX, windowedY, windowedWidth, windowedHeight, 0);
+                    } else {
+                        const GLFWvidmode* mode = glfwGetVideoMode(monitor_);
+                        glfwGetWindowPos(handle_, &windowedX, &windowedY);
+                        glfwGetWindowSize(handle_, &windowedWidth, &windowedHeight);
+                        glfwSetWindowMonitor(handle_, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
+                    }
+                    isFullscreen = !isFullscreen;
+                }
 }
 
 void GLWindow::set_background(const uchar4 *pixels, uint2 size) noexcept {

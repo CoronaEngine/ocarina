@@ -17,6 +17,11 @@ class GLWindow : public Window {
 private:
     ocarina::shared_ptr<GLFWContext> context_;
     GLFWwindow *handle_{nullptr};
+    GLFWmonitor *monitor_{nullptr};
+
+    int windowedX, windowedY, windowedWidth, windowedHeight;
+    std::chrono::steady_clock::time_point lastF11Toggle;
+
     mutable ocarina::unique_ptr<GLTexture> texture_;
 
 private:
@@ -35,6 +40,7 @@ public:
     [[nodiscard]] uint2 size() const noexcept override;
     [[nodiscard]] bool should_close() const noexcept override;
     [[nodiscard]] auto handle() const noexcept { return handle_; }
+    void full_screen() override;
     void set_background(const uchar4 *pixels, uint2 size) noexcept override;
     void set_background(const float4 *pixels, uint2 size) noexcept override;
     void gen_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept override;
