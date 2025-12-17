@@ -43,6 +43,7 @@ public:
     virtual void init(const char *name, uint2 initial_size, bool resizable) noexcept = 0;
     virtual void init_widgets() noexcept = 0;
     Window(Window &&) noexcept = delete;
+    virtual void full_screen() = 0;
     Window(const Window &) noexcept = delete;
     Window &operator=(Window &&) noexcept = delete;
     Window &operator=(const Window &) noexcept = delete;
