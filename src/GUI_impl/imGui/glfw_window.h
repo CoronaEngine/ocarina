@@ -18,7 +18,8 @@ private:
     ocarina::shared_ptr<GLFWContext> context_;
     GLFWwindow *handle_{nullptr};
     GLFWmonitor *monitor_{nullptr};
-
+    int monitor_index = 0;
+    bool isFullscreen = false;
     int windowedX, windowedY, windowedWidth, windowedHeight;
     std::chrono::steady_clock::time_point lastF11Toggle;
 
@@ -41,6 +42,7 @@ public:
     [[nodiscard]] bool should_close() const noexcept override;
     [[nodiscard]] auto handle() const noexcept { return handle_; }
     void full_screen() override;
+    void swap_monitor() override;
     void set_background(const uchar4 *pixels, uint2 size) noexcept override;
     void set_background(const float4 *pixels, uint2 size) noexcept override;
     void gen_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept override;
