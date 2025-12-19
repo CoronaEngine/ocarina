@@ -30,6 +30,7 @@ public:
     SDLWindow &operator=(SDLWindow &&) noexcept = delete;
     SDLWindow &operator=(const SDLWindow &) noexcept = delete;
     void full_screen() override {}
+    void swap_monitor() override {}
     ~SDLWindow() noexcept override;
     [[nodiscard]] uint2 size() const noexcept override;
     [[nodiscard]] bool should_close() const noexcept override;

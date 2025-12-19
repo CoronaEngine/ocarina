@@ -44,6 +44,7 @@ public:
     virtual void init_widgets() noexcept = 0;
     Window(Window &&) noexcept = delete;
     virtual void full_screen() = 0;
+    virtual void swap_monitor() = 0;
     Window(const Window &) noexcept = delete;
     Window &operator=(Window &&) noexcept = delete;
     Window &operator=(const Window &) noexcept = delete;

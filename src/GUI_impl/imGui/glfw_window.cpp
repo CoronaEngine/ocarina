@@ -155,20 +155,31 @@ bool GLWindow::should_close() const noexcept {
 }
 
 void GLWindow::full_screen() {
-                auto now = std::chrono::steady_clock::now();
-                if (now - lastF11Toggle > std::chrono::milliseconds(100)) {
-                    lastF11Toggle = now;
-                    static bool isFullscreen = false;
-                    if (isFullscreen) {
-                        glfwSetWindowMonitor(handle_, NULL, windowedX, windowedY, windowedWidth, windowedHeight, 0);
-                    } else {
-                        const GLFWvidmode* mode = glfwGetVideoMode(monitor_);
-                        glfwGetWindowPos(handle_, &windowedX, &windowedY);
-                        glfwGetWindowSize(handle_, &windowedWidth, &windowedHeight);
-                        glfwSetWindowMonitor(handle_, glfwGetPrimaryMonitor(), 0, 0, mode->width, mode->height, mode->refreshRate);
-                    }
-                    isFullscreen = !isFullscreen;
-                }
+    auto now = std::chrono::steady_clock::now();
+    if (now - lastF11Toggle > std::chrono::milliseconds(100)) {
+        lastF11Toggle = now;
+        //static bool isFullscreen = false;
+        if (isFullscreen) {
+            glfwSetWindowMonitor(handle_, NULL, windowedX, windowedY, windowedWidth, windowedHeight, 0);
+        } else {
+            const GLFWvidmode *mode = glfwGetVideoMode(monitor_);
+            glfwGetWindowPos(handle_, &windowedX, &windowedY);
+            glfwGetWindowSize(handle_, &windowedWidth, &windowedHeight);
+            glfwSetWindowMonitor(handle_, monitor_, 0, 0, mode->width, mode->height, mode->refreshRate);
+        }
+        isFullscreen = !isFullscreen;
+    }
+}
+
+void GLWindow::swap_monitor() {
+    if (isFullscreen) {
+        int count;
+        GLFWmonitor **monitors = glfwGetMonitors(&count);
+        monitor_index = (monitor_index + 1) % count;
+        monitor_ = monitors[monitor_index];
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor_);
+        glfwSetWindowMonitor(handle_, monitor_, 0, 0, mode->width, mode->height, mode->refreshRate);
+    }
 }
 
 void GLWindow::set_background(const uchar4 *pixels, uint2 size) noexcept {
