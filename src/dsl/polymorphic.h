@@ -307,6 +307,18 @@ public:
         return Super::at(i);
     }
 
+    template<typename Index>
+    requires concepts::integral<Index>
+    [[nodiscard]] T &operator[](Index i) {
+        return Super::operator[](i);
+    }
+
+    template<typename Index>
+    requires concepts::integral<Index>
+    [[nodiscard]] T &at(Index i) {
+        return Super::at(i);
+    }
+
     bool replace(int index, T new_obj) noexcept {
         ptr_type *ptr = Super::at(index).get();
         for (auto &item : group_mgr_.group_map) {
