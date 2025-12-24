@@ -305,7 +305,7 @@ handle_ty CUDADevice::import_handle(handle_ty handle, size_t size) {
             const char *error_str = nullptr;
             cuGetErrorString(res, &error_str);
             OC_ERROR_FORMAT("Failed to import external memory: {} (error code: {})",
-                            error_str ? error_str : "Unknown error", res);
+                            error_str ? error_str : "Unknown error", static_cast<int>(res));
         }
 
         CUDA_EXTERNAL_MEMORY_BUFFER_DESC bufferDesc = {};
@@ -320,7 +320,7 @@ handle_ty CUDADevice::import_handle(handle_ty handle, size_t size) {
             cuGetErrorString(res, &error_str);
             cuDestroyExternalMemory(externalMemory);
             OC_ERROR_FORMAT("Failed to get mapped buffer: {} (error code: {})",
-                            error_str ? error_str : "Unknown error", res);
+                            error_str ? error_str : "Unknown error", static_cast<int>(res));
         }
 
         return static_cast<handle_ty>(devicePtr);
@@ -350,7 +350,7 @@ uint64_t CUDADevice::export_handle(handle_ty handle_) {
             const char *error_str = nullptr;
             cuGetErrorString(res, &error_str);
             OC_ERROR_FORMAT("Failed to export shareable handle: {} (error code: {})",
-                            error_str ? error_str : "Unknown error", res);
+                            error_str ? error_str : "Unknown error", static_cast<int>(res));
             throw std::runtime_error(std::string("Failed to export shareable handle: ") +
                                      (error_str ? error_str : "Unknown error"));
         }
