@@ -177,7 +177,7 @@ template<typename FMT, typename... Args>
     using memory_buffer = fmt::basic_memory_buffer<char, fmt::inline_buffer_size, ocarina::allocator<char>>;
     memory_buffer buffer;
     fmt::format_to(std::back_inserter(buffer),
-                   std::forward<FMT>(f),
+                   fmt::runtime(std::forward<FMT>(f)),
                    std::forward<Args>(args)...);
     return ocarina::string{buffer.data(), buffer.size()};
 }
