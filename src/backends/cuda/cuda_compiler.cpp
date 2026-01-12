@@ -12,7 +12,6 @@
 
 namespace ocarina {
 
-
 CUDACompiler::CUDACompiler(CUDADevice *device)
     : device_(device) {}
 
@@ -23,7 +22,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
     OC_NVRTC_CHECK(nvrtcVersion(&ver_major, &ver_minor));
     int nvrtc_version = ver_major * 10000 + ver_minor * 100;
     auto nvrtc_option = fmt::format("-DLC_NVRTC_VERSION={}", nvrtc_version);
-    std::vector header_names{"cuda_device_type.h","cuda_device_builtin.h", "cuda_device_math.h",
+    std::vector header_names{"cuda_device_type.h", "cuda_device_builtin.h", "cuda_device_math.h",
                              "cuda_matrix_func.h",
                              "cuda_device_resource.h"};
     std::vector<string> header_sources;
@@ -35,7 +34,18 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
         header_sources.push_back(ocarina::move(source));
     }
 
-    auto compute_sm = ocarina::format("-arch=compute_{}", sm);
+    // NVRTC will embed the chosen architecture into the PTX (e.g. .target sm_120).
+    // OptiX's PTX frontend can lag behind the newest GPU targets; if we hand it PTX
+    // with an unsupported .target, optixModuleCreate() fails with "Invalid PTX input".
+    //
+    // PTX is ABI-compatible by the driver for the real GPU anyway, so we can OptiX modules
+    // It's safer to cap the PTX target to a widely supported SM.
+    int ptx_sm = sm;
+    if (function.is_raytracing()) {
+        // keep this conservative(for compatibility) given OptiX releases.
+        ptx_sm = std::min(ptx_sm, 89);
+    }
+    auto compute_sm = ocarina::format("-arch=compute_{}", ptx_sm);
     auto rt_option = fmt::format("-DLC_OPTIX_VERSION={}", OPTIX_VERSION);
     auto const_option = fmt::format("-Dlc_constant={}", nvrtc_version <= 110200 ? "const" : "constexpr");
     ocarina::vector<const char *> compile_option = {
@@ -47,9 +57,9 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
         "-default-device",
         "--use_fast_math",
         "-restrict",
-//#ifndef NDEBUG
+        //#ifndef NDEBUG
         "-lineinfo",
-//#endif
+        //#endif
         "-extra-device-vectorization",
         "-dw",
         "-w"};
@@ -110,7 +120,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
             codegen.emit(function);
             const ocarina::string &cu = codegen.scratch().c_str();
             context->write_global_cache(cu_fn, cu);
-            ptx = compile(cu, cu_fn, 75);
+            ptx = compile(cu, cu_fn, ptx_sm);
             context->write_global_cache(ptx_fn, ptx);
         } else {
             const ocarina::string &cu = context->read_global_cache(cu_fn);
