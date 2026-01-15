@@ -70,10 +70,10 @@ public:
     }
 
     void init_shared(uint2 size) noexcept {
-//        size_ = size;
-//        generate();
-//        bind();
-//        unbind();
+        size_ = size;
+        generate();
+        bind();
+        unbind();
     }
 
     void load(const uchar4 *pixels, uint2 size) noexcept {

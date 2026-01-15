@@ -76,7 +76,8 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(handle_, true);
     ImGui_ImplOpenGL3_Init("#version 330");
-
+    uint2 res = make_uint2(mode->width, mode->height);
+    shared_texture_->init_shared(res);
     glfwSetWindowUserPointer(handle_, this);
     glfwSetMouseButtonCallback(handle_, [](GLFWwindow *window, int button, int action, int mods) noexcept {
         if (ImGui::GetIO().WantCaptureMouse) {// ImGui is handling the mouse
@@ -140,6 +141,7 @@ GLWindow::GLWindow(const char *name, uint2 initial_size, bool resizable) noexcep
 GLWindow::~GLWindow() noexcept {
     glfwMakeContextCurrent(handle_);
     texture_.reset();
+    shared_texture_.reset();
     widgets_.reset();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -200,7 +202,6 @@ void GLWindow::set_background(const float4 *pixels, uint2 size) noexcept {
     if (texture_ == nullptr) {
         texture_ = ocarina::make_unique<GLTexture>();
         texture_->init();
-        shared_texture_->init_shared(make_uint2(1,1));
     }
     texture_->load(pixels, size);
 }
