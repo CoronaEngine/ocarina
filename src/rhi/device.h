@@ -262,7 +262,4 @@ public:
     [[nodiscard]] static Device create_device(const string &backend_name);
 };
 
-namespace rhi_global {
-//OC_EXPORT_API Device rhi_create_device(const string &backend_name, const ocarina::InstanceCreation &instance_creation);
-}
 }// namespace ocarina

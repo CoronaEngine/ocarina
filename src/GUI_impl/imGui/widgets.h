@@ -73,6 +73,7 @@ public:
         size_ = size;
         generate();
         bind();
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size_.x, size_.y, 0, GL_RGBA, GL_FLOAT, nullptr);
         unbind();
     }
 
