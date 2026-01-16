@@ -16,6 +16,7 @@
 #include "driver_types.h"
 #include "cuda_compiler.h"
 #include "optix_accel.h"
+#include <cudaGL.h>
 #include "cuda_command_visitor.h"
 
 namespace ocarina {
@@ -208,6 +209,21 @@ handle_ty CUDADevice::create_bindless_array() noexcept {
 
 void CUDADevice::destroy_bindless_array(handle_ty handle) noexcept {
     ocarina::delete_with_allocator(reinterpret_cast<CUDABindlessArray *>(handle));
+}
+
+void CUDADevice::register_external_tex_to_buffer(ocarina::handle_ty handle, ocarina::uint tex_handle) noexcept {
+    shared_handle_map_.insert(make_pair(handle, CUgraphicsResource{}));
+    CUgraphicsResource &shared_handle = shared_handle_map_[handle];
+    OC_CU_CHECK(cuGraphicsGLRegisterImage(addressof(shared_handle), tex_handle, GL_TEXTURE_2D,
+                                          CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+}
+
+void CUDADevice::mapping_external_tex_to_buffer(ocarina::handle_ty handle, ocarina::uint tex_handle) noexcept {
+    CUgraphicsResource &shared_handle = shared_handle_map_[handle];
+    OC_CU_CHECK(cuGraphicsMapResources(1, addressof(shared_handle), 0));
+    size_t buffer_size = 0u;
+    OC_CU_CHECK(cuGraphicsResourceGetMappedPointer(reinterpret_cast<CUdeviceptr *>(&handle),
+                                       &buffer_size,shared_handle));
 }
 
 void CUDADevice::register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept {

@@ -62,6 +62,8 @@ private:
     std::unique_ptr<CommandVisitor> cmd_visitor_;
     uint32_t compute_capability_{};
 
+    /// key:buffer, value: CUgraphicsResource *
+    std::map<handle_ty , CUgraphicsResource> shared_handle_map_;
     thread_safety<std::mutex> memory_guard_;
     std::unordered_map<handle_ty, ExportableResource::Data> exported_resources;
 
@@ -127,6 +129,8 @@ public:
     void destroy_mesh(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_bindless_array() noexcept override;
     void destroy_bindless_array(handle_ty handle) noexcept override;
+    void register_external_tex_to_buffer(ocarina::handle_ty handle, ocarina::uint tex_handle) noexcept override;
+    void mapping_external_tex_to_buffer(handle_ty handle, uint tex_handle) noexcept override;
     void register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
     void register_shared_tex(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
     void mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept override;

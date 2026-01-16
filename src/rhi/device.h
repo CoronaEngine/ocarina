@@ -84,6 +84,7 @@ public:
         [[nodiscard]] virtual handle_ty create_bindless_array() noexcept = 0;
         virtual void destroy_bindless_array(handle_ty handle) noexcept = 0;
         virtual void register_external_tex_to_buffer(handle_ty handle, uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(register_external_tex_to_buffer); }
+        virtual void mapping_external_tex_to_buffer(handle_ty handle, uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(mapping_external_tex_to_buffer); }
         virtual void register_shared_buffer(void *&shared_handle, uint &gl_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(register_shared_buffer); }
         virtual void register_shared_tex(void *&shared_handle, uint &gl_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(register_shared_tex); }
         virtual void mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept { OC_NOT_IMPLEMENT_ERROR(mapping_shared_buffer); }
