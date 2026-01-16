@@ -85,14 +85,6 @@ public:
         virtual void destroy_bindless_array(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_texture_from_external(uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(create_texture_from_external); }
         [[nodiscard]] virtual handle_ty create_buffer_from_external(uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(create_texture_from_external); }
-//        virtual void register_external_tex_to_buffer(handle_ty *handle, uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(register_external_tex_to_buffer); }
-//        virtual void mapping_external_tex_to_buffer(handle_ty *handle, uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(mapping_external_tex_to_buffer); }
-//        virtual void register_shared_buffer(void *&shared_handle, uint &gl_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(register_shared_buffer); }
-//        virtual void register_shared_tex(void *&shared_handle, uint &gl_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(register_shared_tex); }
-//        virtual void mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept { OC_NOT_IMPLEMENT_ERROR(mapping_shared_buffer); }
-//        virtual void mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept { OC_NOT_IMPLEMENT_ERROR(mapping_shared_tex); }
-//        virtual void unmapping_shared(void *&shared_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(unmapping_shared); }
-//        virtual void unregister_shared(void *&shared_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(unregister_shared); }
         [[nodiscard]] RHIContext *context() noexcept { return context_; }
         virtual void init_rtx() noexcept = 0;
         [[nodiscard]] virtual CommandVisitor *command_visitor() noexcept = 0;

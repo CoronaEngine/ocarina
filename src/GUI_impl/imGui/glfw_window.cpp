@@ -257,7 +257,7 @@ void GLWindow::_end_frame() noexcept {
                 static_cast<float>(texture_->size().x),
                 static_cast<float>(texture_->size().y)};
             ImGui::GetBackgroundDrawList()->AddImage(
-                reinterpret_cast<ImTextureID>(static_cast<uint64_t>(texture_->handle())), {}, background_size);
+                reinterpret_cast<ImTextureID>(static_cast<uint64_t>(texture_->tex_handle())), {}, background_size);
         }
         // rendering
         ImGui::Render();

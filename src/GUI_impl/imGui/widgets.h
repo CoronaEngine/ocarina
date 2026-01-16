@@ -18,7 +18,7 @@ namespace ocarina {
 class GLTexture {
 
 private:
-    uint32_t handle_{0u};
+    uint32_t tex_handle_{0u};
     bool is_float4_{false};
     uint2 size_{};
     mutable bool binding_{false};
@@ -27,7 +27,7 @@ public:
     explicit GLTexture() noexcept {}
 
     void generate() noexcept {
-        CHECK_GL(glGenTextures(1, &handle_));
+        CHECK_GL(glGenTextures(1, &tex_handle_));
     }
 
     void init() noexcept {
@@ -48,37 +48,35 @@ public:
     ~GLTexture() noexcept { clear(); }
 
     void clear() noexcept {
-        if (handle_ != 0) {
-            CHECK_GL(glDeleteTextures(1, &handle_));
-            handle_ = 0;
+        if (tex_handle_ != 0) {
+            CHECK_GL(glDeleteTextures(1, &tex_handle_));
+            tex_handle_ = 0;
         }
         size_ = make_uint2(0);
     }
 
-    [[nodiscard]] auto handle() const noexcept { return handle_; }
+    OC_MAKE_MEMBER_GETTER(tex_handle, )
     [[nodiscard]] auto size() const noexcept { return size_; }
     OC_MAKE_MEMBER_GETTER(binding, )
 
     void bind() const noexcept {
-        binding_ = true;
-        CHECK_GL(glBindTexture(GL_TEXTURE_2D, handle_));
+        CHECK_GL(glBindTexture(GL_TEXTURE_2D, tex_handle_));
     }
 
     void unbind() const noexcept {
         CHECK_GL(glBindTexture(GL_TEXTURE_2D, 0));
-        binding_ = false;
     }
 
     void init_shared(uint2 size) noexcept {
-        size_ = size;
-        generate();
-        bind();
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size_.x, size_.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-        unbind();
+//        size_ = size;
+//        generate();
+//        bind();
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size_.x, size_.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+//        unbind();
     }
 
     void load(const uchar4 *pixels, uint2 size) noexcept {
