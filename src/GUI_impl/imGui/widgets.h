@@ -18,26 +18,46 @@ namespace ocarina {
 class GLTexture {
 
 private:
-    uint32_t tex_handle_{0u};
+    GLuint tex_handle_{0u};
+    GLuint buffer_handle_{0u};
     bool is_float4_{false};
     uint2 size_{};
     mutable bool binding_{false};
 
 public:
-    explicit GLTexture() noexcept {}
+    explicit GLTexture() noexcept = default;
 
     void generate() noexcept {
         CHECK_GL(glGenTextures(1, &tex_handle_));
     }
 
-    void init() noexcept {
+    void update(uint2 size) noexcept {
+        size_ = size;
         generate();
         bind();
+        CHECK_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size_.x,
+                              size_.y, 0, GL_RGBA, GL_FLOAT, nullptr));
         CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
         CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
         CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
         CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
         unbind();
+    }
+
+    void gen_buffer() noexcept {
+        glGenBuffers(1, &buffer_handle_);
+    }
+
+    void bind_buffer() noexcept {
+        glBindBuffer(GL_ARRAY_BUFFER, buffer_handle_);
+    }
+
+    void unbind_buffer() noexcept {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    void connect() noexcept {
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, buffer_handle_);
     }
 
     GLTexture(GLTexture &&) noexcept = delete;
@@ -67,37 +87,38 @@ public:
         CHECK_GL(glBindTexture(GL_TEXTURE_2D, 0));
     }
 
-    void init_shared(uint2 size) noexcept {
-//        size_ = size;
-//        generate();
-//        bind();
-//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size_.x, size_.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-//        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-//        unbind();
-    }
-
     void load(const uchar4 *pixels, uint2 size) noexcept {
         bind();
         if (any(size_ != size) || is_float4_) {
             size_ = size;
             is_float4_ = false;
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+            CHECK_GL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
+        } else {
+            CHECK_GL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size_.x, size_.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
         }
-        CHECK_GL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size_.x, size_.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
+        unbind();
+    }
+
+    void init() noexcept {
+        generate();
+        bind();
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size_.x, size_.y, 0, GL_RGBA, GL_FLOAT, nullptr);
+        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+        CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
         unbind();
     }
 
     void load(const float4 *pixels, uint2 size) noexcept {
         bind();
-        if (any(size_ != size) || !is_float4_) {
-            size_ = size;
-            is_float4_ = true;
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA, GL_FLOAT, nullptr);
-        }
-        CHECK_GL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size_.x, size_.y, GL_RGBA, GL_FLOAT, pixels));
+//        if (any(size_ != size) || !is_float4_) {
+//            size_ = size;
+//            is_float4_ = true;
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, size.x, size.y, 0, GL_RGBA, GL_FLOAT, pixels);
+//        } else {
+            CHECK_GL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size_.x, size_.y, GL_RGBA, GL_FLOAT, pixels));
+//        }
         unbind();
     }
 };
