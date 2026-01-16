@@ -19,7 +19,6 @@ class GLTexture {
 
 private:
     GLuint tex_handle_{0u};
-    GLuint buffer_handle_{0u};
     bool is_float4_{false};
     uint2 size_{};
     mutable bool binding_{false};
@@ -42,22 +41,6 @@ public:
         CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
         CHECK_GL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
         unbind();
-    }
-
-    void gen_buffer() noexcept {
-        glGenBuffers(1, &buffer_handle_);
-    }
-
-    void bind_buffer() noexcept {
-        glBindBuffer(GL_ARRAY_BUFFER, buffer_handle_);
-    }
-
-    void unbind_buffer() noexcept {
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
-
-    void connect() noexcept {
-        glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, buffer_handle_);
     }
 
     GLTexture(GLTexture &&) noexcept = delete;
