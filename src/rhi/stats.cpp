@@ -26,9 +26,32 @@ string MemoryStats::buffer_detail_info() const noexcept {
 }
 
 void MemoryStats::foreach_buffer_info(const std::function<void(BufferData)> &func) const noexcept {
+    vector<BufferData> view;
+    view.reserve(buffer_map_.size());
     for (const auto &item : buffer_map_) {
         const BufferData &data = item.second;
-        func(data);
+        view.push_back(data);
+    }
+    std::sort(view.begin(), view.end(), [](const BufferData &lhs, const BufferData &rhs) {
+        return lhs.size > rhs.size;
+    });
+    for (const auto &elm : view) {
+        func(elm);
+    }
+}
+
+void MemoryStats::foreach_tex_info(const std::function<void(TexData)> &func) const noexcept {
+    vector<TexData> view;
+    view.reserve(tex_map_.size());
+    for (const auto &item : tex_map_) {
+        const TexData &data = item.second;
+        view.push_back(data);
+    }
+    std::sort(view.begin(), view.end(), [](const TexData &lhs, const TexData &rhs) {
+        return lhs.size() > rhs.size();
+    });
+    for (const auto &elm : view) {
+        func(elm);
     }
 }
 
@@ -86,13 +109,6 @@ void MemoryStats::on_tex_free(ocarina::handle_ty handle) {
         tex_size_ -= tex_size(handle);
         tex_map_.erase(handle);
     });
-}
-
-void MemoryStats::foreach_tex_info(const std::function<void(TexData)> &func) const noexcept {
-    for (const auto &item : tex_map_) {
-        const TexData &data = item.second;
-        func(data);
-    }
 }
 
 }// namespace ocarina
