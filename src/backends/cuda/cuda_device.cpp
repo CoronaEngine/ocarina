@@ -241,78 +241,78 @@ handle_ty CUDADevice::create_buffer_from_external(ocarina::uint buffer_handle) n
     });
 }
 
-void CUDADevice::register_external_tex_to_buffer(handle_ty *handle, ocarina::uint tex_handle) noexcept {
-
-    use_context([&] {
-        CUgraphicsResource &shared_handle = shared_handle_map_[*handle];
-        OC_CU_CHECK(cuGraphicsGLRegisterImage(addressof(shared_handle), tex_handle,GL_TEXTURE_2D,
-                                              CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
-        OC_CU_CHECK(cuGraphicsMapResources(1, addressof(shared_handle), 0));
-        size_t buffer_size = 0u;
-        CUdeviceptr c_udeviceptr;
-        CUarray cu_array;
-        OC_CU_CHECK(cuGraphicsSubResourceGetMappedArray(&cu_array, shared_handle, 0, 0));
-        CUDA_ARRAY3D_DESCRIPTOR retrievedDesc;
-        OC_CU_CHECK(cuArray3DGetDescriptor(&retrievedDesc, cu_array));
-        int i = 0;
-    });
-}
-
-void CUDADevice::mapping_external_tex_to_buffer(handle_ty *handle, ocarina::uint tex_handle) noexcept {
-
-    //    use_context([&] {
-    //        CUgraphicsResource &shared_handle = shared_handle_map_[*handle];
-    //        OC_CU_CHECK(cuGraphicsMapResources(1, addressof(shared_handle), 0));
-    //        size_t buffer_size = 0u;
-    //        OC_CU_CHECK(cuGraphicsResourceGetMappedPointer(reinterpret_cast<CUdeviceptr *>(handle),
-    //                                                       &buffer_size,shared_handle));
-    //        int i = 0;
-    //    });
-}
-
-void CUDADevice::register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept {
-    if (shared_handle != nullptr) {
-        return;
-    }
-    OC_CUDA_CHECK(cudaGraphicsGLRegisterBuffer(reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle),
-                                               gl_handle, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
-}
-
-void CUDADevice::register_shared_tex(void *&shared_handle, ocarina::uint &gl_handle) noexcept {
-    if (shared_handle != nullptr) {
-        return;
-    }
-    OC_CUDA_CHECK(cudaGraphicsGLRegisterImage(reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle),
-                                              gl_handle, GL_TEXTURE_2D,
-                                              CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
-}
-
-void CUDADevice::mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept {
-    OC_CUDA_CHECK(cudaGraphicsMapResources(1, reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle)));
-    size_t buffer_size = 0u;
-    OC_CUDA_CHECK(cudaGraphicsResourceGetMappedPointer(
-        reinterpret_cast<void **>(&handle),
-        &buffer_size,
-        reinterpret_cast<cudaGraphicsResource_t>(shared_handle)));
-}
-
-void CUDADevice::mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept {
-    OC_CUDA_CHECK(cudaGraphicsMapResources(1, reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle)));
-    OC_CUDA_CHECK(cudaGraphicsSubResourceGetMappedArray(reinterpret_cast<cudaArray_t *>(handle),
-                                                        reinterpret_cast<cudaGraphicsResource_t>(shared_handle), 0, 0));
-}
-
-void CUDADevice::unmapping_shared(void *&shared_handle) noexcept {
-    OC_CUDA_CHECK(cudaGraphicsUnmapResources(1,
-                                             reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle)));
-}
-
-void CUDADevice::unregister_shared(void *&shared_handle) noexcept {
-    if (shared_handle == nullptr) {
-        return;
-    }
-    OC_CUDA_CHECK(cudaGraphicsUnregisterResource(reinterpret_cast<cudaGraphicsResource_t>(shared_handle)));
-}
+//void CUDADevice::register_external_tex_to_buffer(handle_ty *handle, ocarina::uint tex_handle) noexcept {
+//
+//    use_context([&] {
+//        CUgraphicsResource &shared_handle = shared_handle_map_[*handle];
+//        OC_CU_CHECK(cuGraphicsGLRegisterImage(addressof(shared_handle), tex_handle,GL_TEXTURE_2D,
+//                                              CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+//        OC_CU_CHECK(cuGraphicsMapResources(1, addressof(shared_handle), 0));
+//        size_t buffer_size = 0u;
+//        CUdeviceptr c_udeviceptr;
+//        CUarray cu_array;
+//        OC_CU_CHECK(cuGraphicsSubResourceGetMappedArray(&cu_array, shared_handle, 0, 0));
+//        CUDA_ARRAY3D_DESCRIPTOR retrievedDesc;
+//        OC_CU_CHECK(cuArray3DGetDescriptor(&retrievedDesc, cu_array));
+//        int i = 0;
+//    });
+//}
+//
+//void CUDADevice::mapping_external_tex_to_buffer(handle_ty *handle, ocarina::uint tex_handle) noexcept {
+//
+//    //    use_context([&] {
+//    //        CUgraphicsResource &shared_handle = shared_handle_map_[*handle];
+//    //        OC_CU_CHECK(cuGraphicsMapResources(1, addressof(shared_handle), 0));
+//    //        size_t buffer_size = 0u;
+//    //        OC_CU_CHECK(cuGraphicsResourceGetMappedPointer(reinterpret_cast<CUdeviceptr *>(handle),
+//    //                                                       &buffer_size,shared_handle));
+//    //        int i = 0;
+//    //    });
+//}
+//
+//void CUDADevice::register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept {
+//    if (shared_handle != nullptr) {
+//        return;
+//    }
+//    OC_CUDA_CHECK(cudaGraphicsGLRegisterBuffer(reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle),
+//                                               gl_handle, CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+//}
+//
+//void CUDADevice::register_shared_tex(void *&shared_handle, ocarina::uint &gl_handle) noexcept {
+//    if (shared_handle != nullptr) {
+//        return;
+//    }
+//    OC_CUDA_CHECK(cudaGraphicsGLRegisterImage(reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle),
+//                                              gl_handle, GL_TEXTURE_2D,
+//                                              CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+//}
+//
+//void CUDADevice::mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept {
+//    OC_CUDA_CHECK(cudaGraphicsMapResources(1, reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle)));
+//    size_t buffer_size = 0u;
+//    OC_CUDA_CHECK(cudaGraphicsResourceGetMappedPointer(
+//        reinterpret_cast<void **>(&handle),
+//        &buffer_size,
+//        reinterpret_cast<cudaGraphicsResource_t>(shared_handle)));
+//}
+//
+//void CUDADevice::mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept {
+//    OC_CUDA_CHECK(cudaGraphicsMapResources(1, reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle)));
+//    OC_CUDA_CHECK(cudaGraphicsSubResourceGetMappedArray(reinterpret_cast<cudaArray_t *>(handle),
+//                                                        reinterpret_cast<cudaGraphicsResource_t>(shared_handle), 0, 0));
+//}
+//
+//void CUDADevice::unmapping_shared(void *&shared_handle) noexcept {
+//    OC_CUDA_CHECK(cudaGraphicsUnmapResources(1,
+//                                             reinterpret_cast<cudaGraphicsResource_t *>(&shared_handle)));
+//}
+//
+//void CUDADevice::unregister_shared(void *&shared_handle) noexcept {
+//    if (shared_handle == nullptr) {
+//        return;
+//    }
+//    OC_CUDA_CHECK(cudaGraphicsUnregisterResource(reinterpret_cast<cudaGraphicsResource_t>(shared_handle)));
+//}
 
 void CUDADevice::destroy_buffer(handle_ty handle) noexcept {
     if (handle != 0) {

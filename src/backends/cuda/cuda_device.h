@@ -131,14 +131,6 @@ public:
     void destroy_bindless_array(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_texture_from_external(uint tex_handle) noexcept override;
     [[nodiscard]] handle_ty create_buffer_from_external(uint buffer_handle) noexcept override;
-    void register_external_tex_to_buffer(handle_ty *handle, ocarina::uint tex_handle) noexcept override;
-    void mapping_external_tex_to_buffer(handle_ty *handle, uint tex_handle) noexcept override;
-    void register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
-    void register_shared_tex(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
-    void mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept override;
-    void mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept override;
-    void unmapping_shared(void *&shared_handle) noexcept override;
-    void unregister_shared(void *&shared_handle) noexcept override;
     void init_rtx() noexcept override { init_optix_context(); }
     [[nodiscard]] CommandVisitor *command_visitor() noexcept override;
     void submit_frame() noexcept override {}

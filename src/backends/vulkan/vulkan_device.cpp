@@ -91,30 +91,6 @@ void VulkanDevice::destroy_bindless_array(handle_ty handle) noexcept {
     
 }
 
-void VulkanDevice::register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept {
-    
-}
-
-void VulkanDevice::register_shared_tex(void *&shared_handle, ocarina::uint &gl_handle) noexcept {
-    
-}
-
-void VulkanDevice::mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept {
-    
-}
-
-void VulkanDevice::mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept {
-    
-}
-
-void VulkanDevice::unmapping_shared(void *&shared_handle) noexcept {
-    
-}
-
-void VulkanDevice::unregister_shared(void *&shared_handle) noexcept {
-    
-}
-
 void VulkanDevice::destroy_buffer(handle_ty handle) noexcept {
     VulkanBuffer* buffer = (VulkanBuffer*)handle;
     if (buffer) {
