@@ -98,12 +98,11 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
         if (auto &&cb = self->cursor_position_callback_) { cb(make_float2(static_cast<float>(x), static_cast<float>(y))); }
     });
     glfwSetWindowSizeCallback(handle_, [](GLFWwindow *window, int width, int height) noexcept {
-        if (width * height == 0) {
-            return ;
-        }
         auto self = static_cast<GLWindow *>(glfwGetWindowUserPointer(window));
         uint2 res = make_uint2(width, height);
-        self->texture_->update(res);
+        if (width * height > 0) {
+            self->texture_->update(res);
+        }
         if (auto &&cb = self->window_size_callback_) {
             cb(res);
         }
