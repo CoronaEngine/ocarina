@@ -181,6 +181,20 @@ handle_ty CUDADevice::create_texture(uint3 res, PixelStorage pixel_storage,
     });
 }
 
+handle_ty CUDADevice::create_texture_from_external(ocarina::uint tex_handle) noexcept {
+    CUarray handle;
+    CUgraphicsResource shared_handle;
+    return use_context([&] {
+        OC_CU_CHECK(cuGraphicsGLRegisterImage(addressof(shared_handle), tex_handle, GL_TEXTURE_2D,
+                                              CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
+        OC_CU_CHECK(cuGraphicsMapResources(1, addressof(shared_handle), 0));
+        OC_CU_CHECK(cuGraphicsSubResourceGetMappedArray((&handle), shared_handle, 0, 0));
+        auto ret = reinterpret_cast<handle_ty>(handle);
+        shared_handle_map_.insert(make_pair(ret, shared_handle));
+        return ret;
+    });
+}
+
 handle_ty CUDADevice::create_shader(const Function &function) noexcept {
     CUDACompiler compiler(this);
     ocarina::string ptx = compiler.compile(function, compute_capability_);
@@ -211,19 +225,6 @@ void CUDADevice::destroy_bindless_array(handle_ty handle) noexcept {
     ocarina::delete_with_allocator(reinterpret_cast<CUDABindlessArray *>(handle));
 }
 
-handle_ty CUDADevice::create_texture_from_external(ocarina::uint tex_handle) noexcept {
-    CUarray handle;
-    CUgraphicsResource shared_handle;
-    return use_context([&] {
-        OC_CU_CHECK(cuGraphicsGLRegisterImage(addressof(shared_handle), tex_handle, GL_TEXTURE_2D,
-                                              CU_GRAPHICS_REGISTER_FLAGS_WRITE_DISCARD));
-        OC_CU_CHECK(cuGraphicsMapResources(1, addressof(shared_handle), 0));
-        OC_CU_CHECK(cuGraphicsSubResourceGetMappedArray((&handle), shared_handle, 0, 0));
-        auto ret = reinterpret_cast<handle_ty>(handle);
-        shared_handle_map_.insert(make_pair(ret, shared_handle));
-        return ret;
-    });
-}
 
 handle_ty CUDADevice::create_buffer_from_external(ocarina::uint buffer_handle) noexcept {
     CUdeviceptr handle;

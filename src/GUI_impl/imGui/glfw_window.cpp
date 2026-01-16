@@ -249,13 +249,11 @@ void GLWindow::_end_frame() noexcept {
     if (!should_close()) {
         Window::_end_frame();
         // background
-        if (texture_ != nullptr) {
-            ImVec2 background_size{
-                static_cast<float>(texture_->size().x),
-                static_cast<float>(texture_->size().y)};
-            ImGui::GetBackgroundDrawList()->AddImage(
+        ImVec2 background_size{
+            static_cast<float>(texture_->size().x),
+            static_cast<float>(texture_->size().y)};
+        ImGui::GetBackgroundDrawList()->AddImage(
                 reinterpret_cast<ImTextureID>(static_cast<uint64_t>(texture_->tex_handle())), {}, background_size);
-        }
         // rendering
         ImGui::Render();
         int display_w, display_h;

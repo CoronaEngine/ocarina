@@ -84,7 +84,7 @@ public:
         [[nodiscard]] virtual handle_ty create_bindless_array() noexcept = 0;
         virtual void destroy_bindless_array(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_texture_from_external(uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(create_texture_from_external); }
-        [[nodiscard]] virtual handle_ty create_buffer_from_external(uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(create_texture_from_external); }
+        [[nodiscard]] virtual handle_ty create_buffer_from_external(uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(create_buffer_from_external); }
         [[nodiscard]] RHIContext *context() noexcept { return context_; }
         virtual void init_rtx() noexcept = 0;
         [[nodiscard]] virtual CommandVisitor *command_visitor() noexcept = 0;
