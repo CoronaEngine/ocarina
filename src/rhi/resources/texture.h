@@ -28,8 +28,6 @@ namespace detail {
 class Texture : public RHIResource {
 protected:
     uint channel_num_{};
-    mutable uint gl_handle_{0};
-    mutable void *gl_shared_handle_{0};
 
 public:
     class Impl {
@@ -72,26 +70,6 @@ public:
 
     [[nodiscard]] uint size_in_byte() const noexcept {
         return pixel_num() * pixel_size();
-    }
-
-    [[nodiscard]] uint &gl_handle() const noexcept { return gl_handle_; }
-    [[nodiscard]] void *&gl_shared_handle() const noexcept { return gl_shared_handle_; }
-
-    void register_shared() const noexcept {
-        device()->register_shared_tex(gl_shared_handle_, gl_handle_);
-    }
-
-    void mapping() const noexcept {
-        device()->mapping_shared_tex(gl_shared_handle_,
-                                     *const_cast<handle_ty *>(impl()->array_handle_ptr()));
-    }
-
-    void unmapping() const noexcept {
-        device()->unmapping_shared(gl_shared_handle_);
-    }
-
-    void unregister_shared() const noexcept {
-        device()->unregister_shared(gl_shared_handle_);
     }
 
     [[nodiscard]] uint pixel_size() const noexcept {
