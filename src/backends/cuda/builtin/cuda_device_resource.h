@@ -195,6 +195,7 @@ void oc_synchronize_block() noexcept {
 struct OCTextureDesc {
     cudaTextureObject_t texture{};
     cudaSurfaceObject_t surface{};
+    void *array{};
     OCPixelStorage pixel_storage{};
 };
 

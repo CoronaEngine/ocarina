@@ -38,6 +38,7 @@ public:
         [[nodiscard]] virtual handle_ty array_handle() const noexcept = 0;
         [[nodiscard]] virtual const handle_ty *array_handle_ptr() const noexcept = 0;
         [[nodiscard]] virtual handle_ty tex_handle() const noexcept = 0;
+        [[nodiscard]] virtual const TextureDesc &descriptor() const noexcept = 0;
 
         /// for device side structure
         [[nodiscard]] virtual const void *handle_ptr() const noexcept = 0;
@@ -49,8 +50,8 @@ public:
 public:
     Texture3D() = default;
     explicit Texture3D(Device::Impl *device, uint3 res,
-                     PixelStorage pixel_storage, uint level_num = 1u,
-                     const string &desc = "")
+                       PixelStorage pixel_storage, uint level_num = 1u,
+                       const string &desc = "")
         : RHIResource(device, Tag::TEXTURE,
                       device->create_texture(res, pixel_storage,
                                              detail::compute_mip_level_num(res, level_num), desc)),

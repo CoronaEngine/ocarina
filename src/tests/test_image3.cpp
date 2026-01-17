@@ -71,11 +71,11 @@ int main(int argc, char *argv[]) {
         //        static_assert(is_general_vector2_v<decltype(float2{}.xy())>);
         Float4 val = bindless.tex3d_var(0).sample(4, uv.xy()).as_vec4();
         tex.write(make_float4(1,0.3,0,1),dispatch_idx().xy());
-        texture_var.write(make_float4(0.2,1,0,1),dispatch_idx().xy());
+        tex.write(make_float4(1,1,0.2,1),dispatch_idx().xy());
         Uint2 xy = dispatch_idx().xy();
         //        static_assert(is_all_integral_expr_v<Uint>);
                 auto va2l = texture_var.read<float4>(dispatch_idx().xy());
-        $info("{} {}, {} {} {} {}", uv, val);
+//        $info("{} {}, {} {} {} {}", uv, val);
     };
     auto shader = device.compile(kernel);
     stream << shader(tex).dispatch(image.resolution()) << Env::printer().retrieve()<< synchronize() << commit();
