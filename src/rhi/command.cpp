@@ -3,7 +3,6 @@
 //
 
 #include "command.h"
-
 #include <utility>
 #include "resources/shader.h"
 
@@ -15,6 +14,11 @@ ShaderDispatchCommand::ShaderDispatchCommand(handle_ty entry, SP<ArgumentList> a
     : Command(true), entry_(entry),
       argument_list_(ocarina::move(argument_list)), dispatch_dim_(dim) {
 }
+
+BufferReallocateCommand::BufferReallocateCommand(RHIResource *rhi_resource,
+                                                 size_t new_size, bool async)
+    : Command(async), new_size_(new_size),
+      rhi_resource_(rhi_resource) {}
 
 span<void *> ShaderDispatchCommand::args() noexcept {
     return argument_list_->ptr();

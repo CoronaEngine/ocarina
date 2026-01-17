@@ -17,8 +17,8 @@ private:
     BindlessArrayDesc slot_soa_{};
     CUDADevice *device_{};
     Managed<ByteBufferDesc> buffers_;
-    Managed<CUtexObject> texture3ds_;
-    Managed<CUtexObject> texture2ds_;
+    Managed<CUtexObject> tex3ds_;
+    Managed<CUtexObject> tex2ds_;
 
 public:
     explicit CUDABindlessArray(CUDADevice *device);

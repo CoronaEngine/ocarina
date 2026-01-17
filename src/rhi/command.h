@@ -201,8 +201,7 @@ private:
     size_t new_size_;
 
 public:
-    BufferReallocateCommand(RHIResource *rhi_resource, size_t new_size, bool async = true)
-        : Command(async), new_size_(new_size), rhi_resource_(rhi_resource) {}
+    BufferReallocateCommand(RHIResource *rhi_resource, size_t new_size, bool async = true);
     [[nodiscard]] RHIResource *rhi_resource() const noexcept { return rhi_resource_; }
     [[nodiscard]] size_t new_size() const noexcept { return new_size_; }
     OC_MAKE_CMD_COMMON_FUNC(BufferReallocateCommand)
