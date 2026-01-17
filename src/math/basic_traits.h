@@ -121,10 +121,10 @@ struct all_is_impl<T, First, Rest...> : std::conjunction<all_is_impl<T, First>,
 
 }// namespace
 
-template<typename Target, typename ...Ts>
+template<typename Target, typename... Ts>
 using all_is = all_is_impl<std::remove_cvref_t<Target>, std::remove_cvref_t<Ts>...>;
 
-template<typename Target,typename... Ts>
+template<typename Target, typename... Ts>
 constexpr auto all_is_v = all_is<Target, Ts...>::value;
 
 template<typename T, size_t N, size_t... Indices>
@@ -501,7 +501,7 @@ template<typename T>
 constexpr auto is_vector4_v = is_vector4<T>::value;
 
 template<typename T, size_t N = 0u>
-using is_general_vector = std::disjunction<is_vector<T, N>, is_host_swizzle<T, N>>;
+using is_general_vector = std::disjunction<is_vector<swizzle_decay_t<T>, N>>;
 
 template<typename T>
 using is_general_vector2 = is_general_vector<T, 2u>;
@@ -553,6 +553,7 @@ OC_MAKE_IS_ALL_CLS(vector, 4)
     template<typename T>                                                                                 \
     using is_##type##_general_vector##dim = std::conjunction<is_general_vector##dim<T>,                  \
                                                              std::is_same<type_element_t<T>, type>>;     \
+    OC_DEFINE_TEMPLATE_VALUE(is_##type##_general_vector##dim)                                            \
     template<typename... T>                                                                              \
     using is_all_##type##_general_vector##dim = std::conjunction<is_##type##_general_vector##dim<T>...>; \
     OC_DEFINE_TEMPLATE_VALUE_MULTI(is_all_##type##_general_vector##dim)
