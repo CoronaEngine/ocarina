@@ -43,7 +43,6 @@ public:
         [[nodiscard]] virtual BufferUploadCommand *upload_texture2d_handles(bool async) const noexcept = 0;
 
         [[nodiscard]] virtual ByteBufferDesc buffer_view(uint index) const noexcept = 0;
-        virtual void prepare_slotSOA(Device &device) noexcept = 0;
         virtual CommandList update_slotSOA(bool async) noexcept = 0;
 
         /// for device side structure
@@ -60,7 +59,6 @@ public:
     [[nodiscard]] Impl *impl() noexcept { return reinterpret_cast<Impl *>(handle_); }
     [[nodiscard]] const Impl *operator->() const noexcept { return impl(); }
     [[nodiscard]] Impl *operator->() noexcept { return impl(); }
-    void prepare_slotSOA(Device &device) noexcept { impl()->prepare_slotSOA(device); }
 
     [[nodiscard]] CommandList update_slotSOA() noexcept {
         return impl()->update_slotSOA(true);

@@ -30,7 +30,6 @@ public:
     [[nodiscard]] size_t max_member_size() const noexcept override { return sizeof(CUdeviceptr); }
     [[nodiscard]] size_t data_size() const noexcept override { return sizeof(BindlessArrayDesc); }
     [[nodiscard]] size_t data_alignment() const noexcept override { return alignof(BindlessArrayDesc); }
-    void prepare_slotSOA(Device &device) noexcept override;
     [[nodiscard]] CommandList update_slotSOA(bool async) noexcept override;
 
     [[nodiscard]] size_t emplace_buffer(handle_ty handle, uint offset_in_byte,

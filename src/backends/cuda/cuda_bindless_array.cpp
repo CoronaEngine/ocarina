@@ -16,15 +16,6 @@ CUDABindlessArray::CUDABindlessArray(CUDADevice *device)
     slot_soa_.tex2d_slot = tex2ds_.handle();
 }
 
-void CUDABindlessArray::prepare_slotSOA(Device &device) noexcept {
-    //    buffers_.reset_device_buffer_immediately(device);
-    //    tex3ds_.reset_device_buffer_immediately(device);
-    //    tex2ds_.reset_device_buffer_immediately(device);
-    //    slot_soa_.buffer_slot = buffers_.handle();
-    //    slot_soa_.tex3d_slot = tex3ds_.handle();
-    //    slot_soa_.tex2d_slot = tex2ds_.handle();
-}
-
 CommandList CUDABindlessArray::update_slotSOA(bool async) noexcept {
     CommandList ret;
 #define OC_MAKE_REALLOCATE_CMD(arg)                                                            \
