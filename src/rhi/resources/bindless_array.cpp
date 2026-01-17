@@ -31,7 +31,8 @@ ByteBufferView BindlessArray::byte_buffer_view(ocarina::uint index) const noexce
 CommandList BindlessArray::upload_handles(bool async) noexcept {
     CommandList ret;
     ret.push_back(impl()->upload_buffer_handles(async));
-    ret.push_back(impl()->upload_texture_handles(async));
+    ret.push_back(impl()->upload_texture3d_handles(async));
+    ret.push_back(impl()->upload_texture2d_handles(async));
     return ret;
 }
 
@@ -40,7 +41,7 @@ uint BindlessArray::buffer_num() const noexcept {
 }
 
 uint BindlessArray::texture_num() const noexcept {
-    return impl()->texture_num();
+    return impl()->texture3d_num();
 }
 
 }// namespace ocarina

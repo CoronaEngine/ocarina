@@ -18,23 +18,33 @@ public:
     class Impl {
     public:
         static constexpr auto c_max_slot_num = 50000;
-        [[nodiscard]] virtual size_t emplace_buffer(handle_ty handle, uint offset_in_byte,
-                                                    size_t size_in_byte) noexcept = 0;
+
+        virtual size_t emplace_buffer(handle_ty handle, uint offset_in_byte,
+                                      size_t size_in_byte) noexcept = 0;
         virtual void remove_buffer(handle_ty index) noexcept = 0;
-        [[nodiscard]] virtual size_t emplace_texture3d(handle_ty handle) noexcept = 0;
-        virtual void remove_texture3d(handle_ty index) noexcept = 0;
         virtual void set_buffer(handle_ty index, handle_ty handle, uint offset_in_byte,
                                 size_t size_in_byte) noexcept = 0;
-        [[nodiscard]] virtual ByteBufferDesc buffer_view(uint index) const noexcept = 0;
-        virtual void set_texture3d(handle_ty index, handle_ty handle) noexcept = 0;
+        [[nodiscard]] virtual size_t buffer_num() const noexcept = 0;
+        [[nodiscard]] virtual size_t buffer_slot_size() const noexcept = 0;
         [[nodiscard]] virtual BufferUploadCommand *upload_buffer_handles(bool async) const noexcept = 0;
-        [[nodiscard]] virtual BufferUploadCommand *upload_texture_handles(bool async) const noexcept = 0;
+
+        virtual size_t emplace_texture3d(handle_ty handle) noexcept = 0;
+        virtual void remove_texture3d(handle_ty index) noexcept = 0;
+        virtual void set_texture3d(handle_ty index, handle_ty handle) noexcept = 0;
+        [[nodiscard]] virtual size_t texture3d_num() const noexcept = 0;
+        [[nodiscard]] virtual size_t tex3d_slot_size() const noexcept = 0;
+        [[nodiscard]] virtual BufferUploadCommand *upload_texture3d_handles(bool async) const noexcept = 0;
+
+        virtual size_t emplace_texture2d(handle_ty handle) noexcept = 0;
+        virtual void remove_texture2d(handle_ty index) noexcept = 0;
+        virtual void set_texture2d(handle_ty index, handle_ty handle) noexcept = 0;
+        [[nodiscard]] virtual size_t texture2d_num() const noexcept = 0;
+        [[nodiscard]] virtual size_t tex2d_slot_size() const noexcept = 0;
+        [[nodiscard]] virtual BufferUploadCommand *upload_texture2d_handles(bool async) const noexcept = 0;
+
+        [[nodiscard]] virtual ByteBufferDesc buffer_view(uint index) const noexcept = 0;
         virtual void prepare_slotSOA(Device &device) noexcept = 0;
         virtual CommandList update_slotSOA(bool async) noexcept = 0;
-        [[nodiscard]] virtual size_t buffer_num() const noexcept = 0;
-        [[nodiscard]] virtual size_t texture_num() const noexcept = 0;
-        [[nodiscard]] virtual size_t buffer_slots_size() const noexcept = 0;
-        [[nodiscard]] virtual size_t tex_slots_size() const noexcept = 0;
 
         /// for device side structure
         [[nodiscard]] virtual const void *handle_ptr() const noexcept = 0;
@@ -98,8 +108,8 @@ public:
     requires is_integral_expr_v<Index>
     [[nodiscard]] BindlessArrayTexture tex3d_var(Index &&index) const noexcept {
         return expr().tex3d_var(OC_FORWARD(index),
-                              typeid(*this).name(),
-                              texture_num());
+                                typeid(*this).name(),
+                                texture_num());
     }
 
     template<typename T, typename Index>

@@ -28,7 +28,7 @@ void test_list(Device &device, Stream& stream) {
     rl.set_bindless_array(bindless_array);
     rl.register_self();
     stream << bindless_array->upload_buffer_handles(true) ;
-    stream << bindless_array->upload_texture_handles(true) ;
+    stream << bindless_array->upload_texture3d_handles(true) ;
 
     rl.super().clear_immediately();
 

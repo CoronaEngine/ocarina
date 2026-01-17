@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
     bindless_array.prepare_slotSOA(device);
     stream << bindless_array->upload_buffer_handles(true) << synchronize();
-    stream << bindless_array->upload_texture_handles(true) << synchronize();
+    stream << bindless_array->upload_texture3d_handles(true) << synchronize();
 
     stream << cube.build_bvh();
 

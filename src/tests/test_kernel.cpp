@@ -47,6 +47,8 @@ int main(int argc, char *argv[]) {
 
     auto texture = device.create_texture(image.resolution(), image.pixel_storage());
     stream << texture.upload_sync(image.pixel_ptr());
+    BindlessArray bindless_array = device.create_bindless_array();
+    bindless_array->emplace_texture3d(texture.tex_handle());
 
     Buffer<float> f_buffer = device.create_buffer<float>(count);
     Kernel kn = [&](Var<float> a, Var<float> b, BufferVar<float> c, TextureVar tex) {

@@ -113,7 +113,7 @@ void test_compute_shader(Device &device, Stream &stream) {
 
     /// upload buffer and texture handle to device memory
     stream << bindless_array->upload_buffer_handles(true) << synchronize();
-    stream << bindless_array->upload_texture_handles(true) << synchronize();
+    stream << bindless_array->upload_texture3d_handles(true) << synchronize();
 
     stream << vert.upload(vertices.data())
            << tri.upload(triangles.data());

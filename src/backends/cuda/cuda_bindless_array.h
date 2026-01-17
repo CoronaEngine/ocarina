@@ -36,18 +36,27 @@ public:
     [[nodiscard]] size_t emplace_buffer(handle_ty handle, uint offset_in_byte,
                                         size_t size_in_byte) noexcept override;
     void remove_buffer(handle_ty index) noexcept override;
-    [[nodiscard]] size_t emplace_texture3d(handle_ty handle) noexcept override;
-    void remove_texture3d(handle_ty index) noexcept override;
     void set_buffer(ocarina::handle_ty index, ocarina::handle_ty handle, uint offset_in_byte,
                     size_t size_in_byte) noexcept override;
-    [[nodiscard]] ByteBufferDesc buffer_view(ocarina::uint index) const noexcept override;
-    void set_texture3d(ocarina::handle_ty index, ocarina::handle_ty handle) noexcept override;
     [[nodiscard]] size_t buffer_num() const noexcept override;
-    [[nodiscard]] size_t texture_num() const noexcept override;
-    [[nodiscard]] size_t buffer_slots_size() const noexcept override;
-    [[nodiscard]] size_t tex_slots_size() const noexcept override;
+    [[nodiscard]] size_t buffer_slot_size() const noexcept override;
     [[nodiscard]] BufferUploadCommand *upload_buffer_handles(bool async) const noexcept override;
-    [[nodiscard]] BufferUploadCommand *upload_texture_handles(bool async) const noexcept override;
+
+    [[nodiscard]] size_t emplace_texture3d(handle_ty handle) noexcept override;
+    void remove_texture3d(handle_ty index) noexcept override;
+    void set_texture3d(ocarina::handle_ty index, ocarina::handle_ty handle) noexcept override;
+    [[nodiscard]] size_t texture3d_num() const noexcept override;
+    [[nodiscard]] size_t tex3d_slot_size() const noexcept override;
+    [[nodiscard]] BufferUploadCommand *upload_texture3d_handles(bool async) const noexcept override;
+
+    [[nodiscard]] size_t emplace_texture2d(handle_ty handle) noexcept override;
+    void remove_texture2d(handle_ty index) noexcept override;
+    void set_texture2d(ocarina::handle_ty index, ocarina::handle_ty handle) noexcept override;
+    [[nodiscard]] size_t texture2d_num() const noexcept override;
+    [[nodiscard]] size_t tex2d_slot_size() const noexcept override;
+    [[nodiscard]] BufferUploadCommand *upload_texture2d_handles(bool async) const noexcept override;
+
+    [[nodiscard]] ByteBufferDesc buffer_view(ocarina::uint index) const noexcept override;
 };
 
 }// namespace ocarina
