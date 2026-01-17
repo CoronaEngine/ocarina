@@ -115,6 +115,14 @@ public:
                                 texture3d_num());
     }
 
+    template<typename Index>
+    requires is_integral_expr_v<Index>
+    [[nodiscard]] BindlessArrayTexture3D tex2d_var(Index &&index) const noexcept {
+        return expr().tex2d_var(OC_FORWARD(index),
+                                typeid(*this).name(),
+                                texture2d_num());
+    }
+
     template<typename T, typename Index>
     requires is_integral_expr_v<Index>
     [[nodiscard]] BindlessArrayBuffer<T> buffer_var(Index &&index) const noexcept {
