@@ -18,7 +18,6 @@ private:
     uint3 res_{};
     CUarray array_handle_{};
     uint level_num_{1u};
-    mutable cudaGraphicsResource *gfx_resource_{};
 
 public:
     CUDATexture(CUDADevice *device, uint3 res, PixelStorage pixel_storage, uint level_num);

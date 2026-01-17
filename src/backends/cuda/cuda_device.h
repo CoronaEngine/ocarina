@@ -62,6 +62,8 @@ private:
     std::unique_ptr<CommandVisitor> cmd_visitor_;
     uint32_t compute_capability_{};
 
+    /// key:buffer, value: CUgraphicsResource *
+    std::map<handle_ty , CUgraphicsResource> shared_handle_map_;
     thread_safety<std::mutex> memory_guard_;
     std::unordered_map<handle_ty, ExportableResource::Data> exported_resources;
 
@@ -127,12 +129,8 @@ public:
     void destroy_mesh(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_bindless_array() noexcept override;
     void destroy_bindless_array(handle_ty handle) noexcept override;
-    void register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
-    void register_shared_tex(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
-    void mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept override;
-    void mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept override;
-    void unmapping_shared(void *&shared_handle) noexcept override;
-    void unregister_shared(void *&shared_handle) noexcept override;
+    [[nodiscard]] handle_ty create_texture_from_external(uint tex_handle) noexcept override;
+    [[nodiscard]] handle_ty create_buffer_from_external(uint buffer_handle) noexcept override;
     void init_rtx() noexcept override { init_optix_context(); }
     [[nodiscard]] CommandVisitor *command_visitor() noexcept override;
     void submit_frame() noexcept override {}
@@ -140,7 +138,7 @@ public:
     [[nodiscard]] IndexBuffer *create_index_buffer(const void *initial_data, uint32_t indices_count, bool bit16) noexcept override { return nullptr; }
     [[nodiscard]] RHIRenderPass *create_render_pass(const RenderPassCreation &render_pass_creation) noexcept override { return nullptr; }
     void destroy_render_pass(RHIRenderPass *render_pass) noexcept override {}
-    std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> create_descriptor_set_layout(void **shaders, uint32_t shaders_count) noexcept override { return {}; }
+    std::array<DescriptorSetLayout *, max_descriptor_sets_per_shader> create_descriptor_set_layout(void **shaders, uint32_t shaders_count) noexcept override { return {}; }
     void bind_pipeline(const handle_ty pipeline) noexcept override {}
     [[nodiscard]] RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept override { return nullptr; }
     [[nodiscard]] DescriptorSet *get_global_descriptor_set(const string &name) noexcept override { return nullptr; }

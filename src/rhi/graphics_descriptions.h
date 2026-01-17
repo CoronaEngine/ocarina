@@ -372,6 +372,6 @@ struct TextureViewCreation {
     SamplerCreation sampler;                          ///< sampler creation
 };
 
-#define MAX_DESCRIPTOR_SETS_PER_SHADER 8
+static  constexpr uint max_descriptor_sets_per_shader = 8;
 
 }// namespace ocarina

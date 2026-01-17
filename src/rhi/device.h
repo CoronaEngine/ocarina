@@ -83,12 +83,8 @@ public:
         virtual void destroy_mesh(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_bindless_array() noexcept = 0;
         virtual void destroy_bindless_array(handle_ty handle) noexcept = 0;
-        virtual void register_shared_buffer(void *&shared_handle, uint &gl_handle) noexcept = 0;
-        virtual void register_shared_tex(void *&shared_handle, uint &gl_handle) noexcept = 0;
-        virtual void mapping_shared_buffer(void *&shared_handle, handle_ty &handle) noexcept = 0;
-        virtual void mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept = 0;
-        virtual void unmapping_shared(void *&shared_handle) noexcept = 0;
-        virtual void unregister_shared(void *&shared_handle) noexcept = 0;
+        [[nodiscard]] virtual handle_ty create_texture_from_external(uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(create_texture_from_external); }
+        [[nodiscard]] virtual handle_ty create_buffer_from_external(uint tex_handle) noexcept { OC_NOT_IMPLEMENT_ERROR(create_buffer_from_external); }
         [[nodiscard]] RHIContext *context() noexcept { return context_; }
         virtual void init_rtx() noexcept = 0;
         [[nodiscard]] virtual CommandVisitor *command_visitor() noexcept = 0;
@@ -99,7 +95,7 @@ public:
         virtual void end_frame() noexcept = 0;
         virtual RHIRenderPass *create_render_pass(const RenderPassCreation &render_pass_creation) noexcept = 0;
         virtual void destroy_render_pass(RHIRenderPass *render_pass) noexcept = 0;
-        virtual std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> create_descriptor_set_layout(void **shaders, uint32_t shaders_count) noexcept = 0;
+        virtual std::array<DescriptorSetLayout *, max_descriptor_sets_per_shader> create_descriptor_set_layout(void **shaders, uint32_t shaders_count) noexcept = 0;
         virtual void bind_pipeline(const handle_ty pipeline) noexcept = 0;
         virtual RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept = 0;
         virtual DescriptorSet *get_global_descriptor_set(const string &name) noexcept = 0;
@@ -238,7 +234,7 @@ public:
         impl_->destroy_render_pass(render_pass);
     }
 
-    [[nodiscard]] std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> create_descriptor_set_layout(void **shaders, uint32_t shaders_count) {
+    [[nodiscard]] std::array<DescriptorSetLayout *, max_descriptor_sets_per_shader> create_descriptor_set_layout(void **shaders, uint32_t shaders_count) {
         return impl_->create_descriptor_set_layout(shaders, shaders_count);
     }
 
@@ -262,7 +258,4 @@ public:
     [[nodiscard]] static Device create_device(const string &backend_name);
 };
 
-namespace rhi_global {
-//OC_EXPORT_API Device rhi_create_device(const string &backend_name, const ocarina::InstanceCreation &instance_creation);
-}
 }// namespace ocarina

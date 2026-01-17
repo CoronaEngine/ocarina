@@ -96,7 +96,7 @@ void ImGuiWidgets::image(const ocarina::ImageView &image_view) noexcept {
         gl_texture->load(image_view.pixel_ptr<float4>(), image_view.resolution());
     }
     uint2 res = image_view.resolution();
-    adaptive_image(gl_texture->handle(), res);
+    adaptive_image(gl_texture->tex_handle(), res);
 }
 
 bool ImGuiWidgets::push_window(const string &label) noexcept {

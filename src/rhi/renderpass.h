@@ -20,7 +20,7 @@ struct DrawCallItem {
     IndexBuffer* index_buffer = nullptr;
     //float4x4 world_matrix;
     //DescriptorSetWriter *descriptor_set_writer = nullptr;
-    std::array<DescriptorSet *, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_sets = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    std::array<DescriptorSet *, max_descriptor_sets_per_shader> descriptor_sets = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
     uint32_t descriptor_set_count = 0;
      
     using PreRenderFunction = ocarina::function<void(const DrawCallItem&)>;

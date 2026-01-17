@@ -33,8 +33,8 @@ void Primitive::set_geometry_data_setup(Device *device, GeometryDataSetup setup)
 
     //descriptor_sets_.clear();
     //void *shaders[2] = {reinterpret_cast<void *>(vertex_shader_), reinterpret_cast<void *>(pixel_shader_)};
-    //std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_set_layouts = device->create_descriptor_set_layout(shaders, 2);
-    //for (size_t i = 0; i < MAX_DESCRIPTOR_SETS_PER_SHADER; ++i) {
+    //std::array<DescriptorSetLayout *, max_descriptor_sets_per_shader> descriptor_set_layouts = device->create_descriptor_set_layout(shaders, 2);
+    //for (size_t i = 0; i < max_descriptor_sets_per_shader; ++i) {
     //    if (descriptor_set_layouts[i] && !descriptor_set_layouts[i]->is_global_ubo()) {
     //        add_descriptor_set(descriptor_set_layouts[i]->allocate_descriptor_set());
     //    }
@@ -96,7 +96,7 @@ DrawCallItem Primitive::get_draw_call_item(Device *device, RHIRenderPass *render
     }
     item_.pre_render_function = drawcall_pre_draw_function_;
     item_.descriptor_set_count = descriptor_sets_.size();
-    for (size_t i = 0; i < MAX_DESCRIPTOR_SETS_PER_SHADER; ++i) {
+    for (size_t i = 0; i < max_descriptor_sets_per_shader; ++i) {
         if (i < descriptor_sets_.size() && !descriptor_sets_[i]->is_global()) {
             item_.descriptor_sets[i] = descriptor_sets_[i];
         } else {
@@ -125,8 +125,8 @@ void Primitive::update_descriptor_sets(Device *device) {
         descriptor_sets_.clear();
 
         void *shaders[2] = {reinterpret_cast<void *>(vertex_shader_), reinterpret_cast<void *>(pixel_shader_)};
-        std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_set_layouts = device->create_descriptor_set_layout(shaders, 2);
-        for (size_t i = 1; i < MAX_DESCRIPTOR_SETS_PER_SHADER; ++i) {
+        std::array<DescriptorSetLayout *, max_descriptor_sets_per_shader> descriptor_set_layouts = device->create_descriptor_set_layout(shaders, 2);
+        for (size_t i = 1; i < max_descriptor_sets_per_shader; ++i) {
             if (descriptor_set_layouts[i]/* && !descriptor_set_layouts[i]->is_global_ubo()*/) {
                 add_descriptor_set(descriptor_set_layouts[i]->allocate_descriptor_set());
             }

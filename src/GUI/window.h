@@ -54,6 +54,7 @@ public:
     [[nodiscard]] double dt() const noexcept { return dt_; }
     [[nodiscard]] virtual uint2 size() const noexcept = 0;
     [[nodiscard]] virtual bool should_close() const noexcept = 0;
+    [[nodiscard]] virtual uint shared_texture_handle() const noexcept { OC_ASSERT(0); return 0; };
     [[nodiscard]] explicit operator bool() const noexcept { return !should_close(); }
     [[nodiscard]] uint64_t get_window_handle() const { return window_handle_; }
     virtual Window &set_mouse_callback(MouseButtonCallback cb) noexcept;

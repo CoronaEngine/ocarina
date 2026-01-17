@@ -56,12 +56,6 @@ public:
     void destroy_mesh(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_bindless_array() noexcept override;
     void destroy_bindless_array(handle_ty handle) noexcept override;
-    void register_shared_buffer(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
-    void register_shared_tex(void *&shared_handle, ocarina::uint &gl_handle) noexcept override;
-    void mapping_shared_buffer(void *&shared_handle,handle_ty &handle) noexcept override;
-    void mapping_shared_tex(void *&shared_handle, handle_ty &handle) noexcept override;
-    void unmapping_shared(void *&shared_handle) noexcept override;
-    void unregister_shared(void *&shared_handle) noexcept override;
     void init_rtx() noexcept override {  }
     [[nodiscard]] CommandVisitor *command_visitor() noexcept override;
     void shutdown();
