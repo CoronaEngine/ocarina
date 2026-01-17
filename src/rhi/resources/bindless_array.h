@@ -93,7 +93,8 @@ public:
     size_t emplace(const Texture3D &texture) noexcept;
     void set_texture3d(handle_ty index, const Texture3D &texture) noexcept;
     [[nodiscard]] uint buffer_num() const noexcept;
-    [[nodiscard]] uint texture_num() const noexcept;
+    [[nodiscard]] uint texture3d_num() const noexcept;
+    [[nodiscard]] uint texture2d_num() const noexcept;
     [[nodiscard]] CommandList upload_handles(bool async = true) noexcept;
 
     /// for dsl
@@ -109,7 +110,7 @@ public:
     [[nodiscard]] BindlessArrayTexture tex3d_var(Index &&index) const noexcept {
         return expr().tex3d_var(OC_FORWARD(index),
                                 typeid(*this).name(),
-                                texture_num());
+                                texture3d_num());
     }
 
     template<typename T, typename Index>

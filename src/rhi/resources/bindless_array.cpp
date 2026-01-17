@@ -40,8 +40,12 @@ uint BindlessArray::buffer_num() const noexcept {
     return impl()->buffer_num();
 }
 
-uint BindlessArray::texture_num() const noexcept {
+uint BindlessArray::texture3d_num() const noexcept {
     return impl()->texture3d_num();
+}
+
+uint BindlessArray::texture2d_num() const noexcept {
+    return impl()->texture2d_num();
 }
 
 }// namespace ocarina

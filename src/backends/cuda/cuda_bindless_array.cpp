@@ -29,11 +29,11 @@ CommandList CUDABindlessArray::update_slotSOA(bool async) noexcept {
     CommandList ret;
     append(ret, buffers_.device_buffer().reallocate(buffers_.host_buffer().size(), async));
     append(ret, texture3ds_.device_buffer().reallocate(texture3ds_.host_buffer().size(), async));
-    append(ret, texture2ds_.device_buffer().reallocate(texture2ds_.host_buffer().size(), async));
+//    append(ret, texture2ds_.device_buffer().reallocate(texture2ds_.host_buffer().size(), async));
     ret.push_back(HostFunctionCommand::create([&]() {
         slot_soa_.buffer_slot = buffers_.handle();
         slot_soa_.tex3d_slot = texture3ds_.handle();
-        slot_soa_.tex2d_slot = texture2ds_.handle();
+//        slot_soa_.tex2d_slot = texture2ds_.handle();
     },
                                               async));
     return ret;
