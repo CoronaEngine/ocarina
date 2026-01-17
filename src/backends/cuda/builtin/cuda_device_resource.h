@@ -389,6 +389,35 @@ __device__ oc_array<float, N> oc_bindless_array_tex3d_sample(OCBindlessArrayDesc
     return _oc_tex3d_sample_float<N>(texture, u, v, w);
 }
 
+template<oc_uint N>
+__device__ oc_array<float, N> _oc_tex2d_sample_float(cudaTextureObject_t texture, oc_float u, oc_float v) noexcept {
+    if constexpr (N == 1) {
+        auto ret = tex2D<float>(texture, u, v);
+        return {ret};
+    } else if constexpr (N == 2) {
+        auto ret = tex2D<float2>(texture, u, v);
+        return {ret.x, ret.y};
+    } else if constexpr (N == 3) {
+        auto ret = tex2D<float4>(texture, u, v);
+        return {ret.x, ret.y, ret.z};
+    } else if constexpr (N == 4) {
+        auto ret = tex2D<float4>(texture, u, v);
+        return {ret.x, ret.y, ret.z, ret.w};
+    }
+    return {};
+}
+
+template<oc_uint N>
+__device__ oc_array<float, N> oc_tex2d_sample_float(OCTextureDesc obj, oc_float u, oc_float v) noexcept {
+    return _oc_tex2d_sample_float<N>(obj.texture, u, v);
+}
+
+template<oc_uint N>
+__device__ oc_array<float, N> oc_bindless_array_tex2d_sample(OCBindlessArrayDesc bindless_array, oc_uint tex_index,
+                                                           oc_float u, oc_float v) noexcept {
+    cudaTextureObject_t texture = bindless_array.tex2d_slot[tex_index];
+    return _oc_tex2d_sample_float<N>(texture, u, v);
+}
 
 template<typename Dst, typename Src>
 __device__ auto oc_convert_scalar(const Src &src) noexcept {
