@@ -163,7 +163,7 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
         }
         case CallOp::BINDLESS_ARRAY_TEX3D_SAMPLE: {
             uint N = std::get<uint>(expr->template_arg(0));
-            current_scratch() << "oc_bindless_array_tex_sample<" << N << ">";
+            current_scratch() << "oc_bindless_array_tex3d_sample<" << N << ">";
             break;
         }
         case CallOp::UNREACHABLE: current_scratch() << "__builtin_unreachable"; break;
@@ -177,7 +177,7 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
         case CallOp::BYTE_BUFFER_SIZE: OC_GEN_FUNC_NAME(buffer_size); break;
         case CallOp::TEX3D_SAMPLE: {
             uint N = std::get<uint>(expr->template_arg(0));
-            current_scratch() << "oc_tex_sample_float<" << N << ">";
+            current_scratch() << "oc_tex3d_sample_float<" << N << ">";
             break;
         }
         case CallOp::TEX3D_READ: {
