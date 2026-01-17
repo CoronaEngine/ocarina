@@ -395,7 +395,7 @@ DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const U &u,
 
 template<typename T>
 template<typename UVW>
-requires(is_float_vector3_v<expr_value_t<UVW>>)
+requires(is_float_general_vector3_v<remove_device_t<UVW>>)
 DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const UVW &uvw)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {
@@ -405,7 +405,7 @@ DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const UVW &
 
 template<typename T>
 template<typename UV>
-requires(is_float_vector2_v<expr_value_t<UV>>)
+requires(is_float_general_vector2_v<remove_device_t<UV>>)
 DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const UV &uv)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {

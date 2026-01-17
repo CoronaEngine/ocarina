@@ -123,11 +123,12 @@ public:
     }
 
     template<typename Target, typename XY>
-    requires(is_int_vector2_v<expr_value_t<XY>> ||
-             is_uint_vector2_v<expr_value_t<XY>> &&
-                 (is_uchar_element_expr_v<Target> || is_float_element_expr_v<Target>))
+    requires((is_int_general_vector2_v<remove_device_t<XY>> || is_uint_general_vector2_v<remove_device_t<XY>>) &&
+             (is_uchar_element_expr_v<Target> || is_float_element_expr_v<Target>))
     OC_NODISCARD auto read(const XY &xy) const noexcept {
-        return read<Target>(xy.x, xy.y);
+        return [this]<typename T>(const T &xy) {
+            return read<Target>(xy.x, xy.y);
+        }(decay_swizzle(xy));
     }
 
     template<typename X, typename Y, typename Val>

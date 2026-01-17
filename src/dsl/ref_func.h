@@ -304,8 +304,7 @@ struct EnableTextureReadAndWrite {
     }
 
     template<typename Target, typename XY>
-    requires(is_int_vector2_v<expr_value_t<XY>> ||
-             is_uint_vector2_v<expr_value_t<XY>> &&
+    requires((is_int_general_vector2_v<remove_device_t<XY>> || is_uint_general_vector2_v<remove_device_t<XY>>) &&
                  (is_uchar_element_expr_v<Target> || is_float_element_expr_v<Target>))
     OC_NODISCARD auto read(const XY &xy) const noexcept {
         return [&]<typename Arg>(const Arg &arg) {
@@ -314,8 +313,7 @@ struct EnableTextureReadAndWrite {
     }
 
     template<typename Target, typename XYZ>
-    requires(is_int_vector3_v<expr_value_t<XYZ>> ||
-             is_uint_vector3_v<expr_value_t<XYZ>> &&
+    requires((is_int_general_vector3_v<remove_device_t<XYZ>> || is_uint_general_vector3_v<remove_device_t<XYZ>>) &&
                  (is_uchar_element_expr_v<Target> || is_float_element_expr_v<Target>))
     OC_NODISCARD auto read(const XYZ &xyz) const noexcept {
         return [&]<typename Arg>(const Arg &arg) {
@@ -349,7 +347,7 @@ struct EnableTextureReadAndWrite {
     }
 
     template<typename XYZ, typename Val>
-    requires(is_uint_vector3_v<expr_value_t<XYZ>>)
+    requires(is_uint_general_vector3_v<remove_device_t<XYZ>>)
     void write(const Val &elm, const XYZ &xyz) noexcept {
         [&]<typename Arg>(const Arg &arg) {
             write(elm, arg.x, arg.y, arg.z);
@@ -357,7 +355,7 @@ struct EnableTextureReadAndWrite {
     }
 
     template<typename XY, typename Val>
-    requires(is_uint_vector2_v<expr_value_t<XY>>)
+    requires(is_uint_general_vector2_v<remove_device_t<XY>>)
     void write(const Val &elm, const XY &xy) noexcept {
         [&]<typename Arg>(const Arg &arg) {
             write(elm, arg.x, arg.y);
@@ -429,12 +427,12 @@ struct EnableTextureSample {
         const noexcept;// implement in dsl/array.h
 
     template<typename UVW>
-    requires(is_float_vector3_v<expr_value_t<UVW>>)
+    requires(is_float_general_vector3_v<remove_device_t<UVW>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UVW &uvw)
         const noexcept;// implement in dsl/array.h
 
     template<typename UV>
-    requires(is_float_vector2_v<expr_value_t<UV>>)
+    requires(is_float_general_vector2_v<remove_device_t<UV>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
         const noexcept;// implement in dsl/array.h
 };

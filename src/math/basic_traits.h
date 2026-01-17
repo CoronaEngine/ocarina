@@ -571,6 +571,9 @@ OC_MAKE_IS_TYPE_VECTOR(float)
 OC_MAKE_IS_TYPE_VECTOR(uchar)
 OC_MAKE_IS_TYPE_VECTOR(char)
 
+//template<typename T>
+//using is_integer_general_vector = std::disjunction<is_uin>
+
 #undef OC_MAKE_IS_TYPE_VECTOR
 
 #undef OC_MAKE_IS_TYPE_VECTOR_DIM
