@@ -449,7 +449,7 @@ DynamicArray<float> BindlessArrayTexture::sample(uint channel_num, const U &u, c
 }
 
 template<typename UVW>
-requires(is_float_vector3_v<expr_value_t<UVW>>)
+requires(is_general_float_vector3_v<remove_device_t<UVW>>)
 DynamicArray<float> BindlessArrayTexture::sample(uint channel_num, const UVW &uvw)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {
@@ -458,7 +458,7 @@ DynamicArray<float> BindlessArrayTexture::sample(uint channel_num, const UVW &uv
 }
 
 template<typename UV>
-requires(is_float_vector2_v<expr_value_t<UV>>)
+requires(is_general_float_vector2_v<remove_device_t<UV>>)
 DynamicArray<float> BindlessArrayTexture::sample(uint channel_num, const UV &uv)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {

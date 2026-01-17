@@ -434,12 +434,12 @@ public:
         const noexcept;// implement in dsl/array.h
 
     template<typename UVW>
-    requires(is_float_vector3_v<expr_value_t<UVW>>)
+    requires(is_general_float_vector3_v<remove_device_t<UVW>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UVW &uvw)
         const noexcept;// implement in dsl/array.h
 
     template<typename UV>
-    requires(is_float_vector2_v<expr_value_t<UV>>)
+    requires(is_general_float_vector2_v<remove_device_t<UV>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
         const noexcept;// implement in dsl/array.h
 };

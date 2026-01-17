@@ -71,7 +71,9 @@ void CUDACommandVisitor::visit(const BufferReallocateCommand *cmd) noexcept {
                 if (exportable_resource->exported()) {
                     exportable = true;
                 }
-                device_->memory_free(reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr()));
+                handle_ty *ptr = reinterpret_cast<handle_ty *>(rhi_resource->handle_ptr());
+                device_->memory_free(ptr);
+                *ptr = 0;
                 //OC_CU_CHECK(cuMemFree(rhi_resource->handle()));
             }
             if (cmd->new_size() > 0) {
