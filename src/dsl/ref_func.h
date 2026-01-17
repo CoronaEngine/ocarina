@@ -278,7 +278,7 @@ struct EnableByteLoadAndStore {
 };
 
 template<typename T>
-struct EnableTextureReadAndWrite {
+struct EnableTexture3DReadAndWrite {
 
     [[nodiscard]] T *self() noexcept { return static_cast<T *>(this); }
     [[nodiscard]] const T *self() const noexcept { return static_cast<const T *>(this); }
@@ -414,7 +414,7 @@ struct BufferAsAtomicAddress {
 };
 
 template<typename T>
-struct EnableTextureSample {
+struct EnableTexture3DSample {
 
     template<typename U, typename V>
     requires(is_all_floating_point_expr_v<U, V>)
@@ -429,6 +429,20 @@ struct EnableTextureSample {
     template<typename UVW>
     requires(is_general_float_vector3_v<remove_device_t<UVW>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UVW &uvw)
+        const noexcept;// implement in dsl/array.h
+
+    template<typename UV>
+    requires(is_general_float_vector2_v<remove_device_t<UV>>)
+    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
+        const noexcept;// implement in dsl/array.h
+};
+
+template<typename T>
+struct EnableTexture2DSample {
+
+    template<typename U, typename V>
+    requires(is_all_floating_point_expr_v<U, V>)
+    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v)
         const noexcept;// implement in dsl/array.h
 
     template<typename UV>

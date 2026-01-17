@@ -363,7 +363,7 @@ template<typename T>
 template<typename T>
 template<typename U, typename V>
 requires(is_all_floating_point_expr_v<U, V>)
-DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const U &u, const V &v)
+DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const U &u, const V &v)
     const noexcept {
     const T *texture = static_cast<const T *>(this);
     const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
@@ -379,7 +379,7 @@ DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const U &u,
 template<typename T>
 template<typename U, typename V, typename W>
 requires(is_all_floating_point_expr_v<U, V, W>)
-DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const U &u, const V &v, const W &w)
+DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const U &u, const V &v, const W &w)
     const noexcept {
     const T *texture = static_cast<const T *>(this);
     const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
@@ -396,7 +396,7 @@ DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const U &u,
 template<typename T>
 template<typename UVW>
 requires(is_general_float_vector3_v<remove_device_t<UVW>>)
-DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const UVW &uvw)
+DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const UVW &uvw)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {
         return sample(channel_num, arg.x, arg.y, arg.z);
@@ -406,7 +406,33 @@ DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const UVW &
 template<typename T>
 template<typename UV>
 requires(is_general_float_vector2_v<remove_device_t<UV>>)
-DynamicArray<float> EnableTextureSample<T>::sample(uint channel_num, const UV &uv)
+DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const UV &uv)
+    const noexcept {
+    return [&]<typename Arg>(const Arg &arg) {
+        return sample(channel_num, arg.x, arg.y);
+    }(decay_swizzle(uv));
+}
+
+template<typename T>
+template<typename U, typename V>
+requires(is_all_floating_point_expr_v<U, V>)
+DynamicArray<float> EnableTexture2DSample<T>::sample(uint channel_num, const U &u, const V &v)
+    const noexcept {
+    const T *texture = static_cast<const T *>(this);
+    const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
+                                                             CallOp::TEX2D_SAMPLE,
+                                                             {texture->expression(),
+                                                              OC_EXPR(u),
+                                                              OC_EXPR(v)},
+                                                             {channel_num});
+    texture->expression()->mark(Usage::READ);
+    return eval_dynamic_array(DynamicArray<float>(channel_num, expr));
+}
+
+template<typename T>
+template<typename UV>
+requires(is_general_float_vector2_v<remove_device_t<UV>>)
+DynamicArray<float> EnableTexture2DSample<T>::sample(uint channel_num, const UV &uv)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {
         return sample(channel_num, arg.x, arg.y);
@@ -485,6 +511,5 @@ DynamicArray<float> BindlessArrayTexture2D::sample(uint channel_num, const UV &u
         return sample(channel_num, arg.x, arg.y);
     }(decay_swizzle(uv));
 }
-
 
 }// namespace ocarina
