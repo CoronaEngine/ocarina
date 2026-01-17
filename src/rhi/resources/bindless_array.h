@@ -109,7 +109,7 @@ public:
 
     template<typename Index>
     requires is_integral_expr_v<Index>
-    [[nodiscard]] BindlessArrayTexture tex3d_var(Index &&index) const noexcept {
+    [[nodiscard]] BindlessArrayTexture3D tex3d_var(Index &&index) const noexcept {
         return expr().tex3d_var(OC_FORWARD(index),
                                 typeid(*this).name(),
                                 texture3d_num());
