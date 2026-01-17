@@ -68,7 +68,7 @@ public:
         explicit Impl(RHIContext *ctx, const InstanceCreation &instance_creation) : context_(ctx) {}
         [[nodiscard]] virtual handle_ty create_buffer(size_t size, const string &desc, bool exported = false) noexcept = 0;
         virtual void destroy_buffer(handle_ty handle) noexcept = 0;
-        [[nodiscard]] virtual handle_ty create_texture(uint3 res, PixelStorage pixel_storage,
+        [[nodiscard]] virtual handle_ty create_texture3d(uint3 res, PixelStorage pixel_storage,
                                                        uint level_num, const string &desc) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_texture(Image *image, const TextureViewCreation &texture_view) noexcept = 0;
         virtual void destroy_texture(handle_ty handle) noexcept = 0;
@@ -186,8 +186,8 @@ public:
     [[nodiscard]] Accel create_accel() const noexcept;
     [[nodiscard]] BindlessArray create_bindless_array() const noexcept;
     void init_rtx() noexcept { impl_->init_rtx(); }
-    [[nodiscard]] Texture3D create_texture(uint3 res, PixelStorage storage, const string &desc = "") const noexcept;
-    [[nodiscard]] Texture3D create_texture(uint2 res, PixelStorage storage, const string &desc = "") const noexcept;
+    [[nodiscard]] Texture3D create_texture3d(uint3 res, PixelStorage storage, const string &desc = "") const noexcept;
+    [[nodiscard]] Texture3D create_texture3d(uint2 res, PixelStorage storage, const string &desc = "") const noexcept;
     [[nodiscard]] Texture3D create_texture(Image *image_resource, const TextureViewCreation &texture_view) const noexcept;
     template<typename T>
     [[nodiscard]] auto compile(const Kernel<T> &kernel, const string &shader_desc = "", ShaderTag tag = CS) const noexcept {

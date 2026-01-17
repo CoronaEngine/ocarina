@@ -125,9 +125,9 @@ public:
     [[nodiscard]] const host_ty &host_tex() const noexcept { return *this; }
 
     void allocate_on_device(Device &device, const string &name = "") noexcept {
-        device_tex() = device.create_texture(Image::resolution(),
-                                             Image::pixel_storage(),
-                                             name);
+        device_tex() = device.create_texture3d(Image::resolution(),
+                                               Image::pixel_storage(),
+                                               name);
     }
 
     void upload_immediately() const noexcept {

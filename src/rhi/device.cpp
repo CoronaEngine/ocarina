@@ -29,12 +29,12 @@ BindlessArray Device::create_bindless_array() const noexcept {
     return create<BindlessArray>();
 }
 
-Texture3D Device::create_texture(uint3 res, PixelStorage storage, const string &desc) const noexcept {
+Texture3D Device::create_texture3d(uint3 res, PixelStorage storage, const string &desc) const noexcept {
     return create<Texture3D>(res, storage, 1, desc);
 }
 
-Texture3D Device::create_texture(uint2 res, PixelStorage storage, const string &desc) const noexcept {
-    return create_texture(make_uint3(res, 1u), storage, desc);
+Texture3D Device::create_texture3d(uint2 res, PixelStorage storage, const string &desc) const noexcept {
+    return create_texture3d(make_uint3(res, 1u), storage, desc);
 }
 
 Texture3D Device::create_texture(Image *image_resource, const TextureViewCreation &texture_view) const noexcept {

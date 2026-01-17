@@ -65,8 +65,8 @@ public:
                        PixelStorage pixel_storage, uint level_num = 1u,
                        const string &desc = "")
         : RHIResource(device, Tag::TEXTURE,
-                      device->create_texture(res, pixel_storage,
-                                             detail::compute_mip_level_num(res, level_num), desc)),
+                      device->create_texture3d(res, pixel_storage,
+                                               detail::compute_mip_level_num(res, level_num), desc)),
           channel_num_(ocarina::channel_num(pixel_storage)) {}
 
     explicit Texture3D(Device::Impl *device, Image *image_resource, const TextureViewCreation &texture_view)

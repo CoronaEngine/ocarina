@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
 //    auto path1 = R"(E:/work/test_dir/D5.png)";
 //    auto path2 = R"(E:/work/test_dir/D5.jpg)";
 //    auto image_io = Image::load(path1, LINEAR);
-//    auto image = device.create_texture(image_io.resolution(), image_io.pixel_storage());
+//    auto image = device.create_texture3d(image_io.resolution(), image_io.pixel_storage());
 //    stream << image.upload_sync(image_io.pixel_ptr());
     device.init_rtx();
 

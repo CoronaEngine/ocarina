@@ -475,7 +475,7 @@ public:
                                                     uint buffer_num = 0) const noexcept {
         if (buffer_num != 0) {
             if constexpr (is_integral_v<Index>) {
-                OC_ASSERT(index <= buffer_num);
+                OC_ASSERT(index < buffer_num);
             } else {
                 index = correct_index(index, buffer_num, desc, traceback_string(1));
             }
@@ -489,7 +489,7 @@ public:
                                                    uint tex_num = 0) const noexcept {
         if (tex_num != 0) {
             if constexpr (is_integral_v<Index>) {
-                OC_ASSERT(index <= tex_num);
+                OC_ASSERT(index < tex_num);
             } else {
                 index = correct_index(index, tex_num, desc, traceback_string(1));
             }
@@ -503,7 +503,7 @@ public:
                                                    uint tex_num = 0) const noexcept {
         if (tex_num != 0) {
             if constexpr (is_integral_v<Index>) {
-                OC_ASSERT(index <= tex_num);
+                OC_ASSERT(index < tex_num);
             } else {
                 index = correct_index(index, tex_num, desc, traceback_string(1));
             }
@@ -517,7 +517,7 @@ public:
                                                           uint buffer_num = 0) const noexcept {
         if (buffer_num != 0) {
             if constexpr (is_integral_v<Index>) {
-                OC_ASSERT(index <= buffer_num);
+                OC_ASSERT(index < buffer_num);
             } else {
                 index = correct_index(index, buffer_num, desc, traceback_string(1));
             }

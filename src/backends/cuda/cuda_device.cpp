@@ -170,7 +170,7 @@ handle_ty CUDADevice::create_stream() noexcept {
     });
 }
 
-handle_ty CUDADevice::create_texture(uint3 res, PixelStorage pixel_storage,
+handle_ty CUDADevice::create_texture3d(uint3 res, PixelStorage pixel_storage,
                                      uint level_num,
                                      const string &desc) noexcept {
     return use_context([&] {
