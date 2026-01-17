@@ -182,14 +182,11 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
         }
         case CallOp::TEX3D_READ: {
             auto output_type = expr->template_arg(0);
-            current_scratch() << ocarina::format("oc_texture_read<oc_{}>",
+            current_scratch() << ocarina::format("oc_tex3d_read<oc_{}>",
                                                  std::get<const Type *>(output_type)->name());
             break;
         }
-        case CallOp::TEX3D_WRITE: {
-            current_scratch() << "oc_texture_write";
-            break;
-        }
+        case CallOp::TEX3D_WRITE: OC_GEN_FUNC_NAME(tex3d_write); break;
         case CallOp::COUNT: break;
         default: OC_ASSERT(0); break;
     }

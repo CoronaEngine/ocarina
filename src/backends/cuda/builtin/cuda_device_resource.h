@@ -195,7 +195,6 @@ void oc_synchronize_block() noexcept {
 struct OCTextureDesc {
     cudaTextureObject_t texture{};
     cudaSurfaceObject_t surface{};
-    void *array{};
     OCPixelStorage pixel_storage{};
 };
 
@@ -460,7 +459,7 @@ __device__ auto oc_fit(const Src &src) noexcept {
 }
 
 template<typename T>
-__device__ T oc_texture_read(OCTextureDesc obj, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
+__device__ T oc_tex3d_read(OCTextureDesc obj, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
     if constexpr (oc_is_same_v<T, uchar> || oc_is_same_v<T, float>) {
         switch (obj.pixel_storage) {
             case OCPixelStorage::BYTE1: {
@@ -509,7 +508,7 @@ __device__ T oc_texture_read(OCTextureDesc obj, oc_uint x, oc_uint y, oc_uint z 
 }
 
 template<typename T>
-__device__ void oc_texture_write(OCTextureDesc obj, T val, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
+__device__ void oc_tex3d_write(OCTextureDesc obj, T val, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
     if constexpr (oc_is_same_v<T, uchar> || oc_is_same_v<T, float>) {
         switch (obj.pixel_storage) {
             case OCPixelStorage::BYTE1: {
