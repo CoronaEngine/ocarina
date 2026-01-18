@@ -277,8 +277,9 @@ struct EnableByteLoadAndStore {
     }
 };
 
-template<typename T>
-struct EnableTexture3DReadAndWrite {
+
+template<typename T, CallOp Read, CallOp Write>
+struct EnableTextureReadAndWrite {
 
     [[nodiscard]] T *self() noexcept { return static_cast<T *>(this); }
     [[nodiscard]] const T *self() const noexcept { return static_cast<const T *>(this); }
@@ -286,7 +287,7 @@ struct EnableTexture3DReadAndWrite {
     template<typename Output, typename X, typename Y>
     requires(is_all_integral_expr_v<X, Y>)
     OC_NODISCARD auto read(const X &x, const Y &y) const noexcept {
-        const CallExpr *expr = Function::current()->call_builtin(Type::of<Output>(), CallOp::TEX3D_READ,
+        const CallExpr *expr = Function::current()->call_builtin(Type::of<Output>(), Read,
                                                                  {self()->expression(), OC_EXPR(x), OC_EXPR(y)},
                                                                  {Type::of<Output>()});
         self()->expression()->mark(Usage::READ);
@@ -296,7 +297,7 @@ struct EnableTexture3DReadAndWrite {
     template<typename Output, typename X, typename Y, typename Z>
     requires(is_all_integral_expr_v<X, Y, Z>)
     OC_NODISCARD auto read(const X &x, const Y &y, const Z &z) const noexcept {
-        const CallExpr *expr = Function::current()->call_builtin(Type::of<Output>(), CallOp::TEX3D_READ,
+        const CallExpr *expr = Function::current()->call_builtin(Type::of<Output>(), Read,
                                                                  {self()->expression(), OC_EXPR(x), OC_EXPR(y), OC_EXPR(z)},
                                                                  {Type::of<Output>()});
         self()->expression()->mark(Usage::READ);
@@ -327,7 +328,7 @@ struct EnableTexture3DReadAndWrite {
               is_float_element_expr_v<Val>))
     void write(const Val &elm, const X &x, const Y &y) noexcept {
         const T *texture = static_cast<const T *>(this);
-        const CallExpr *expr = Function::current()->call_builtin(nullptr, CallOp::TEX3D_WRITE,
+        const CallExpr *expr = Function::current()->call_builtin(nullptr, Write,
                                                                  {self()->expression(),
                                                                   OC_EXPR(elm), OC_EXPR(x), OC_EXPR(y)});
         self()->expression()->mark(Usage::WRITE);
@@ -339,7 +340,7 @@ struct EnableTexture3DReadAndWrite {
              (is_uchar_element_expr_v<Val> ||
               is_float_element_expr_v<Val>))
     void write(const Val &elm, const X &x, const Y &y, const Z &z) noexcept {
-        const CallExpr *expr = Function::current()->call_builtin(nullptr, CallOp::TEX3D_WRITE,
+        const CallExpr *expr = Function::current()->call_builtin(nullptr, Write,
                                                                  {self()->expression(),
                                                                   OC_EXPR(elm), OC_EXPR(x), OC_EXPR(y), OC_EXPR(z)});
         self()->expression()->mark(Usage::WRITE);
@@ -352,53 +353,6 @@ struct EnableTexture3DReadAndWrite {
         [&]<typename Arg>(const Arg &arg) {
             write(elm, arg.x, arg.y, arg.z);
         }(decay_swizzle(xyz));
-    }
-
-    template<typename XY, typename Val>
-    requires(is_general_integer_vector2_v<remove_device_t<XY>>)
-    void write(const Val &elm, const XY &xy) noexcept {
-        [&]<typename Arg>(const Arg &arg) {
-            write(elm, arg.x, arg.y);
-        }(decay_swizzle(xy));
-    }
-};
-
-template<typename T>
-struct EnableTexture2DReadAndWrite {
-
-    [[nodiscard]] T *self() noexcept { return static_cast<T *>(this); }
-    [[nodiscard]] const T *self() const noexcept { return static_cast<const T *>(this); }
-
-    template<typename Output, typename X, typename Y>
-    requires(is_all_integral_expr_v<X, Y>)
-    OC_NODISCARD auto read(const X &x, const Y &y) const noexcept {
-        const CallExpr *expr = Function::current()->call_builtin(Type::of<Output>(), CallOp::TEX2D_READ,
-                                                                 {self()->expression(), OC_EXPR(x), OC_EXPR(y)},
-                                                                 {Type::of<Output>()});
-        self()->expression()->mark(Usage::READ);
-        return eval<Output>(expr);
-    }
-
-    template<typename Target, typename XY>
-    requires((is_general_integer_vector2_v<remove_device_t<XY>>) &&
-             (is_uchar_element_expr_v<Target> || is_float_element_expr_v<Target>))
-    OC_NODISCARD auto read(const XY &xy) const noexcept {
-        return [&]<typename Arg>(const Arg &arg) {
-            return read<Target>(arg.x, arg.y);
-        }(decay_swizzle(xy));
-    }
-
-    template<typename X, typename Y, typename Val>
-    requires(is_all_integral_expr_v<X, Y> &&
-             (is_uchar_element_expr_v<Val> ||
-              is_float_element_expr_v<Val>))
-    void write(const Val &elm, const X &x, const Y &y) noexcept {
-        const T *texture = static_cast<const T *>(this);
-        const CallExpr *expr = Function::current()->call_builtin(nullptr, CallOp::TEX2D_WRITE,
-                                                                 {self()->expression(),
-                                                                  OC_EXPR(elm), OC_EXPR(x), OC_EXPR(y)});
-        self()->expression()->mark(Usage::WRITE);
-        Function::current()->expr_statement(expr);
     }
 
     template<typename XY, typename Val>
@@ -460,42 +414,28 @@ struct BufferAsAtomicAddress {
     }
 };
 
-template<typename T>
-struct EnableTexture3DSample {
+template<typename T, CallOp callOp>
+struct EnableTextureSample {
 
     template<typename U, typename V>
     requires(is_all_floating_point_expr_v<U, V>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v)
-        const noexcept;// implement in dsl/array.h
+        const noexcept;// implement in dsl/dynamic_array.h
 
     template<typename U, typename V, typename W>
     requires(is_all_floating_point_expr_v<U, V, W>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v, const W &w)
-        const noexcept;// implement in dsl/array.h
+        const noexcept;// implement in dsl/dynamic_array.h
 
     template<typename UVW>
     requires(is_general_float_vector3_v<remove_device_t<UVW>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UVW &uvw)
-        const noexcept;// implement in dsl/array.h
+        const noexcept;// implement in dsl/dynamic_array.h
 
     template<typename UV>
     requires(is_general_float_vector2_v<remove_device_t<UV>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
-        const noexcept;// implement in dsl/array.h
-};
-
-template<typename T>
-struct EnableTexture2DSample {
-
-    template<typename U, typename V>
-    requires(is_all_floating_point_expr_v<U, V>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v)
-        const noexcept;// implement in dsl/array.h
-
-    template<typename UV>
-    requires(is_general_float_vector2_v<remove_device_t<UV>>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
-        const noexcept;// implement in dsl/array.h
+        const noexcept;// implement in dsl/dynamic_array.h
 };
 
 template<typename T>

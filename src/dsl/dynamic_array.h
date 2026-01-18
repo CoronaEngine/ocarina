@@ -360,14 +360,14 @@ template<typename T>
     return ret;
 }
 
-template<typename T>
+template<typename T, CallOp callOp>
 template<typename U, typename V>
 requires(is_all_floating_point_expr_v<U, V>)
-DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const U &u, const V &v)
+DynamicArray<float> EnableTextureSample<T,callOp>::sample(uint channel_num, const U &u, const V &v)
     const noexcept {
     const T *texture = static_cast<const T *>(this);
     const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
-                                                             CallOp::TEX3D_SAMPLE,
+                                                             callOp,
                                                              {texture->expression(),
                                                               OC_EXPR(u),
                                                               OC_EXPR(v)},
@@ -376,14 +376,14 @@ DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const U &
     return eval_dynamic_array(DynamicArray<float>(channel_num, expr));
 }
 
-template<typename T>
+template<typename T, CallOp callOp>
 template<typename U, typename V, typename W>
 requires(is_all_floating_point_expr_v<U, V, W>)
-DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const U &u, const V &v, const W &w)
+DynamicArray<float> EnableTextureSample<T,callOp>::sample(uint channel_num, const U &u, const V &v, const W &w)
     const noexcept {
     const T *texture = static_cast<const T *>(this);
     const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
-                                                             CallOp::TEX3D_SAMPLE,
+                                                             callOp,
                                                              {texture->expression(),
                                                               OC_EXPR(u),
                                                               OC_EXPR(v),
@@ -393,46 +393,20 @@ DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const U &
     return eval_dynamic_array(DynamicArray<float>(channel_num, expr));
 }
 
-template<typename T>
+template<typename T, CallOp callOp>
 template<typename UVW>
 requires(is_general_float_vector3_v<remove_device_t<UVW>>)
-DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const UVW &uvw)
+DynamicArray<float> EnableTextureSample<T,callOp>::sample(uint channel_num, const UVW &uvw)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {
         return sample(channel_num, arg.x, arg.y, arg.z);
     }(decay_swizzle(uvw));
 }
 
-template<typename T>
+template<typename T, CallOp callOp>
 template<typename UV>
 requires(is_general_float_vector2_v<remove_device_t<UV>>)
-DynamicArray<float> EnableTexture3DSample<T>::sample(uint channel_num, const UV &uv)
-    const noexcept {
-    return [&]<typename Arg>(const Arg &arg) {
-        return sample(channel_num, arg.x, arg.y);
-    }(decay_swizzle(uv));
-}
-
-template<typename T>
-template<typename U, typename V>
-requires(is_all_floating_point_expr_v<U, V>)
-DynamicArray<float> EnableTexture2DSample<T>::sample(uint channel_num, const U &u, const V &v)
-    const noexcept {
-    const T *texture = static_cast<const T *>(this);
-    const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
-                                                             CallOp::TEX2D_SAMPLE,
-                                                             {texture->expression(),
-                                                              OC_EXPR(u),
-                                                              OC_EXPR(v)},
-                                                             {channel_num});
-    texture->expression()->mark(Usage::READ);
-    return eval_dynamic_array(DynamicArray<float>(channel_num, expr));
-}
-
-template<typename T>
-template<typename UV>
-requires(is_general_float_vector2_v<remove_device_t<UV>>)
-DynamicArray<float> EnableTexture2DSample<T>::sample(uint channel_num, const UV &uv)
+DynamicArray<float> EnableTextureSample<T,callOp>::sample(uint channel_num, const UV &uv)
     const noexcept {
     return [&]<typename Arg>(const Arg &arg) {
         return sample(channel_num, arg.x, arg.y);

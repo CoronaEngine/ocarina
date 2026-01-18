@@ -246,15 +246,15 @@ public:
 
 template<>
 struct Ref<Texture3D>
-    : detail::EnableTexture3DSample<Ref<Texture3D>>,
-      detail::EnableTexture3DReadAndWrite<Ref<Texture3D>> {
+    : detail::EnableTextureSample<Ref<Texture3D>, CallOp::TEX3D_SAMPLE>,
+      detail::EnableTextureReadAndWrite<Ref<Texture3D>, CallOp::TEX3D_READ, CallOp::TEX3D_WRITE> {
     OC_REF_COMMON(Ref<Texture3D>)
 };
 
 template<>
 struct Ref<Texture2D>
-    : detail::EnableTexture2DSample<Ref<Texture2D>>,
-      detail::EnableTexture2DReadAndWrite<Ref<Texture2D>> {
+    : detail::EnableTextureSample<Ref<Texture2D>, CallOp::TEX2D_SAMPLE>,
+      detail::EnableTextureReadAndWrite<Ref<Texture2D>, CallOp::TEX2D_READ, CallOp::TEX2D_WRITE> {
     OC_REF_COMMON(Ref<Texture2D>)
 };
 

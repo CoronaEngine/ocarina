@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
     Kernel kernel = [&](TextureVar texture_var) {
         Float2 uv = make_float2(dispatch_idx()) / make_float2(dispatch_dim());
         //        static_assert(is_general_vector2_v<decltype(float2{}.xy())>);
-        Float4 val = bindless.tex3d_var(1).sample(4, uv.xy()).as_vec4();
-//        val = texture_var.sample(4, uv.xy()).as_vec4();
+        Float4 val = bindless.tex3d_var(0).sample(4, uv.xy()).as_vec4();
+        val = texture_var.sample(4, uv.xy()).as_vec4();
         tex.write(make_float4(1,0.3,0,1),dispatch_idx().xy());
         tex.write(make_float4(1,1,0.2,1),dispatch_idx().xy());
         Uint2 xy = dispatch_idx().xy();
