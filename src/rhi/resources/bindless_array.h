@@ -92,8 +92,11 @@ public:
         impl()->set_buffer(index, buffer.handle(), buffer.offset_in_byte(),
                            buffer.size_in_byte());
     }
-    size_t emplace(const Texture3D &texture) noexcept;
+
+    [[nodiscard]] size_t emplace(const Texture3D &texture) noexcept;
     void set_texture3d(handle_ty index, const Texture3D &texture) noexcept;
+    [[nodiscard]] size_t emplace(const Texture2D &texture) noexcept;
+    void set_texture2d(handle_ty index, const Texture2D &texture) noexcept;
     [[nodiscard]] uint buffer_num() const noexcept;
     [[nodiscard]] uint texture3d_num() const noexcept;
     [[nodiscard]] uint texture2d_num() const noexcept;

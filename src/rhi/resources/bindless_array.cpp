@@ -23,6 +23,15 @@ void BindlessArray::set_texture3d(ocarina::handle_ty index,
     impl()->set_texture3d(index, texture.tex_handle());
 }
 
+size_t BindlessArray::emplace(const Texture2D &texture) noexcept {
+    return impl()->emplace_texture3d(texture.tex_handle());
+}
+
+void BindlessArray::set_texture2d(ocarina::handle_ty index,
+                                  const ocarina::Texture2D &texture) noexcept {
+    impl()->set_texture3d(index, texture.tex_handle());
+}
+
 ByteBufferView BindlessArray::byte_buffer_view(ocarina::uint index) const noexcept {
     ByteBufferDesc buffer_desc = impl()->buffer_view(index);
     return {buffer_desc.head(), buffer_desc.size_in_byte()};
