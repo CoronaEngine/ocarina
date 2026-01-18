@@ -190,7 +190,7 @@ public:
     }
 };
 
-class OC_RHI_API Texture2D : public Texture {
+class OC_RHI_API Texture2D : public Texture, public TextureBehaviour<Texture2D> {
 public:
     Texture2D() = default;
     explicit Texture2D(Device::Impl *device, uint2 res,

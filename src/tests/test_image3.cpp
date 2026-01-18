@@ -59,21 +59,21 @@ int main(int argc, char *argv[]) {
     auto image = Image::load(path1, ColorSpace::SRGB);
 
     auto bindless = device.create_bindless_array();
-    auto tex = device.create_texture3d(image.resolution(), image.pixel_storage(), "test");
+    auto tex = device.create_texture2d(image.resolution(), image.pixel_storage(), "test");
     stream << tex.upload(image.pixel_ptr());
-    bindless->emplace_texture3d(tex.tex_handle());
+    bindless->emplace_texture2d(tex.tex_handle());
 
     stream << bindless.upload_handles();
 
     // 我擦
-    Kernel kernel = [&](TextureVar texture_var) {
+    Kernel kernel = [&](Texture2DVar texture_var) {
         Float2 uv = make_float2(dispatch_idx()) / make_float2(dispatch_dim());
         //        static_assert(is_general_vector2_v<decltype(float2{}.xy())>);
-        Float4 val = bindless.tex3d_var(0).sample(4, make_float3(uv, 0)).as_vec4();
-        Float4 v = tex.template read<float4>(dispatch_idx());
-        val = tex.sample(4, make_float3(uv, 0)).as_vec4();
+        Float4 val = bindless.tex2d_var(0).sample(4, make_float3(uv, 0).xy()).as_vec4();
+        Float4 v = tex.template read<float4>(dispatch_idx().xy());
+//        val = tex.sample(4, uv).as_vec4();
 //        tex.write(make_float4(1,0.3,0,1),dispatch_idx().xy());
-        tex.write(v * 0.3f,dispatch_idx().xyz());
+//        texture_var.write(v * 0.3f,dispatch_idx().xyz());
         Uint2 xy = dispatch_idx().xy();
         //        static_assert(is_all_integral_expr_v<Uint>);
                 auto va2l = texture_var.read<float4>(dispatch_idx().xy());
