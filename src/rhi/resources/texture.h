@@ -138,8 +138,23 @@ public:
              (is_uchar_element_expr_v<Target> || is_float_element_expr_v<Target>))
     OC_NODISCARD auto read(const XY &xy) const noexcept {
         return [this]<typename T>(const T &xy) {
-            return read<Target>(xy.x, xy.y);
+            return this->read<Target>(xy.x, xy.y);
         }(decay_swizzle(xy));
+    }
+
+    template<typename Target, typename X, typename Y, typename Z>
+    requires(is_all_integral_expr_v<X, Y>)
+    OC_NODISCARD auto read(const X &x, const Y &y, const Z &z) const noexcept {
+        return make_expr<texture_type>(self()->expression()).template read<Target>(x, y, z);
+    }
+
+    template<typename Target, typename XYZ>
+    requires((is_general_integer_vector3_v<remove_device_t<XYZ>>) &&
+             (is_uchar_element_expr_v<Target> || is_float_element_expr_v<Target>))
+    OC_NODISCARD auto read(const XYZ &xyz) const noexcept {
+        return [this]<typename T>(const T &xyz) {
+            return this->read<Target>(xyz.x, xyz.y, xyz.z);
+        }(decay_swizzle(xyz));
     }
 
     template<typename X, typename Y, typename Val>
@@ -152,6 +167,18 @@ public:
     template<typename Val>
     void write(const Val &elm, const Uint2 &xy) noexcept {
         write(elm, xy.x, xy.y);
+    }
+
+    template<typename X, typename Y, typename Z, typename Val>
+    requires(is_all_integral_expr_v<X, Y, Z> &&
+             (is_uchar_element_expr_v<Val> || is_float_element_expr_v<Val>))
+    void write(const Val &elm, const X &x, const Y &y, const Z &z) noexcept {
+        make_expr<texture_type>(self()->expression()).write(elm, x, y, z);
+    }
+
+    template<typename Val>
+    void write(const Val &elm, const Uint3 &xyz) noexcept {
+        write(elm, xyz.x, xyz.y, xyz.z);
     }
 };
 
