@@ -25,7 +25,7 @@ namespace detail {
 }
 }// namespace detail
 
-class Texture : public RHIResource {
+class OC_RHI_API Texture : public RHIResource {
 public:
     class Impl {
     public:
@@ -40,38 +40,18 @@ public:
         [[nodiscard]] virtual size_t data_size() const noexcept = 0;
         [[nodiscard]] virtual size_t data_alignment() const noexcept = 0;
         [[nodiscard]] virtual size_t max_member_size() const noexcept = 0;
+        [[nodiscard]] virtual uint3 resolution() const noexcept = 0;
     };
 
 public:
     using RHIResource::RHIResource;
     Texture(Device::Impl *device, PixelStorage pixel_storage,
             RHIResource::Tag tag, handle_ty handle);
-};
 
-class Texture3D : public Texture {
-protected:
-
-
-public:
-    class Impl : public Texture::Impl {
-    public:
-        ~Impl() override = default;
-        [[nodiscard]] virtual uint3 resolution() const noexcept = 0;
-    };
-
-public:
-    Texture3D() = default;
-    explicit Texture3D(Device::Impl *device, uint3 res,
-                       PixelStorage pixel_storage, uint level_num = 1u,
-                       const string &desc = "")
-        : Texture(device, Tag::TEXTURE3D,
-                  device->create_texture3d(res, pixel_storage,
-                                           detail::compute_mip_level_num(res, level_num), desc)) {}
-
-    explicit Texture3D(Device::Impl *device, Image *image_resource, const TextureViewCreation &texture_view)
-        : Texture(device, Tag::TEXTURE3D,
-                  device->create_texture3d(image_resource, texture_view)) {}
-
+    [[nodiscard]] Impl *impl() noexcept { return reinterpret_cast<Impl *>(handle_); }
+    [[nodiscard]] const Impl *impl() const noexcept { return reinterpret_cast<const Impl *>(handle_); }
+    [[nodiscard]] Impl *operator->() noexcept { return impl(); }
+    [[nodiscard]] const Impl *operator->() const noexcept { return impl(); }
     [[nodiscard]] uint pixel_num() const noexcept {
         uint3 res = impl()->resolution();
         return res.x * res.y * res.z;
@@ -85,59 +65,42 @@ public:
         return ::ocarina::pixel_size(impl()->pixel_storage());
     }
 
-    [[nodiscard]] uint3 resolution() const noexcept {
-        return impl()->resolution();
-    }
-
-    [[nodiscard]] Impl *impl() noexcept { return reinterpret_cast<Impl *>(handle_); }
-    [[nodiscard]] const Impl *impl() const noexcept { return reinterpret_cast<const Impl *>(handle_); }
-    [[nodiscard]] Impl *operator->() noexcept { return impl(); }
-    [[nodiscard]] const Impl *operator->() const noexcept { return impl(); }
+    [[nodiscard]] uint3 resolution() const noexcept { return impl()->resolution(); }
     [[nodiscard]] handle_ty array_handle() const noexcept { return impl()->array_handle(); }
     [[nodiscard]] handle_ty tex_handle() const noexcept { return impl()->tex_handle(); }
     [[nodiscard]] const void *handle_ptr() const noexcept override { return impl()->handle_ptr(); }
     [[nodiscard]] size_t data_size() const noexcept override { return impl()->data_size(); }
     [[nodiscard]] size_t data_alignment() const noexcept override { return impl()->data_alignment(); }
     [[nodiscard]] size_t max_member_size() const noexcept override { return impl()->max_member_size(); }
-    [[nodiscard]] Texture3DUploadCommand *upload(const void *data, bool async = true) const noexcept {
-        return Texture3DUploadCommand::create(data, array_handle(), impl()->resolution(),
-                                            impl()->pixel_storage(), async);
-    }
-    [[nodiscard]] Texture3DUploadCommand *upload_sync(const void *data) const noexcept {
-        return upload(data, false);
-    }
-    [[nodiscard]] Texture3DDownloadCommand *download(void *data, bool async = true) const noexcept {
-        return Texture3DDownloadCommand::create(data, array_handle(), impl()->resolution(),
-                                              impl()->pixel_storage(), async);
-    }
-    [[nodiscard]] Texture3DDownloadCommand *download_sync(void *data) const noexcept {
-        return download(data, false);
-    }
+};
+
+class OC_RHI_API Texture3D : public Texture {
+public:
+    Texture3D() = default;
+    explicit Texture3D(Device::Impl *device, uint3 res,
+                       PixelStorage pixel_storage, uint level_num = 1u,
+                       const string &desc = "");
+
+    explicit Texture3D(Device::Impl *device, Image *image_resource,
+                       const TextureViewCreation &texture_view);
+
+    [[nodiscard]] Texture3DUploadCommand *upload(const void *data, bool async = true) const noexcept;
+    [[nodiscard]] Texture3DUploadCommand *upload_sync(const void *data) const noexcept;
+    [[nodiscard]] Texture3DDownloadCommand *download(void *data, bool async = true) const noexcept;
+    [[nodiscard]] Texture3DDownloadCommand *download_sync(void *data) const noexcept;
 
     template<typename Arg>
     requires is_buffer_or_view_v<Arg>
     [[nodiscard]] BufferToTexture3DCommand *copy_from(const Arg &buffer, size_t buffer_offset, bool async = true) const noexcept {
         return BufferToTexture3DCommand::create(buffer.handle(), buffer_offset * buffer.element_size(), array_handle(),
-                                              impl()->pixel_storage(),
-                                              impl()->resolution(), 0, async);
+                                                impl()->pixel_storage(),
+                                                impl()->resolution(), 0, async);
     }
-
-    void upload_immediately(const void *data) const noexcept {
-        upload_sync(data)->accept(*device_->command_visitor());
-    }
-
-    void download_immediately(void *data) const noexcept {
-        download_sync(data)->accept(*device_->command_visitor());
-    }
+    void upload_immediately(const void *data) const noexcept;
+    void download_immediately(void *data) const noexcept;
 
     /// for dsl
-    [[nodiscard]] const Expression *expression() const noexcept override {
-        const CapturedResource &captured_resource = Function::current()->get_captured_resource(Type::of<decltype(*this)>(),
-                                                                                               Variable::Tag::TEXTURE3D,
-                                                                                               memory_block());
-        return captured_resource.expression();
-    }
-
+    [[nodiscard]] const Expression *expression() const noexcept override;
     template<typename U, typename V>
     requires(is_all_floating_point_expr_v<U, V>)
     [[nodiscard]] auto sample(uint channel_num, const U &u, const V &v) const noexcept {
@@ -192,7 +155,6 @@ public:
     void write(const Val &elm, const Uint2 &xy) noexcept {
         write(elm, xy.x, xy.y);
     }
-
 };
 
 }// namespace ocarina
