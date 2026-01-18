@@ -242,7 +242,19 @@ void CUDACommandVisitor::visit(const Texture3DCopyCommand *cmd) noexcept {
 
 void CUDACommandVisitor::visit(const Texture2DCopyCommand *cmd) noexcept {
     device_->use_context([&] {
-
+        CUDA_MEMCPY2D copy{};
+        uint pitch = pixel_size(cmd->pixel_storage()) * cmd->resolution().x;
+        copy.srcMemoryType = CU_MEMORYTYPE_ARRAY;
+        copy.srcArray = cmd->src<CUarray>();
+        copy.dstMemoryType = CU_MEMORYTYPE_ARRAY;
+        copy.dstArray = cmd->dst<CUarray>();
+        copy.WidthInBytes = pitch;
+        copy.Height = cmd->resolution().y;
+        if (cmd->async() && stream_) {
+            OC_CU_CHECK(cuMemcpy2DAsync(&copy, stream_));
+        } else {
+            OC_CU_CHECK(cuMemcpy2D(&copy));
+        }
     });
 }
 
@@ -268,7 +280,19 @@ void CUDACommandVisitor::visit(const ocarina::BufferToTexture3DCommand *cmd) noe
 
 void CUDACommandVisitor::visit(const ocarina::BufferToTexture2DCommand *cmd) noexcept {
     device_->use_context([&] {
-
+        CUDA_MEMCPY2D copy{};
+        copy.srcMemoryType = CU_MEMORYTYPE_DEVICE;
+        copy.srcDevice = cmd->src() + cmd->buffer_offset();
+        copy.srcPitch = cmd->width_in_bytes();
+        copy.dstMemoryType = CU_MEMORYTYPE_ARRAY;
+        copy.dstArray = cmd->dst<CUarray>();
+        copy.WidthInBytes = cmd->width_in_bytes();
+        copy.Height = cmd->height();
+        if (cmd->async() && stream_) {
+            OC_CU_CHECK(cuMemcpy2DAsync(&copy, stream_));
+        } else {
+            OC_CU_CHECK(cuMemcpy2D(&copy));
+        }
     });
 }
 
