@@ -183,7 +183,6 @@ public:
 
     // Move assignment
     Buffer &operator=(Buffer &&other) noexcept {
-        destroy();
         Super::operator=(std::move(other));
         this->size_ = other.size_;
         this->name_ = std::move(other.name_);

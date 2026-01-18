@@ -348,7 +348,10 @@ void CUDADevice::destroy_texture3d(handle_ty handle) noexcept {
 }
 
 void CUDADevice::destroy_texture2d(ocarina::handle_ty handle) noexcept {
-
+    use_context([&] {
+        MemoryStats::instance().on_tex_free(handle);
+        ocarina::delete_with_allocator(reinterpret_cast<CUDATexture2D *>(handle));
+    });
 }
 
 void CUDADevice::destroy_stream(handle_ty handle) noexcept {
