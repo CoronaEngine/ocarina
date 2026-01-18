@@ -76,7 +76,6 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
     ImGui_ImplGlfw_InitForOpenGL(handle_, true);
     ImGui_ImplOpenGL3_Init("#version 330");
     uint2 res = size();
-    shared_texture_ = make_unique<GLTexture>();
     texture_ = ocarina::make_unique<GLTexture>();
     texture_->update(res);
     glfwSetWindowUserPointer(handle_, this);
@@ -143,7 +142,6 @@ GLWindow::GLWindow(const char *name, uint2 initial_size, bool resizable) noexcep
 GLWindow::~GLWindow() noexcept {
     glfwMakeContextCurrent(handle_);
     texture_.reset();
-    shared_texture_.reset();
     widgets_.reset();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

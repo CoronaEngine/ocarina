@@ -31,6 +31,7 @@ public:
     }
 
     void update(uint2 size) noexcept {
+        clear();
         size_ = size;
         generate();
         bind();
