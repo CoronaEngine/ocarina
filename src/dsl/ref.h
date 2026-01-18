@@ -421,13 +421,17 @@ public:
         const noexcept;// implement in dsl/array.h
 };
 
-class BindlessArrayTexture3D {
+template<size_t Dim>
+class BindlessArrayTexture {
 private:
+    static_assert(Dim == 2 || Dim == 3, "The dimension of texture must be 2 or 3!");
+    static constexpr CallOp call_op = Dim == 2 ? CallOp::BINDLESS_ARRAY_TEX2D_SAMPLE :
+                                                 CallOp::BINDLESS_ARRAY_TEX3D_SAMPLE;
     const Expression *bindless_array_{nullptr};
     const Expression *index_{nullptr};
 
 public:
-    BindlessArrayTexture3D(const Expression *array, const Expression *index) noexcept
+    BindlessArrayTexture(const Expression *array, const Expression *index) noexcept
         : bindless_array_{array}, index_{index} {}
 
     template<typename U, typename V, typename W>
@@ -443,26 +447,6 @@ public:
     template<typename UVW>
     requires(is_general_float_vector3_v<remove_device_t<UVW>>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UVW &uvw)
-        const noexcept;// implement in dsl/array.h
-
-    template<typename UV>
-    requires(is_general_float_vector2_v<remove_device_t<UV>>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
-        const noexcept;// implement in dsl/array.h
-};
-
-class BindlessArrayTexture2D {
-private:
-    const Expression *bindless_array_{nullptr};
-    const Expression *index_{nullptr};
-
-public:
-    BindlessArrayTexture2D(const Expression *array, const Expression *index) noexcept
-        : bindless_array_{array}, index_{index} {}
-
-    template<typename U, typename V>
-    requires(is_all_floating_point_expr_v<U, V>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v)
         const noexcept;// implement in dsl/array.h
 
     template<typename UV>
@@ -492,7 +476,7 @@ public:
 
     template<typename Index>
     requires concepts::integral<expr_value_t<Index>>
-    [[nodiscard]] BindlessArrayTexture3D tex3d_var(Index index, const string &desc = "",
+    [[nodiscard]] BindlessArrayTexture<3> tex3d_var(Index index, const string &desc = "",
                                                    uint tex_num = 0) const noexcept {
         if (tex_num != 0) {
             if constexpr (is_integral_v<Index>) {
@@ -501,12 +485,12 @@ public:
                 index = correct_index(index, tex_num, desc, traceback_string(1));
             }
         }
-        return BindlessArrayTexture3D(expression(), OC_EXPR(index));
+        return BindlessArrayTexture<3>(expression(), OC_EXPR(index));
     }
 
     template<typename Index>
     requires concepts::integral<expr_value_t<Index>>
-    [[nodiscard]] BindlessArrayTexture2D tex2d_var(Index index, const string &desc = "",
+    [[nodiscard]] BindlessArrayTexture<2> tex2d_var(Index index, const string &desc = "",
                                                    uint tex_num = 0) const noexcept {
         if (tex_num != 0) {
             if constexpr (is_integral_v<Index>) {
@@ -515,7 +499,7 @@ public:
                 index = correct_index(index, tex_num, desc, traceback_string(1));
             }
         }
-        return BindlessArrayTexture2D(expression(), OC_EXPR(index));
+        return BindlessArrayTexture<2>(expression(), OC_EXPR(index));
     }
 
     template<typename Index>

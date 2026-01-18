@@ -109,7 +109,7 @@ public:
 
     template<typename Index>
     requires is_integral_expr_v<Index>
-    [[nodiscard]] BindlessArrayTexture3D tex3d_var(Index &&index) const noexcept {
+    [[nodiscard]] BindlessArrayTexture<3> tex3d_var(Index &&index) const noexcept {
         return expr().tex3d_var(OC_FORWARD(index),
                                 typeid(*this).name(),
                                 texture3d_num());
@@ -117,7 +117,7 @@ public:
 
     template<typename Index>
     requires is_integral_expr_v<Index>
-    [[nodiscard]] BindlessArrayTexture3D tex2d_var(Index &&index) const noexcept {
+    [[nodiscard]] BindlessArrayTexture<2> tex2d_var(Index &&index) const noexcept {
         return expr().tex2d_var(OC_FORWARD(index),
                                 typeid(*this).name(),
                                 texture2d_num());

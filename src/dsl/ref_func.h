@@ -277,12 +277,36 @@ struct EnableByteLoadAndStore {
     }
 };
 
+template<typename T, size_t Dim>
+struct EnableTextureSample {
+    static_assert(Dim == 2 || Dim == 3, "The dimension of texture must be 2 or 3!");
+    static constexpr CallOp call_op = Dim == 2 ? CallOp::TEX2D_SAMPLE : CallOp::TEX3D_SAMPLE;
+    template<typename U, typename V>
+    requires(is_all_floating_point_expr_v<U, V>)
+    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v)
+        const noexcept;// implement in dsl/dynamic_array.h
+
+    template<typename U, typename V, typename W>
+    requires(is_all_floating_point_expr_v<U, V, W>)
+    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v, const W &w)
+        const noexcept;// implement in dsl/dynamic_array.h
+
+    template<typename UVW>
+    requires(is_general_float_vector3_v<remove_device_t<UVW>>)
+    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UVW &uvw)
+        const noexcept;// implement in dsl/dynamic_array.h
+
+    template<typename UV>
+    requires(is_general_float_vector2_v<remove_device_t<UV>>)
+    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
+        const noexcept;// implement in dsl/dynamic_array.h
+};
 
 template<typename T, size_t Dim>
 struct EnableTextureReadAndWrite {
     static_assert(Dim == 2 || Dim == 3, "The dimension of texture must be 2 or 3!");
-    static constexpr CallOp Read = Dim == 2 ? CallOp::TEX2D_READ :CallOp::TEX3D_READ;
-    static constexpr CallOp Write = Dim == 2 ? CallOp::TEX2D_WRITE :CallOp::TEX3D_WRITE;
+    static constexpr CallOp Read = Dim == 2 ? CallOp::TEX2D_READ : CallOp::TEX3D_READ;
+    static constexpr CallOp Write = Dim == 2 ? CallOp::TEX2D_WRITE : CallOp::TEX3D_WRITE;
     [[nodiscard]] T *self() noexcept { return static_cast<T *>(this); }
     [[nodiscard]] const T *self() const noexcept { return static_cast<const T *>(this); }
 
@@ -299,6 +323,7 @@ struct EnableTextureReadAndWrite {
     template<typename Output, typename X, typename Y, typename Z>
     requires(is_all_integral_expr_v<X, Y, Z>)
     OC_NODISCARD auto read(const X &x, const Y &y, const Z &z) const noexcept {
+        static_assert(Dim == 3,"This method only available on 3D tex");
         const CallExpr *expr = Function::current()->call_builtin(Type::of<Output>(), Read,
                                                                  {self()->expression(), OC_EXPR(x), OC_EXPR(y), OC_EXPR(z)},
                                                                  {Type::of<Output>()});
@@ -330,6 +355,7 @@ struct EnableTextureReadAndWrite {
               is_float_element_expr_v<Val>))
     void write(const Val &elm, const X &x, const Y &y) noexcept {
         const T *texture = static_cast<const T *>(this);
+        static_assert(Dim == 3,"This method only available on 3D tex");
         const CallExpr *expr = Function::current()->call_builtin(nullptr, Write,
                                                                  {self()->expression(),
                                                                   OC_EXPR(elm), OC_EXPR(x), OC_EXPR(y)});
@@ -414,31 +440,6 @@ struct BufferAsAtomicAddress {
         static_assert(is_scalar_expr_v<Elm>);
         return AtomicRef<Target>(static_cast<TBuffer *>(this)->expression(), OC_EXPR(index));
     }
-};
-
-template<typename T, size_t Dim>
-struct EnableTextureSample {
-    static_assert(Dim == 2 || Dim == 3, "The dimension of texture must be 2 or 3!");
-    static constexpr CallOp call_op = Dim == 2 ? CallOp::TEX2D_SAMPLE :CallOp::TEX3D_SAMPLE;
-    template<typename U, typename V>
-    requires(is_all_floating_point_expr_v<U, V>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v)
-        const noexcept;// implement in dsl/dynamic_array.h
-
-    template<typename U, typename V, typename W>
-    requires(is_all_floating_point_expr_v<U, V, W>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v, const W &w)
-        const noexcept;// implement in dsl/dynamic_array.h
-
-    template<typename UVW>
-    requires(is_general_float_vector3_v<remove_device_t<UVW>>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UVW &uvw)
-        const noexcept;// implement in dsl/dynamic_array.h
-
-    template<typename UV>
-    requires(is_general_float_vector2_v<remove_device_t<UV>>)
-    OC_NODISCARD DynamicArray<float> sample(uint channel_num, const UV &uv)
-        const noexcept;// implement in dsl/dynamic_array.h
 };
 
 template<typename T>
