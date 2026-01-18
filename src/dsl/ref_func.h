@@ -278,9 +278,11 @@ struct EnableByteLoadAndStore {
 };
 
 
-template<typename T, CallOp Read, CallOp Write>
+template<typename T, size_t Dim>
 struct EnableTextureReadAndWrite {
-
+    static_assert(Dim == 2 || Dim == 3, "The dimension of texture must be 2 or 3!");
+    static constexpr CallOp Read = Dim == 2 ? CallOp::TEX2D_READ :CallOp::TEX3D_READ;
+    static constexpr CallOp Write = Dim == 2 ? CallOp::TEX2D_WRITE :CallOp::TEX3D_WRITE;
     [[nodiscard]] T *self() noexcept { return static_cast<T *>(this); }
     [[nodiscard]] const T *self() const noexcept { return static_cast<const T *>(this); }
 
@@ -414,9 +416,10 @@ struct BufferAsAtomicAddress {
     }
 };
 
-template<typename T, CallOp callOp>
+template<typename T, size_t Dim>
 struct EnableTextureSample {
-
+    static_assert(Dim == 2 || Dim == 3, "The dimension of texture must be 2 or 3!");
+    static constexpr CallOp call_op = Dim == 2 ? CallOp::TEX2D_SAMPLE :CallOp::TEX3D_SAMPLE;
     template<typename U, typename V>
     requires(is_all_floating_point_expr_v<U, V>)
     OC_NODISCARD DynamicArray<float> sample(uint channel_num, const U &u, const V &v)
