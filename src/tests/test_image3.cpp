@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
         Float4 v = tex.template read<float4>(dispatch_idx().xy());
 //        val = tex.sample(4, uv).as_vec4();
 //        tex.write(make_float4(1,0.3,0,1),dispatch_idx().xy());
-//        texture_var.write(v * 0.3f,dispatch_idx().xyz());
+        tex.write(v * 0.5f,dispatch_idx().xy());
         Uint2 xy = dispatch_idx().xy();
         //        static_assert(is_all_integral_expr_v<Uint>);
                 auto va2l = texture_var.read<float4>(dispatch_idx().xy());

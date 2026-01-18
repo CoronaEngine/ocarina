@@ -355,7 +355,6 @@ struct EnableTextureReadAndWrite {
               is_float_element_expr_v<Val>))
     void write(const Val &elm, const X &x, const Y &y) noexcept {
         const T *texture = static_cast<const T *>(this);
-        static_assert(Dim == 3,"This method only available on 3D tex");
         const CallExpr *expr = Function::current()->call_builtin(nullptr, Write,
                                                                  {self()->expression(),
                                                                   OC_EXPR(elm), OC_EXPR(x), OC_EXPR(y)});
@@ -368,6 +367,7 @@ struct EnableTextureReadAndWrite {
              (is_uchar_element_expr_v<Val> ||
               is_float_element_expr_v<Val>))
     void write(const Val &elm, const X &x, const Y &y, const Z &z) noexcept {
+        static_assert(Dim == 3,"This method only available on 3D tex");
         const CallExpr *expr = Function::current()->call_builtin(nullptr, Write,
                                                                  {self()->expression(),
                                                                   OC_EXPR(elm), OC_EXPR(x), OC_EXPR(y), OC_EXPR(z)});

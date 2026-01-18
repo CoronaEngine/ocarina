@@ -208,7 +208,16 @@ void CUDACommandVisitor::visit(const Texture3DDownloadCommand *cmd) noexcept {
 
 void CUDACommandVisitor::visit(const Texture2DDownloadCommand *cmd) noexcept {
     device_->use_context([&] {
-
+        CUDA_MEMCPY2D desc = detail::memcpy2d_desc(cmd);
+        desc.srcMemoryType = CU_MEMORYTYPE_ARRAY;
+        desc.dstMemoryType = CU_MEMORYTYPE_HOST;
+        desc.srcArray = cmd->device_handle<CUarray>();
+        desc.dstHost = reinterpret_cast<void *>(cmd->host_ptr());
+        if (cmd->async() && stream_) {
+            OC_CU_CHECK(cuMemcpy2DAsync(&desc, stream_));
+        } else {
+            OC_CU_CHECK(cuMemcpy2D(&desc));
+        }
     });
 }
 
