@@ -61,11 +61,15 @@ int main(int argc, char *argv[]) {
     auto bindless = device.create_bindless_array();
     auto tex = device.create_texture2d(image.resolution(), image.pixel_storage(), "test");
     auto tex2 = device.create_texture2d(image.resolution(), image.pixel_storage(), "test");
-    stream << tex2.upload(image.pixel_ptr());
+    auto buffer = device.create_buffer<float>(image.pixel_num());
+    stream << buffer.upload(image.pixel_ptr());
+    stream << tex.upload(image.pixel_ptr());
     bindless->emplace_texture2d(tex.tex_handle());
     bindless->emplace_texture2d(tex2.tex_handle());
 
-    stream << bindless.upload_handles() << tex.copy_from(tex2);
+
+    stream << bindless.upload_handles() ;
+//    stream << tex.copy_from(tex2);
 
     Ray ray;
     cout << to_str(ray) << endl;
@@ -87,6 +91,9 @@ int main(int argc, char *argv[]) {
     };
     auto shader = device.compile(kernel);
     stream << shader(tex).dispatch(image.resolution()) << Env::printer().retrieve()<< synchronize() << commit();
+//    stream << buffer.
+//    stream << buffer.upload(image.pixel_ptr()) << synchronize() << commit();
+    stream << tex.copy_from_buffer(buffer,0, true);
     stream << tex.download(image.pixel_ptr()) << synchronize() << commit();
     image.save(dst_path);
 

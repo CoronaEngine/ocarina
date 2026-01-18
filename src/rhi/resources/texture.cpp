@@ -55,7 +55,7 @@ DataCopyCommand *Texture2D::copy_from(const ocarina::Texture &src, bool async) c
                                         resolution(), impl()->pixel_storage(), 0, 0, async);
 }
 
-BufferToTextureCommand *Texture2D::copy_from_impl(ocarina::handle_ty buffer_handle,
+BufferToTextureCommand *Texture2D::copy_from_buffer_impl(handle_ty buffer_handle,
                                                   size_t buffer_offset_in_byte, bool async) const noexcept {
     return BufferToTexture2DCommand::create(buffer_handle, buffer_offset_in_byte, array_handle(),
                                             impl()->pixel_storage(),
@@ -106,7 +106,7 @@ DataCopyCommand *Texture3D::copy_from(const ocarina::Texture &src, bool async) c
                                         resolution(), impl()->pixel_storage(), 0, 0, async);
 }
 
-BufferToTextureCommand *Texture3D::copy_from_impl(ocarina::handle_ty buffer_handle,
+BufferToTextureCommand *Texture3D::copy_from_buffer_impl(handle_ty buffer_handle,
                                                   size_t buffer_offset_in_byte, bool async) const noexcept {
     return BufferToTexture3DCommand::create(buffer_handle, buffer_offset_in_byte, array_handle(),
                                             impl()->pixel_storage(),

@@ -174,13 +174,13 @@ public:
     [[nodiscard]] virtual TextureOpCommand *download_sync(void *data) const noexcept = 0;
     [[nodiscard]] virtual DataCopyCommand *copy_from(const Texture &src,
                                                      bool async = true) const noexcept = 0;
-    [[nodiscard]] virtual BufferToTextureCommand *copy_from_impl(handle_ty buffer_handle, size_t buffer_offset_in_byte,
+    [[nodiscard]] virtual BufferToTextureCommand *copy_from_buffer_impl(handle_ty buffer_handle, size_t buffer_offset_in_byte,
                                                                  bool async = true) const noexcept = 0;
 
     template<typename Arg>
     requires is_buffer_or_view_v<Arg>
-    [[nodiscard]] BufferToTextureCommand *copy_from(const Arg &buffer, size_t buffer_offset, bool async = true) const noexcept {
-        return copy_from_impl(buffer.handle(), buffer_offset * buffer.element_size(), async);
+    [[nodiscard]] BufferToTextureCommand *copy_from_buffer(const Arg &buffer, size_t buffer_offset, bool async = true) const noexcept {
+        return copy_from_buffer_impl(buffer.handle(), buffer_offset * buffer.element_size(), async);
     }
 
     [[nodiscard]] uint3 resolution() const noexcept { return impl()->resolution(); }
@@ -208,7 +208,7 @@ public:
     [[nodiscard]] TextureOpCommand *download_sync(void *data) const noexcept override;
     [[nodiscard]] DataCopyCommand *copy_from(const ocarina::Texture &src,
                                              bool async = true) const noexcept override;
-    [[nodiscard]] BufferToTextureCommand *copy_from_impl(ocarina::handle_ty buffer_handle,
+    [[nodiscard]] BufferToTextureCommand *copy_from_buffer_impl(handle_ty buffer_handle,
                                                          size_t buffer_offset_in_byte,
                                                          bool async) const noexcept override;
 
@@ -232,7 +232,7 @@ public:
     [[nodiscard]] TextureOpCommand *download_sync(void *data) const noexcept override;
     [[nodiscard]] DataCopyCommand *copy_from(const ocarina::Texture &src,
                                              bool async = true) const noexcept override;
-    [[nodiscard]] BufferToTextureCommand *copy_from_impl(ocarina::handle_ty buffer_handle,
+    [[nodiscard]] BufferToTextureCommand *copy_from_buffer_impl(handle_ty buffer_handle,
                                                          size_t buffer_offset_in_byte,
                                                          bool async) const noexcept override;
 
