@@ -18,7 +18,7 @@ protected:
     CUDADevice *device_{};
     uint level_num_{1u};
     uint3 res_{};
-    CUarray array_;
+    CUarray array_{};
     CUDATexture(CUDADevice *device, uint3 res,
                 PixelStorage pixel_storage, uint level_num);
 
@@ -39,6 +39,7 @@ public:
     [[nodiscard]] size_t data_alignment() const noexcept override;
     [[nodiscard]] size_t max_member_size() const noexcept override;
     [[nodiscard]] PixelStorage pixel_storage() const noexcept override { return descriptor_.pixel_storage; }
+    void init_by_array(CUarray array);
     ~CUDATexture() override;
 };
 

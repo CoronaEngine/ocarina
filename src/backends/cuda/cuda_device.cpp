@@ -172,7 +172,14 @@ handle_ty CUDADevice::create_stream() noexcept {
 
 handle_ty CUDADevice::create_texture2d(ocarina::uint2 res, ocarina::PixelStorage pixel_storage,
                                        ocarina::uint level_num, const std::string &desc) noexcept {
-    return {};
+    return use_context([&] {
+        auto texture = ocarina::new_with_allocator<CUDATexture2D>(this, make_uint3(res, 1),
+                                                                  pixel_storage, level_num);
+        MemoryStats::instance().on_tex_allocate(reinterpret_cast<handle_ty>(texture),
+                                                make_uint3(res, 1),
+                                                pixel_storage, desc);
+        return reinterpret_cast<handle_ty>(texture);
+    });
 }
 
 handle_ty CUDADevice::create_texture3d(uint3 res, PixelStorage pixel_storage,
@@ -341,7 +348,7 @@ void CUDADevice::destroy_texture3d(handle_ty handle) noexcept {
 }
 
 void CUDADevice::destroy_texture2d(ocarina::handle_ty handle) noexcept {
-    
+
 }
 
 void CUDADevice::destroy_stream(handle_ty handle) noexcept {
