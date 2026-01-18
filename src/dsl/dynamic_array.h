@@ -433,7 +433,7 @@ requires(is_all_floating_point_expr_v<U, V>)
 DynamicArray<float> BindlessArrayTexture<Dim>::sample(uint channel_num, const U &u,
                                                       const V &v) const noexcept {
     const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
-                                                             CallOp::BINDLESS_ARRAY_TEX3D_SAMPLE,
+                                                             call_op,
                                                              {bindless_array_, index_, OC_EXPR(u), OC_EXPR(v)},
                                                              {channel_num});
     return detail::eval_dynamic_array(DynamicArray<float>(channel_num, expr));
@@ -446,7 +446,7 @@ DynamicArray<float> BindlessArrayTexture<Dim>::sample(uint channel_num, const U 
                                                       const V &v, const W &w) const noexcept {
     static_assert(Dim == 3,"This method only available on 3D tex");
     const CallExpr *expr = Function::current()->call_builtin(DynamicArray<float>::type(channel_num),
-                                                             CallOp::BINDLESS_ARRAY_TEX3D_SAMPLE,
+                                                             call_op,
                                                              {bindless_array_, index_, OC_EXPR(u), OC_EXPR(v), OC_EXPR(w)},
                                                              {channel_num});
     return detail::eval_dynamic_array(DynamicArray<float>(channel_num, expr));
