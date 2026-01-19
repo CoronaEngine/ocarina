@@ -18,7 +18,7 @@ namespace ocarina {
 class GLTexture {
 
 private:
-    GLuint tex_handle_{0u};
+    GLuint tex_handle_{InvalidUI32};
     bool is_float4_{false};
     uint2 size_{};
     mutable bool binding_{false};
