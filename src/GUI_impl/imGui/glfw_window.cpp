@@ -78,7 +78,6 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
     uint2 res = size();
     texture_ = ocarina::make_unique<GLTexture>();
     texture_->update(res);
-    shared_texture_->update(res);
     glfwSetWindowUserPointer(handle_, this);
     glfwSetMouseButtonCallback(handle_, [](GLFWwindow *window, int button, int action, int mods) noexcept {
         if (ImGui::GetIO().WantCaptureMouse) {// ImGui is handling the mouse
@@ -102,7 +101,6 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
         uint2 res = make_uint2(width, height);
         if (width * height > 0) {
             self->texture_->update(res);
-            self->shared_texture_->update(res);
         }
         if (auto &&cb = self->window_size_callback_) {
             cb(res);
