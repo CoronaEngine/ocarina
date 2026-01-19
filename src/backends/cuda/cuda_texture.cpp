@@ -35,6 +35,7 @@ bool CUDATexture::is_external() const noexcept {
 
 void CUDATexture::unmapping_external_resource() {
     CUgraphicsResource resource = device_->get_shared_resource(reinterpret_cast<handle_ty>(this));
+    device_->unregister_shared_resource(reinterpret_cast<handle_ty>(this));
     OC_CU_CHECK(cuGraphicsUnmapResources(1, &resource, nullptr));
     OC_CU_CHECK(cuGraphicsUnregisterResource(resource));
 }
@@ -159,6 +160,7 @@ void CUDATexture2D::init_with_external_handle(ocarina::uint external_handle) noe
     OC_CU_CHECK(cuArrayGetDescriptor(&array_desc, array_));
     descriptor_.pixel_storage = PixelStorage::FLOAT4;
     res_ = make_uint3(array_desc.Width, array_desc.Height, 0);
+    device_->register_shared_resource(reinterpret_cast<handle_ty>(this), res);
     init_by_array(array_);
 }
 
