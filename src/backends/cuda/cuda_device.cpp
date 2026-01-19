@@ -127,7 +127,7 @@ uint64_t CUDADevice::get_aligned_memory_size(handle_ty handle) const {
 handle_ty CUDADevice::create_buffer(size_t size, const string &desc, bool exported) noexcept {
     OC_ASSERT(size > 0);
     if (desc == "") {
-        int o = 0;
+        OC_WARNING("buffer is no description");
     }
     return use_context([&] {
         handle_ty handle{};
