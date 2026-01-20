@@ -64,7 +64,7 @@ public:
     virtual Window &set_scroll_callback(ScrollCallback cb) noexcept;
     virtual Window &set_begin_frame_callback(BeginFrame cb) noexcept;
     virtual Window &set_end_frame_callback(EndFrame cb) noexcept;
-    virtual void download_background(void *data) const noexcept {
+    virtual void download_background(float4 *data) const noexcept {
         OC_NOT_IMPLEMENT_ERROR(download_background);
     }
     virtual void set_background(const uchar4 *pixels, uint2 size) noexcept = 0;

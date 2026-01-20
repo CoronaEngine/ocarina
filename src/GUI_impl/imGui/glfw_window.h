@@ -7,7 +7,6 @@
 #include "GUI/window.h"
 #include "widgets.h"
 
-
 namespace ocarina {
 
 class GLTexture;
@@ -43,7 +42,7 @@ public:
     [[nodiscard]] auto handle() const noexcept { return handle_; }
     void full_screen() override;
     void swap_monitor() override;
-    void download_background(void *data) const noexcept;
+    void download_background(float4 *data) const noexcept;
     uint shared_texture_handle() const noexcept override { return texture_->tex_handle(); }
     void set_background(const uchar4 *pixels, uint2 size) noexcept override;
     void set_background(const float4 *pixels, uint2 size) noexcept override;
