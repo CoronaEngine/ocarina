@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <cuda_fp16.h>
+
 namespace ocarina {
 template<typename... Ts>
 struct always_false {
@@ -120,6 +122,7 @@ OC_MAKE_VECTOR_TYPES(ulong)
 
 using oc_int = int;
 using oc_uint = unsigned int;
+using oc_half = half;
 using oc_float = float;
 using oc_bool = bool;
 using oc_uchar = unsigned char;

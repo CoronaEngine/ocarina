@@ -403,6 +403,7 @@ void CUDACodegen::_emit_type_name(const Type *type) noexcept {
             case Type::Tag::VECTOR:
             case Type::Tag::MATRIX:
             case Type::Tag::UINT64T:
+            case Type::Tag::HALF:
                 current_scratch() << TYPE_PREFIX << type->name();
                 break;
             case Type::Tag::ARRAY:

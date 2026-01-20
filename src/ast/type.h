@@ -374,6 +374,7 @@ public:
     enum struct Tag : uint32_t {
         BOOL,
         FLOAT,
+        HALF,
         INT,
         UINT,
         UCHAR,

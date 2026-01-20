@@ -16,7 +16,7 @@ requires std::is_enum_v<T>
 to_underlying(T e) noexcept {
     return static_cast<std::underlying_type_t<T>>(e);
 }
-
+class half;
 using uint = uint32_t;
 using ulong = uint64_t;
 using uchar = unsigned char;
@@ -38,7 +38,8 @@ template<typename T>
 constexpr auto is_boolean_v = is_boolean<T>::value;
 
 template<typename T>
-using is_floating_point = std::is_same<std::remove_cvref_t<T>, float>;
+using is_floating_point = std::disjunction<std::is_same<std::remove_cvref_t<T>, float>,
+                                           std::is_same<std::remove_cvref_t<T>, half>>;
 
 template<typename T>
 constexpr auto is_floating_point_v = is_floating_point<T>::value;
