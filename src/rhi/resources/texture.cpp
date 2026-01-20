@@ -66,6 +66,10 @@ BufferToTextureCommand *Texture2D::copy_from_buffer_impl(handle_ty buffer_handle
                                             impl()->resolution(), 0, async);
 }
 
+void Texture2D::destroy() noexcept {
+    *this = {};
+}
+
 const Expression *Texture2D::expression() const noexcept {
     const CapturedResource &captured_resource = Function::current()->get_captured_resource(Type::of<decltype(*this)>(),
                                                                                            Variable::Tag::TEXTURE2D,
@@ -122,6 +126,10 @@ const Expression *Texture3D::expression() const noexcept {
                                                                                            Variable::Tag::TEXTURE3D,
                                                                                            memory_block());
     return captured_resource.expression();
+}
+
+void Texture3D::destroy() noexcept {
+    *this = {};
 }
 
 //#endregion
