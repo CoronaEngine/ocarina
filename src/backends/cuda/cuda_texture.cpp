@@ -159,7 +159,7 @@ void CUDATexture2D::init_with_external_handle(ocarina::uint external_handle) noe
     CUDA_ARRAY_DESCRIPTOR array_desc{};
     OC_CU_CHECK(cuArrayGetDescriptor(&array_desc, array_));
     descriptor_.pixel_storage = PixelStorage::FLOAT4;
-    res_ = make_uint3(array_desc.Width, array_desc.Height, 0);
+    res_ = make_uint3(array_desc.Width, array_desc.Height, 1);
     device_->register_shared_resource(reinterpret_cast<handle_ty>(this), res);
     init_by_array(array_);
 }
