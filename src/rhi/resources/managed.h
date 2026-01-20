@@ -66,6 +66,7 @@ public:
     void reset_device_buffer_immediately(Device &d, const string &desc = "", size_t num = 0) {
         num = num == 0 ? host_ty ::size() : num;
         if (num == 0) {
+            device_buffer() = {};
             return;
         }
         device_buffer() = d.template create_buffer<T>(num, desc);
