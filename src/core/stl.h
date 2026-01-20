@@ -250,7 +250,7 @@ template<class To, class From>
 requires(sizeof(To) == sizeof(From) &&
          std::is_trivially_copyable_v<From> &&
          std::is_trivially_copyable_v<To>)
-[[nodiscard]] To bit_cast(const From &src) noexcept {
+[[nodiscard]] constexpr To bit_cast(const From &src) noexcept {
     return *reinterpret_cast<const To *>(&src);
 }
 

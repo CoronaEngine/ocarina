@@ -12,9 +12,8 @@ class half {
 private:
     uint16_t bits;
 
-    static uint16_t floatToHalf(float f) {
-        uint32_t bits = *reinterpret_cast<uint32_t *>(&f);
-
+    static constexpr uint16_t floatToHalf(float f) {
+        uint32_t bits = bit_cast<uint32_t>(f);
         // 提取符号位、指数位和尾数位
         uint16_t sign = (bits >> 31) & 0x1;
         uint16_t exp = (bits >> 23) & 0xFF;
@@ -64,7 +63,7 @@ private:
         uint16_t half_mantissa = (mantissa >> 13) & 0x3FF;
         return (sign << 15) | (half_exp << 10) | half_mantissa;
     }
-    static float halfToFloat(uint16_t h) {
+    static constexpr float halfToFloat(uint16_t h) {
         uint16_t sign = (h >> 15) & 0x1;
         uint16_t exp = (h >> 10) & 0x1F;
         uint16_t mantissa = h & 0x3FF;
@@ -97,121 +96,121 @@ private:
     }
 
 public:
-    half() : bits(0) {}
-    half(float f) : bits(floatToHalf(f)) {}
-    half(double d) : bits(floatToHalf(static_cast<float>(d))) {}
-    half(int i) : bits(floatToHalf(static_cast<float>(i))) {}
+    constexpr half() : bits(0) {}
+    constexpr half(float f) : bits(floatToHalf(f)) {}
+    constexpr half(double d) : bits(floatToHalf(static_cast<float>(d))) {}
+    constexpr half(int i) : bits(floatToHalf(static_cast<float>(i))) {}
 
-    operator float() const {
+    constexpr operator float() const {
         return halfToFloat(bits);
     }
-    operator double() const {
+    constexpr operator double() const {
         return static_cast<double>(halfToFloat(bits));
     }
-    operator int() const {
+    constexpr operator int() const {
         return static_cast<int>(halfToFloat(bits));
     }
 
-    half &operator=(float f) {
+    constexpr half &operator=(float f) {
         bits = floatToHalf(f);
         return *this;
     }
-    half &operator=(double d) {
+    constexpr half &operator=(double d) {
         bits = floatToHalf(static_cast<float>(d));
         return *this;
     }
-    half &operator=(int i) {
+    constexpr half &operator=(int i) {
         bits = floatToHalf(static_cast<float>(i));
         return *this;
     }
-    half &operator=(const half &other) {
+    constexpr half &operator=(const half &other) {
         if (this != &other) {
             bits = other.bits;
         }
         return *this;
     }
 
-    half operator+(const half &other) const {
+    constexpr half operator+(const half &other) const {
         return half(halfToFloat(bits) + halfToFloat(other.bits));
     }
-    half operator-(const half &other) const {
+    constexpr half operator-(const half &other) const {
         return half(halfToFloat(bits) - halfToFloat(other.bits));
     }
-    half operator*(const half &other) const {
+    constexpr half operator*(const half &other) const {
         return half(halfToFloat(bits) * halfToFloat(other.bits));
     }
-    half operator/(const half &other) const {
+    constexpr half operator/(const half &other) const {
         return half(halfToFloat(bits) / halfToFloat(other.bits));
     }
 
-    half &operator+=(const half &other) {
+    constexpr half &operator+=(const half &other) {
         *this = *this + other;
         return *this;
     }
-    half &operator-=(const half &other) {
+    constexpr half &operator-=(const half &other) {
         *this = *this - other;
         return *this;
     }
-    half &operator*=(const half &other) {
+    constexpr half &operator*=(const half &other) {
         *this = *this * other;
         return *this;
     }
-    half &operator/=(const half &other) {
+    constexpr half &operator/=(const half &other) {
         *this = *this / other;
         return *this;
     }
 
-    half &operator++() {
+    constexpr half &operator++() {
         *this = *this + half(1.0f);
         return *this;
     }
-    half operator++(int) {
+    constexpr half operator++(int) {
         half temp = *this;
         ++(*this);
         return temp;
     }
-    half &operator--() {
+    constexpr half &operator--() {
         *this = *this - half(1.0f);
         return *this;
     }
 
-    half operator--(int) {
+    constexpr half operator--(int) {
         half temp = *this;
         --(*this);
         return temp;
     }
 
-    bool operator==(const half &other) const {
+    constexpr bool operator==(const half &other) const {
         if (isNaN() || other.isNaN()) {
             return false;
         }
         return bits == other.bits;
     }
-    bool operator!=(const half &other) const {
+    constexpr bool operator!=(const half &other) const {
         return !(*this == other);
     }
-    bool operator<(const half &other) const {
+    constexpr bool operator<(const half &other) const {
         // NaN比较总是返回false
         if (isNaN() || other.isNaN()) {
             return false;
         }
         return halfToFloat(bits) < halfToFloat(other.bits);
     }
-    bool operator<=(const half &other) const {
+    constexpr bool operator<=(const half &other) const {
         // NaN比较总是返回false
         if (isNaN() || other.isNaN()) {
             return false;
         }
         return halfToFloat(bits) <= halfToFloat(other.bits);
     }
-    bool operator>(const half &other) const {
+    constexpr bool operator>(const half &other) const {
         // NaN比较总是返回false
         if (isNaN() || other.isNaN()) {
             return false;
         }
         return halfToFloat(bits) > halfToFloat(other.bits);
     }
-    bool operator>=(const half &other) const {
+    constexpr bool operator>=(const half &other) const {
         // NaN比较总是返回false
         if (isNaN() || other.isNaN()) {
             return false;
@@ -219,10 +218,10 @@ public:
         return halfToFloat(bits) >= halfToFloat(other.bits);
     }
 
-    half operator+() const {
+    constexpr half operator+() const {
         return *this;
     }
-    half operator-() const {
+    constexpr half operator-() const {
         half result;
         result.bits = bits ^ 0x8000;// 切换符号位
         return result;
@@ -239,15 +238,15 @@ public:
         return is;
     }
 
-    uint16_t getBits() const { return bits; }
+    constexpr uint16_t getBits() const { return bits; }
 
-    [[nodiscard]] bool isNaN() const {
+    [[nodiscard]] constexpr bool isNaN() const {
         return ((bits & 0x7C00) == 0x7C00) && (bits & 0x03FF);
     }
-    [[nodiscard]] bool isInfinity() const {
+    [[nodiscard]] constexpr bool isInfinity() const {
         return ((bits & 0x7FFF) == 0x7C00);
     }
-    bool isNegative() const {
+    constexpr bool isNegative() const {
         return (bits & 0x8000) != 0;
     }
 };
