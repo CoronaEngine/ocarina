@@ -8,6 +8,7 @@
 #include "scalar_func.h"
 #include "math/constants.h"
 #include "matrix_types.h"
+#include "half.h"
 
 namespace ocarina {
 

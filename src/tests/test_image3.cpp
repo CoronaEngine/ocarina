@@ -74,6 +74,11 @@ int main(int argc, char *argv[]) {
     Ray ray;
     cout << to_str(ray) << endl;
 
+    half h2 = 8.6;
+
+    cout << h2 * half(2.f)<< "  half" << endl;
+    return 0;
+
 
     // 我擦
     Kernel kernel = [&](Texture2DVar texture_var) {
