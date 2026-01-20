@@ -12,11 +12,30 @@
 
 namespace ocarina {
 
+std::string get_cuda_path() {
+    char cudaPath[1024];
+    DWORD size = GetEnvironmentVariableA("CUDA_PATH", cudaPath, sizeof(cudaPath));
+    if (size > 0 && size < sizeof(cudaPath)) {
+        return std::string(cudaPath);
+    }
+
+    std::string defaultPath = "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA";
+    if (access(defaultPath.c_str(), 0) == 0) {
+        return defaultPath;
+    }
+    return "";
+}
+
+
 CUDACompiler::CUDACompiler(CUDADevice *device)
     : device_(device) {}
 
 ocarina::string CUDACompiler::compile(const Function &function, int sm) const noexcept {
 
+    fs::path cuda_path = get_cuda_path();
+    cuda_path = cuda_path / "include";
+
+    string header_path = "-I"+cuda_path.string();
     int ver_major = 0;
     int ver_minor = 0;
     OC_NVRTC_CHECK(nvrtcVersion(&ver_major, &ver_minor));
@@ -57,6 +76,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
         "-default-device",
         "--use_fast_math",
         "-restrict",
+        header_path.c_str(),
         //#ifndef NDEBUG
         "-lineinfo",
         //#endif
