@@ -49,7 +49,7 @@ public:
 
     RHIResource &operator=(RHIResource &&other) noexcept {
         if (&other == this) { return *this; }
-        destroy();
+        _destroy();
         tag_ = other.tag_;
         device_ = other.device_;
         handle_ = other.handle_;
