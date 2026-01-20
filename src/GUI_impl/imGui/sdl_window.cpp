@@ -66,20 +66,6 @@ void SDLWindow::set_background(const float4 *pixels, uint2 size) noexcept {
     //texture_->load(pixels, size);
 }
 
-void SDLWindow::gen_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept {
-    //CHECK_GL(glGenBuffers(1, addressof(handle)));
-    //CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, handle));
-    //CHECK_GL(glBufferData(GL_ARRAY_BUFFER, size_in_byte,
-    //                      nullptr, GL_STREAM_DRAW));
-    //CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, 0u));
-}
-
-void SDLWindow::bind_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept {
-    //if (handle == 0) {
-    //    gen_buffer(handle, size_in_byte);
-    //}
-    //CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, handle));
-}
 
 void SDLWindow::set_background(const Buffer<ocarina::float4> &buffer, ocarina::uint2 size) noexcept {
     //if (texture_ == nullptr) {
@@ -89,9 +75,6 @@ void SDLWindow::set_background(const Buffer<ocarina::float4> &buffer, ocarina::u
     //bind_buffer(buffer.gl_handle(), buffer.size_in_byte());
 }
 
-void SDLWindow::unbind_buffer(ocarina::uint &handle) const noexcept {
-    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-}
 
 void SDLWindow::set_should_close() noexcept {
     should_close_ = true;

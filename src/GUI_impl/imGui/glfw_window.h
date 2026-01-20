@@ -43,12 +43,10 @@ public:
     [[nodiscard]] auto handle() const noexcept { return handle_; }
     void full_screen() override;
     void swap_monitor() override;
+    void download_background(void *data) const noexcept;
     uint shared_texture_handle() const noexcept override { return texture_->tex_handle(); }
     void set_background(const uchar4 *pixels, uint2 size) noexcept override;
     void set_background(const float4 *pixels, uint2 size) noexcept override;
-    void gen_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept override;
-    void bind_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept override;
-    void unbind_buffer(ocarina::uint &handle) const noexcept override;
     void set_background(const Buffer<ocarina::float4> &buffer, ocarina::uint2 size) noexcept override;
     void set_should_close() noexcept override;
     void set_size(uint2 size) noexcept override;

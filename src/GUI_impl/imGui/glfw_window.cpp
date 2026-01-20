@@ -190,6 +190,10 @@ void GLWindow::swap_monitor() {
     }
 }
 
+void GLWindow::download_background(void *data) const noexcept {
+
+}
+
 void GLWindow::set_background(const uchar4 *pixels, uint2 size) noexcept {
     if (texture_ == nullptr) {
         texture_ = ocarina::make_unique<GLTexture>();
@@ -201,20 +205,20 @@ void GLWindow::set_background(const float4 *pixels, uint2 size) noexcept {
     texture_->upload(pixels);
 }
 
-void GLWindow::gen_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept {
-    CHECK_GL(glGenBuffers(1, addressof(handle)));
-    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, handle));
-    CHECK_GL(glBufferData(GL_ARRAY_BUFFER, size_in_byte,
-                          nullptr, GL_STREAM_DRAW));
-    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, 0u));
-}
-
-void GLWindow::bind_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept {
-    if (handle == 0) {
-        gen_buffer(handle, size_in_byte);
-    }
-    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, handle));
-}
+//void GLWindow::gen_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept {
+//    CHECK_GL(glGenBuffers(1, addressof(handle)));
+//    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, handle));
+//    CHECK_GL(glBufferData(GL_ARRAY_BUFFER, size_in_byte,
+//                          nullptr, GL_STREAM_DRAW));
+//    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, 0u));
+//}
+//
+//void GLWindow::bind_buffer(ocarina::uint &handle, ocarina::uint size_in_byte) const noexcept {
+//    if (handle == 0) {
+//        gen_buffer(handle, size_in_byte);
+//    }
+//    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, handle));
+//}
 
 void GLWindow::set_background(const Buffer<ocarina::float4> &buffer, ocarina::uint2 size) noexcept {
     if (texture_ == nullptr) {
@@ -223,9 +227,9 @@ void GLWindow::set_background(const Buffer<ocarina::float4> &buffer, ocarina::ui
     texture_->bind();
 }
 
-void GLWindow::unbind_buffer(ocarina::uint &handle) const noexcept {
-    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
-}
+//void GLWindow::unbind_buffer(ocarina::uint &handle) const noexcept {
+//    CHECK_GL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+//}
 
 void GLWindow::set_should_close() noexcept {
     glfwSetWindowShouldClose(handle_, true);
