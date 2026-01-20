@@ -181,6 +181,9 @@ enum struct CallOp : uint32_t {
     ATOMIC_SUB,
     ATOMIC_CAS,
 
+    HALF2FLOAT,
+    FLOAT2HALF,
+
     // ray tracing
     MAKE_RAY,
     RAY_OFFSET_ORIGIN,

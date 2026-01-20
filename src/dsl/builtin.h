@@ -191,6 +191,20 @@ OC_MAKE_DSL_UNARY_FUNC(inverse, INVERSE)
 
 #undef OC_MAKE_DSL_UNARY_FUNC
 
+[[nodiscard]] inline Half float2half(const Float &arg) {
+    const CallExpr *expr = Function::current()->call_builtin(Type::of<half>(),
+                                                             CallOp::FLOAT2HALF,
+                                                             {OC_EXPR(arg)});
+    return eval<half>(expr);
+}
+
+[[nodiscard]] inline Float half2float(const Float &arg) {
+    const CallExpr *expr = Function::current()->call_builtin(Type::of<half>(),
+                                                             CallOp::HALF2FLOAT,
+                                                             {OC_EXPR(arg)});
+    return eval<float>(expr);
+}
+
 template<typename... Ts>
 using match_dsl_basic_func = std::conjunction<any_device_type<Ts...>,
                                               match_basic_func<remove_device_t<Ts>...>>;

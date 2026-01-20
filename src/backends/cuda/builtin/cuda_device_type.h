@@ -129,6 +129,14 @@ using oc_uchar = unsigned char;
 using oc_ushort = unsigned short;
 using oc_ulong = unsigned long long;
 
+oc_half oc_float2half(oc_float f) {
+    return __float2half(f);
+}
+
+oc_float oc_half2float(oc_half h) {
+    return __half2float(h);
+}
+
 #define OC_MAKE_VECTOR_N(type, dim) using type##dim = ocarina::Vector<type, dim>;
 
 template<typename T, size_t N>

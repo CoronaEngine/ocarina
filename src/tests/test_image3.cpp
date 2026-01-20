@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 
     cout << h2 * half(2.f)<< "  half" << endl;
 
-    Kernel kernel = [&](Texture2DVar texture_var, Half) {
+    Kernel kernel = [&](Texture2DVar texture_var, Half h) {
         Float2 uv = make_float2(dispatch_idx()) / make_float2(dispatch_dim());
         //        static_assert(is_general_vector2_v<decltype(float2{}.xy())>);
         Float4 val = bindless.tex2d_var(0).sample(4, make_float3(uv, 0).xy()).as_vec4();
@@ -92,10 +92,11 @@ int main(int argc, char *argv[]) {
         Uint2 xy = dispatch_idx().xy();
         //        static_assert(is_all_integral_expr_v<Uint>);
                 auto va2l = texture_var.read<float4>(dispatch_idx().xy());
-//        $info("{} {}, {} {} {} {}", uv, val);
+                Float f = half2float(h);
+        $info("{} {}, {} {} {} {}, {}", uv, val, f * 2);
     };
     auto shader = device.compile(kernel);
-    stream << shader(tex, h2).dispatch(image.resolution()) << Env::printer().retrieve()<< synchronize() << commit();
+    stream << shader(tex, h2).dispatch(1) << Env::printer().retrieve()<< synchronize() << commit();
 //    stream << buffer.
 //    stream << buffer.upload(image.pixel_ptr()) << synchronize() << commit();
     stream << tex.copy_from_buffer(buffer,0, true);
