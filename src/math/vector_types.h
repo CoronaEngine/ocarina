@@ -7,6 +7,7 @@
 #include "basic_traits.h"
 #include "scalar_func.h"
 #include "math/constants.h"
+#include "half.h"
 
 namespace ocarina {
 namespace detail {
@@ -19,6 +20,7 @@ struct valid_vector_impl : public std::disjunction<
                                std::is_same<T, char>,
                                std::is_same<T, short>,
                                std::is_same<T, ushort>,
+                               std::is_same<T, half>,
                                std::is_same<T, ulong>,
                                std::is_same<T, uchar>,
                                std::is_same<T, uint>> {};
@@ -700,6 +702,7 @@ requires(is_all_general_vector_v<T, U, V> &&
 
 OC_MAKE_VECTOR_TYPES(bool)
 OC_MAKE_VECTOR_TYPES(float)
+OC_MAKE_VECTOR_TYPES(half)
 OC_MAKE_VECTOR_TYPES(int)
 OC_MAKE_VECTOR_TYPES(char)
 OC_MAKE_VECTOR_TYPES(short)
@@ -822,10 +825,16 @@ OC_MAKE_SWIZZLE_LOGIC_FUNC(none)
 
 OC_MAKE_TYPE_N(bool)
 OC_MAKE_TYPE_N(float)
+//OC_MAKE_TYPE_N(half)
 OC_MAKE_TYPE_N(int)
 OC_MAKE_TYPE_N(uint)
 OC_MAKE_TYPE_N(uchar)
+OC_MAKE_TYPE_N(short)
+OC_MAKE_TYPE_N(ushort)
+OC_MAKE_TYPE_N(ulong)
 OC_MAKE_TYPE_N(char)
+
+
 #undef OC_MAKE_TYPE_N
 
 }// namespace ocarina

@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
     cout << to_str(ray) << endl;
 
     half h2 = 8.6;
+    half2 half_2(h2, h2);
 
     cout << h2 * half(2.f)<< "  half" << endl;
     return 0;
