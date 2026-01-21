@@ -28,9 +28,13 @@ int main() {
     stream << synchronize() << commit();
 
     half h = 0.66f;
+    h = 100.66;
+    auto a = 1.f+h ;
 
     cout << 1 + h << endl;
-    cout <<  h+1 << endl;
+    cout << h + h << endl;
+    cout << (h += h) << endl;
+//    cout <<  (h+=2) ;
 
     return 0;
 }
