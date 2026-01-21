@@ -231,16 +231,16 @@ OC_MAKE_VECTOR(oc_ulong)
         return ocarina::Vector<T, N>{lhs} op rhs;                        \
     }
 
-OC_MAKE_VECTOR_BINARY_OPERATOR(+, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(-, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(*, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(/, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(%, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(>>, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(<<, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(|, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(&, )
-OC_MAKE_VECTOR_BINARY_OPERATOR(^, )
+OC_MAKE_VECTOR_BINARY_OPERATOR(+, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(-, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(*, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(/, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(%, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(>>, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(<<, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(|, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(&, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_BINARY_OPERATOR(^, ocarina::is_all_integral_v<T, U>)
 
 #define OC_MAKE_VECTOR_ASSIGN_OPERATOR(op, ...)                           \
     template<typename T, typename U, size_t N>                            \
@@ -258,16 +258,16 @@ OC_MAKE_VECTOR_BINARY_OPERATOR(^, )
         return (lhs op ocarina::Vector<U, N>{rhs});                       \
     }
 
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(+=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(-=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(*=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(/=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(%=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(<<=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(>>=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(|=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(&=, )
-OC_MAKE_VECTOR_ASSIGN_OPERATOR(^=, )
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(+=, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(-=, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(*=, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(/=, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(%=, ocarina::is_all_number_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(<<=, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(>>=, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(|=, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(&=, ocarina::is_all_integral_v<T, U>)
+OC_MAKE_VECTOR_ASSIGN_OPERATOR(^=, ocarina::is_all_integral_v<T, U>)
 
 #define OC_MAKE_VECTOR_LOGIC_OPERATOR(op, ...)                           \
     template<typename T, size_t N>                                       \
@@ -301,14 +301,14 @@ OC_MAKE_VECTOR_ASSIGN_OPERATOR(^=, )
     operator op(T lhs, ocarina::Vector<T, N> rhs) noexcept {             \
         return ocarina::Vector<T, N>{lhs} op rhs;                        \
     }
-OC_MAKE_VECTOR_LOGIC_OPERATOR(||, )
-OC_MAKE_VECTOR_LOGIC_OPERATOR(&&, )
-OC_MAKE_VECTOR_LOGIC_OPERATOR(==, )
-OC_MAKE_VECTOR_LOGIC_OPERATOR(!=, )
-OC_MAKE_VECTOR_LOGIC_OPERATOR(<, )
-OC_MAKE_VECTOR_LOGIC_OPERATOR(>, )
-OC_MAKE_VECTOR_LOGIC_OPERATOR(<=, )
-OC_MAKE_VECTOR_LOGIC_OPERATOR(>=, )
+OC_MAKE_VECTOR_LOGIC_OPERATOR(||, ocarina::is_all_boolean_v<T>)
+OC_MAKE_VECTOR_LOGIC_OPERATOR(&&, ocarina::is_all_boolean_v<T>)
+OC_MAKE_VECTOR_LOGIC_OPERATOR(==, ocarina::is_all_number_v<T>)
+OC_MAKE_VECTOR_LOGIC_OPERATOR(!=, ocarina::is_all_number_v<T>)
+OC_MAKE_VECTOR_LOGIC_OPERATOR(<, ocarina::is_all_number_v<T>)
+OC_MAKE_VECTOR_LOGIC_OPERATOR(>, ocarina::is_all_number_v<T>)
+OC_MAKE_VECTOR_LOGIC_OPERATOR(<=, ocarina::is_all_number_v<T>)
+OC_MAKE_VECTOR_LOGIC_OPERATOR(>=, ocarina::is_all_number_v<T>)
 
 template<typename T, oc_uint N>
 class oc_array {
