@@ -3,6 +3,34 @@
 
 #include <cuda_fp16.h>
 
+using oc_int = int;
+using oc_uint = unsigned int;
+using oc_half = half;
+using oc_float = float;
+using oc_bool = bool;
+using oc_uchar = unsigned char;
+using oc_ushort = unsigned short;
+using oc_ulong = unsigned long long;
+
+oc_half oc_float2half(oc_float f) {
+    return __float2half(f);
+}
+
+oc_float oc_half2float(oc_half h) {
+    return __half2float(h);
+}
+
+template<typename Dst, typename Src>
+Dst oc_static_cast(Src src) {
+    return static_cast<Dst>(src);
+}
+
+template<typename Dst>
+Dst oc_static_cast(half src) {
+    return static_cast<Dst>(oc_half2float(src));
+}
+
+
 namespace ocarina {
 template<typename... Ts>
 struct always_false {
@@ -81,12 +109,12 @@ private:
     template<typename U, size_t NN, size_t... i>
     static Vector<T, N> construct_helper(Vector<U, NN> v,
                                          ocarina::index_sequence<i...>) {
-        return Vector<T, N>(static_cast<T>(v[i])...);
+        return Vector<T, N>(oc_static_cast<T>(v[i])...);
     }
 
 public:
     template<typename U>
-    explicit constexpr Vector(U s) noexcept : Vector(static_cast<T>(s)) {}
+    explicit constexpr Vector(U s) noexcept : Vector(oc_static_cast<T>(s)) {}
 
     template<typename U, size_t NN, ocarina::enable_if_t<NN >= N, int> = 0>
     explicit constexpr Vector(Vector<U, NN> v)
@@ -121,22 +149,7 @@ OC_MAKE_VECTOR_TYPES(ulong)
 
 }// namespace ocarina
 
-using oc_int = int;
-using oc_uint = unsigned int;
-using oc_half = half;
-using oc_float = float;
-using oc_bool = bool;
-using oc_uchar = unsigned char;
-using oc_ushort = unsigned short;
-using oc_ulong = unsigned long long;
 
-oc_half oc_float2half(oc_float f) {
-    return __float2half(f);
-}
-
-oc_float oc_half2float(oc_half h) {
-    return __half2float(h);
-}
 
 #define OC_MAKE_VECTOR_N(type, dim) using type##dim = ocarina::Vector<type, dim>;
 
@@ -378,7 +391,7 @@ public:
     template<typename... Args, enable_if_t<sizeof...(Args) == ElementNum, int> = 0>
     explicit constexpr Matrix(Args &&...args) noexcept
         : cols_(construct_helper(ocarina::make_index_sequence<N>(),
-                                 oc_array<scalar_type, ElementNum>{static_cast<scalar_type>(args)...})) {}
+                                 oc_array<scalar_type, ElementNum>{oc_static_cast<scalar_type>(args)...})) {}
 
     [[nodiscard]] constexpr vector_type &operator[](size_t i) noexcept { return cols_[i]; }
     [[nodiscard]] constexpr const vector_type &operator[](size_t i) const noexcept { return cols_[i]; }
