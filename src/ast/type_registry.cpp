@@ -164,7 +164,7 @@ const Type *TypeRegistry::parse_type(ocarina::string_view desc) noexcept {
     OC_PARSE_BASIC_TYPE(uchar, UCHAR)
     OC_PARSE_BASIC_TYPE(char, CHAR)
     OC_PARSE_BASIC_TYPE(ushort, USHORT)
-    OC_PARSE_BASIC_TYPE(ulong, UINT64T)
+    OC_PARSE_BASIC_TYPE(ulong, ULONG)
     OC_PARSE_BASIC_TYPE(short, SHORT)
 
 #undef OC_PARSE_BASIC_TYPE

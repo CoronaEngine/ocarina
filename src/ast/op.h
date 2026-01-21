@@ -149,18 +149,30 @@ enum struct CallOp : uint32_t {
     MAKE_BOOL2,
     MAKE_BOOL3,
     MAKE_BOOL4,
+
     MAKE_INT2,
     MAKE_INT3,
     MAKE_INT4,
+
     MAKE_UINT2,
     MAKE_UINT3,
     MAKE_UINT4,
+
     MAKE_UCHAR2,
     MAKE_UCHAR3,
     MAKE_UCHAR4,
+
     MAKE_FLOAT2,
     MAKE_FLOAT3,
     MAKE_FLOAT4,
+
+    MAKE_HALF2,
+    MAKE_HALF3,
+    MAKE_HALF4,
+
+    MAKE_ULONG2,
+    MAKE_ULONG3,
+    MAKE_ULONG4,
 
     MAKE_FLOAT2X2,
     MAKE_FLOAT2X3,
