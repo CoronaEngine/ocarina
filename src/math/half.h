@@ -123,16 +123,6 @@ static constexpr float cast_to_float(T val) {
     }
 }
 
-//    template<typename T>
-//    requires is_floating_point_v<T>
-//    static constexpr T cast(half src) {
-//        if constexpr (is_float_v<T>) {
-//            return half_to_float(src.bits());
-//        } else {
-//            return src;
-//        }
-//    }
-
 class half {
 private:
     uint16_t bits_;
@@ -194,25 +184,6 @@ public:
 
 #undef OC_HALF_BINARY_AND_ASSIGN_OP
 
-    constexpr half &operator++() {
-        *this = *this + half(1.0f);
-        return *this;
-    }
-    constexpr half operator++(int) {
-        half temp = *this;
-        ++(*this);
-        return temp;
-    }
-    constexpr half &operator--() {
-        *this = *this - half(1.0f);
-        return *this;
-    }
-    constexpr half operator--(int) {
-        half temp = *this;
-        --(*this);
-        return temp;
-    }
-
     constexpr bool operator==(const half &other) const {
         if (is_nan() || other.is_nan()) {
             return false;
@@ -254,6 +225,25 @@ public:
             return false;
         }
         return half_to_float(bits_) >= half_to_float(other.bits_);
+    }
+
+    constexpr half &operator++() {
+        *this = *this + half(1.0f);
+        return *this;
+    }
+    constexpr half operator++(int) {
+        half temp = *this;
+        ++(*this);
+        return temp;
+    }
+    constexpr half &operator--() {
+        *this = *this - half(1.0f);
+        return *this;
+    }
+    constexpr half operator--(int) {
+        half temp = *this;
+        --(*this);
+        return temp;
     }
 
     constexpr half operator+() const {
