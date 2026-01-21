@@ -8,6 +8,27 @@
 #include "basic_traits.h"
 
 namespace ocarina {
+
+namespace detail {
+template<typename T>
+struct is_half_op_enable : std::false_type {};
+
+template<>
+struct is_half_op_enable<float> : std::true_type {};
+
+template<>
+struct is_half_op_enable<int> : std::true_type {};
+
+template<>
+struct is_half_op_enable<uint> : std::true_type {};
+
+template<>
+struct is_half_op_enable<double> : std::true_type {};
+}// namespace detail
+
+template<typename T>
+static constexpr auto is_half_op_enable_v = detail::is_half_op_enable<std::remove_cvref_t<T>>::value;
+
 class half {
 private:
     uint16_t bits_;
@@ -93,29 +114,20 @@ private:
 
 public:
     constexpr half() : bits_(0) {}
-    constexpr half(float f) : bits_(float_to_half(f)) {}
-    constexpr half(int i) : bits_(float_to_half(static_cast<float>(i))) {}
-    constexpr half(double d) : bits_(float_to_half(static_cast<float>(d))) {}
+    template<typename T>
+    requires is_half_op_enable_v<T>
+    constexpr half(T &&val) : bits_(float_to_half(static_cast<float>(std::forward<T>(val)))) {}
 
-    constexpr operator float() const {
-        return half_to_float(bits_);
+#define OC_HALF_CAST_OP(type)\
+    constexpr operator type() const {\
+        return static_cast<type>(half_to_float(bits_));\
     }
-    constexpr operator int() const {
-        return static_cast<int>(half_to_float(bits_));
-    }
+    OC_HALF_CAST_OP(float)
+    OC_HALF_CAST_OP(int)
+    OC_HALF_CAST_OP(uint)
+    OC_HALF_CAST_OP(double)
+#undef OC_HALF_CAST_OP
 
-    constexpr half &operator=(float f) {
-        bits_ = float_to_half(f);
-        return *this;
-    }
-    constexpr half &operator=(double d) {
-        bits_ = float_to_half(static_cast<float>(d));
-        return *this;
-    }
-    constexpr half &operator=(int i) {
-        bits_ = float_to_half(static_cast<float>(i));
-        return *this;
-    }
     constexpr half &operator=(const half &other) {
         if (this != &other) {
             bits_ = other.bits_;
@@ -138,6 +150,11 @@ public:
     friend constexpr half operator+(int lhs, half rhs) {
         return half(static_cast<float>(lhs) + half_to_float(rhs.bits()));
     }
+    template<typename T>
+    constexpr half &operator+=(const T &other) {
+        *this = *this + other;
+        return *this;
+    }
 
     constexpr half operator-(const half &other) const {
         return half(half_to_float(bits_) - half_to_float(other.bits_));
@@ -149,10 +166,6 @@ public:
         return half(half_to_float(bits_) / half_to_float(other.bits_));
     }
 
-    constexpr half &operator+=(const half &other) {
-        *this = *this + other;
-        return *this;
-    }
     constexpr half &operator-=(const half &other) {
         *this = *this - other;
         return *this;
@@ -179,7 +192,6 @@ public:
         *this = *this - half(1.0f);
         return *this;
     }
-
     constexpr half operator--(int) {
         half temp = *this;
         --(*this);
@@ -192,6 +204,15 @@ public:
         }
         return bits_ == other.bits_;
     }
+
+    constexpr bool operator==(float other) const {
+        return (*this) == half(other);
+    }
+
+    constexpr bool operator==(int other) const {
+        return (*this) == half(other);
+    }
+
     constexpr bool operator!=(const half &other) const {
         return !(*this == other);
     }
