@@ -272,4 +272,13 @@ public:
         return (bits_ & 0x8000) != 0;
     }
 };
+
+static constexpr float half2float(half h) {
+    return half_to_float(h.bits());
+}
+
+static constexpr half float2half(float f) {
+    return half(f);
+}
+
 }// namespace ocarina
