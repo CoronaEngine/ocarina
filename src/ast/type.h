@@ -463,7 +463,7 @@ public:
     [[nodiscard]] constexpr bool is_scalar() const noexcept {
         return tag_ == Tag::BOOL || tag_ == Tag::FLOAT || tag_ == Tag::INT ||
                tag_ == Tag::UINT || tag_ == Tag::UCHAR || tag_ == Tag::CHAR ||
-               tag_ == Tag::USHORT || tag_ == Tag::SHORT;
+               tag_ == Tag::USHORT || tag_ == Tag::SHORT || tag_ == Tag::HALF || tag_ == Tag::UINT64T;
     }
     [[nodiscard]] size_t max_member_size() const noexcept;
     [[nodiscard]] constexpr bool is_builtin_struct() const noexcept { return builtin_struct_; }
