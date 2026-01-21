@@ -10,13 +10,13 @@
 namespace ocarina {
 class half {
 private:
-    uint16_t bits;
+    uint16_t bits_;
 
-    static constexpr uint16_t floatToHalf(float f) {
-        uint32_t bits = bit_cast<uint32_t>(f);
-        uint16_t sign = (bits >> 31) & 0x1;
-        uint16_t exp = (bits >> 23) & 0xFF;
-        uint32_t mantissa = bits & 0x7FFFFF;
+    static constexpr uint16_t float_to_half(float f) {
+        uint32_t bits_ = bit_cast<uint32_t>(f);
+        uint16_t sign = (bits_ >> 31) & 0x1;
+        uint16_t exp = (bits_ >> 23) & 0xFF;
+        uint32_t mantissa = bits_ & 0x7FFFFF;
 
         if (exp == 0xFF) {
             // inf or nan
@@ -52,7 +52,7 @@ private:
         uint16_t half_mantissa = (mantissa >> 13) & 0x3FF;
         return (sign << 15) | (half_exp << 10) | half_mantissa;
     }
-    static constexpr float halfToFloat(uint16_t h) {
+    static constexpr float half_to_float(uint16_t h) {
         uint16_t sign = (h >> 15) & 0x1;
         uint16_t exp = (h >> 10) & 0x1F;
         uint16_t mantissa = h & 0x3FF;
@@ -82,51 +82,51 @@ private:
     }
 
 public:
-    constexpr half() : bits(0) {}
-    constexpr half(float f) : bits(floatToHalf(f)) {}
-    constexpr half(double d) : bits(floatToHalf(static_cast<float>(d))) {}
-    constexpr half(int i) : bits(floatToHalf(static_cast<float>(i))) {}
+    constexpr half() : bits_(0) {}
+    constexpr half(float f) : bits_(float_to_half(f)) {}
+    constexpr half(double d) : bits_(float_to_half(static_cast<float>(d))) {}
+    constexpr half(int i) : bits_(float_to_half(static_cast<float>(i))) {}
 
     constexpr operator float() const {
-        return halfToFloat(bits);
+        return half_to_float(bits_);
     }
     constexpr operator double() const {
-        return static_cast<double>(halfToFloat(bits));
+        return static_cast<double>(half_to_float(bits_));
     }
     constexpr operator int() const {
-        return static_cast<int>(halfToFloat(bits));
+        return static_cast<int>(half_to_float(bits_));
     }
 
     constexpr half &operator=(float f) {
-        bits = floatToHalf(f);
+        bits_ = float_to_half(f);
         return *this;
     }
     constexpr half &operator=(double d) {
-        bits = floatToHalf(static_cast<float>(d));
+        bits_ = float_to_half(static_cast<float>(d));
         return *this;
     }
     constexpr half &operator=(int i) {
-        bits = floatToHalf(static_cast<float>(i));
+        bits_ = float_to_half(static_cast<float>(i));
         return *this;
     }
     constexpr half &operator=(const half &other) {
         if (this != &other) {
-            bits = other.bits;
+            bits_ = other.bits_;
         }
         return *this;
     }
 
     constexpr half operator+(const half &other) const {
-        return half(halfToFloat(bits) + halfToFloat(other.bits));
+        return half(half_to_float(bits_) + half_to_float(other.bits_));
     }
     constexpr half operator-(const half &other) const {
-        return half(halfToFloat(bits) - halfToFloat(other.bits));
+        return half(half_to_float(bits_) - half_to_float(other.bits_));
     }
     constexpr half operator*(const half &other) const {
-        return half(halfToFloat(bits) * halfToFloat(other.bits));
+        return half(half_to_float(bits_) * half_to_float(other.bits_));
     }
     constexpr half operator/(const half &other) const {
-        return half(halfToFloat(bits) / halfToFloat(other.bits));
+        return half(half_to_float(bits_) / half_to_float(other.bits_));
     }
 
     constexpr half &operator+=(const half &other) {
@@ -167,37 +167,37 @@ public:
     }
 
     constexpr bool operator==(const half &other) const {
-        if (isNaN() || other.isNaN()) {
+        if (is_nan() || other.is_nan()) {
             return false;
         }
-        return bits == other.bits;
+        return bits_ == other.bits_;
     }
     constexpr bool operator!=(const half &other) const {
         return !(*this == other);
     }
     constexpr bool operator<(const half &other) const {
-        if (isNaN() || other.isNaN()) {
+        if (is_nan() || other.is_nan()) {
             return false;
         }
-        return halfToFloat(bits) < halfToFloat(other.bits);
+        return half_to_float(bits_) < half_to_float(other.bits_);
     }
     constexpr bool operator<=(const half &other) const {
-        if (isNaN() || other.isNaN()) {
+        if (is_nan() || other.is_nan()) {
             return false;
         }
-        return halfToFloat(bits) <= halfToFloat(other.bits);
+        return half_to_float(bits_) <= half_to_float(other.bits_);
     }
     constexpr bool operator>(const half &other) const {
-        if (isNaN() || other.isNaN()) {
+        if (is_nan() || other.is_nan()) {
             return false;
         }
-        return halfToFloat(bits) > halfToFloat(other.bits);
+        return half_to_float(bits_) > half_to_float(other.bits_);
     }
     constexpr bool operator>=(const half &other) const {
-        if (isNaN() || other.isNaN()) {
+        if (is_nan() || other.is_nan()) {
             return false;
         }
-        return halfToFloat(bits) >= halfToFloat(other.bits);
+        return half_to_float(bits_) >= half_to_float(other.bits_);
     }
 
     constexpr half operator+() const {
@@ -205,7 +205,7 @@ public:
     }
     constexpr half operator-() const {
         half result;
-        result.bits = bits ^ 0x8000;
+        result.bits_ = bits_ ^ 0x8000;
         return result;
     }
 
@@ -220,16 +220,16 @@ public:
         return is;
     }
 
-    constexpr uint16_t getBits() const { return bits; }
+    constexpr uint16_t bits() const { return bits_; }
 
-    [[nodiscard]] constexpr bool isNaN() const {
-        return ((bits & 0x7C00) == 0x7C00) && (bits & 0x03FF);
+    [[nodiscard]] constexpr bool is_nan() const {
+        return ((bits_ & 0x7C00) == 0x7C00) && (bits_ & 0x03FF);
     }
-    [[nodiscard]] constexpr bool isInfinity() const {
-        return ((bits & 0x7FFF) == 0x7C00);
+    [[nodiscard]] constexpr bool is_inf() const {
+        return ((bits_ & 0x7FFF) == 0x7C00);
     }
-    constexpr bool isNegative() const {
-        return (bits & 0x8000) != 0;
+    constexpr bool is_neg() const {
+        return (bits_ & 0x8000) != 0;
     }
 };
 }// namespace ocarina
