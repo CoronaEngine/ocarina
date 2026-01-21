@@ -184,48 +184,42 @@ public:
 
 #undef OC_HALF_BINARY_AND_ASSIGN_OP
 
-    constexpr bool operator==(const half &other) const {
-        if (is_nan() || other.is_nan()) {
-            return false;
-        }
-        return bits_ == other.bits_;
+#define OC_HALF_COMPARE_OP(op, bool_nan)                  \
+    constexpr bool operator op(const half &other) const { \
+        if (is_nan() || other.is_nan()) {                 \
+            return bool_nan;                              \
+        }                                                 \
+        return bits_ op other.bits_;                      \
+    }                                                     \
+                                                          \
+    template<typename T>                                  \
+    requires is_half_op_enable_v<T>                       \
+    constexpr bool operator op(T val) const {             \
+        if constexpr (is_integral_v<T>) {                 \
+            return *this op half(val);                    \
+        } else {                                          \
+            return T(*this) op val;                       \
+        }                                                 \
+    }                                                     \
+                                                          \
+    template<typename T>                                  \
+    requires is_half_op_enable_v<T>                       \
+    friend constexpr bool operator op(T lhs, half rhs) {  \
+        if constexpr (is_integral_v<T>) {                 \
+            return half(lhs) op rhs;                      \
+        } else {                                          \
+            return lhs op T(rhs);                         \
+        }                                                 \
     }
 
-    constexpr bool operator==(float other) const {
-        return (*this) == half(other);
-    }
+    OC_HALF_COMPARE_OP(==, false)
+    OC_HALF_COMPARE_OP(!=, true)
+    OC_HALF_COMPARE_OP(>, false)
+    OC_HALF_COMPARE_OP(<, false)
+    OC_HALF_COMPARE_OP(>=, false)
+    OC_HALF_COMPARE_OP(<=, false)
 
-    constexpr bool operator==(int other) const {
-        return (*this) == half(other);
-    }
-
-    constexpr bool operator!=(const half &other) const {
-        return !(*this == other);
-    }
-    constexpr bool operator<(const half &other) const {
-        if (is_nan() || other.is_nan()) {
-            return false;
-        }
-        return half_to_float(bits_) < half_to_float(other.bits_);
-    }
-    constexpr bool operator<=(const half &other) const {
-        if (is_nan() || other.is_nan()) {
-            return false;
-        }
-        return half_to_float(bits_) <= half_to_float(other.bits_);
-    }
-    constexpr bool operator>(const half &other) const {
-        if (is_nan() || other.is_nan()) {
-            return false;
-        }
-        return half_to_float(bits_) > half_to_float(other.bits_);
-    }
-    constexpr bool operator>=(const half &other) const {
-        if (is_nan() || other.is_nan()) {
-            return false;
-        }
-        return half_to_float(bits_) >= half_to_float(other.bits_);
-    }
+#undef OC_HALF_COMPARE_OP
 
     constexpr half &operator++() {
         *this = *this + half(1.0f);
