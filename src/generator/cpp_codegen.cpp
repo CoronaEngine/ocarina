@@ -18,9 +18,9 @@ struct LiteralPrinter {
     void operator()(T v) {
         if constexpr (ocarina::is_scalar_v<T>) {
             if constexpr (ocarina::is_floating_point_v<T>) {
-                if (std::isnan(v)) [[unlikely]] {
+                if (ocarina::isnan(v)) [[unlikely]] {
                     OC_ERROR("nan error!");
-                } else if (std::isinf(v)) {
+                } else if (ocarina::isinf(v)) {
                     scratch << (v < 0.f ? "(1.f/-0.f)" : "1.f/+0.f");
                 } else {
                     scratch << v;

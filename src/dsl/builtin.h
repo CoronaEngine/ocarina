@@ -354,6 +354,7 @@ void make_normal_tangent(const N &n, const T &t, Var<float3> &a, Var<float3> &b)
 OC_MAKE_VEC_MAKER(int, INT)
 OC_MAKE_VEC_MAKER(uint, UINT)
 OC_MAKE_VEC_MAKER(float, FLOAT)
+OC_MAKE_VEC_MAKER(half, HALF)
 OC_MAKE_VEC_MAKER(bool, BOOL)
 OC_MAKE_VEC_MAKER(uchar, UCHAR)
 

@@ -22,6 +22,9 @@ Codegen::Scratch &Codegen::Scratch::operator<<(float v) noexcept {
 Codegen::Scratch &Codegen::Scratch::operator<<(bool v) noexcept {
     return *this << detail::to_string(v);
 }
+Codegen::Scratch &Codegen::Scratch::operator<<(ocarina::half v) noexcept {
+    return *this << to_str(v);
+}
 Codegen::Scratch &Codegen::Scratch::operator<<(ocarina::string_view v) noexcept {
     buffer_.append(v);
     return *this;
