@@ -81,17 +81,24 @@ private:
         return *reinterpret_cast<float *>(&result);
     }
 
+    template<typename T>
+    requires is_floating_point_v<T>
+    static constexpr T cast(half src) {
+        if constexpr (is_float_v<T>) {
+            return half_to_float(src.bits());
+        } else {
+            return src;
+        }
+    }
+
 public:
     constexpr half() : bits_(0) {}
     constexpr half(float f) : bits_(float_to_half(f)) {}
-    constexpr half(double d) : bits_(float_to_half(static_cast<float>(d))) {}
     constexpr half(int i) : bits_(float_to_half(static_cast<float>(i))) {}
+    constexpr half(double d) : bits_(float_to_half(static_cast<float>(d))) {}
 
     constexpr operator float() const {
         return half_to_float(bits_);
-    }
-    constexpr operator double() const {
-        return static_cast<double>(half_to_float(bits_));
     }
     constexpr operator int() const {
         return static_cast<int>(half_to_float(bits_));
@@ -119,6 +126,19 @@ public:
     constexpr half operator+(const half &other) const {
         return half(half_to_float(bits_) + half_to_float(other.bits_));
     }
+    constexpr float operator+(float other) const {
+        return half_to_float(bits_) + other;
+    }
+    friend constexpr float operator+(float lhs, half rhs) {
+        return lhs + half_to_float(rhs.bits_);
+    }
+    constexpr half operator+(int other) const {
+        return half(half_to_float(bits_) + static_cast<float>(other));
+    }
+    friend constexpr half operator+(int lhs, half rhs) {
+        return half(static_cast<float>(lhs) + half_to_float(rhs.bits()));
+    }
+
     constexpr half operator-(const half &other) const {
         return half(half_to_float(bits_) - half_to_float(other.bits_));
     }
@@ -220,7 +240,7 @@ public:
         return is;
     }
 
-    constexpr uint16_t bits() const { return bits_; }
+    [[nodiscard]] constexpr uint16_t bits() const { return bits_; }
 
     [[nodiscard]] constexpr bool is_nan() const {
         return ((bits_ & 0x7C00) == 0x7C00) && (bits_ & 0x03FF);
@@ -228,7 +248,7 @@ public:
     [[nodiscard]] constexpr bool is_inf() const {
         return ((bits_ & 0x7FFF) == 0x7C00);
     }
-    constexpr bool is_neg() const {
+    [[nodiscard]] constexpr bool is_neg() const {
         return (bits_ & 0x8000) != 0;
     }
 };

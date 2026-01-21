@@ -38,8 +38,15 @@ template<typename T>
 constexpr auto is_boolean_v = is_boolean<T>::value;
 
 template<typename T>
-using is_floating_point = std::disjunction<std::is_same<std::remove_cvref_t<T>, float>,
-                                           std::is_same<std::remove_cvref_t<T>, half>>;
+using is_half = std::is_same<std::remove_cvref_t<T>, half>;
+OC_DEFINE_TEMPLATE_VALUE(is_half)
+
+template<typename T>
+using is_float = std::is_same<std::remove_cvref_t<T>, float>;
+OC_DEFINE_TEMPLATE_VALUE(is_float)
+
+template<typename T>
+using is_floating_point = std::disjunction<is_half<T>, is_float<T>>;
 
 template<typename T>
 constexpr auto is_floating_point_v = is_floating_point<T>::value;

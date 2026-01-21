@@ -27,5 +27,10 @@ int main() {
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();
     stream << synchronize() << commit();
 
+    half h = 0.66f;
+
+    cout << 1 + h << endl;
+    cout <<  h+1 << endl;
+
     return 0;
 }
