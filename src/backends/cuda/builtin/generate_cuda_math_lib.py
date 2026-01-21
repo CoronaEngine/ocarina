@@ -5,8 +5,13 @@ from os.path import realpath, dirname
 import os
 from posixpath import split
 
-scalar_types = ["int", "uint", "float", "bool", "uchar", "ushort", "ulong"]
-native_types = ["int", "unsigned int", "float", "bool", "unsigned char", "unsigned short", "unsigned long long"]
+floating_point_types = ["float", "half"]
+integral_types = ["int", "uint", "ushort", "ulong"]
+
+invalid_cast_half = ["bool", "uchar"]
+
+scalar_types = ["int", "uint", "float", "half", "bool", "uchar", "ushort", "ulong"]
+native_types = ["int", "unsigned int", "float", "half", "bool", "unsigned char", "unsigned short", "unsigned long long"]
 vector_alignments = {2: 8, 3: 16, 4: 16}
 indent = "\t"
 name_lst = ["x", "y", "z", "w"]
@@ -542,7 +547,6 @@ def define_unary_func(func_name, need_array, param):
         t_body += f"    for(oc_uint i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);\n    return ret;\n"
         ff = f"template<typename T, oc_uint N>\n__device__ {t_ret_type} {prefix}_{func_name}(oc_array<T, N> x) {{{t_body}}}\n"
         content += ff
-        print(ff)
         
     content += "\n"
     
@@ -721,6 +725,12 @@ def define_make_vecs():
 [[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{type} x, oc_{type} y) noexcept {{ return oc_{type}2{{x, y}}; }}""" + "\n"
 
         for t in scalar_types:
+            if type == "half":
+                if t in invalid_cast_half:
+                    continue
+            if type in invalid_cast_half:
+                if t == "half":
+                    continue
             for l in range(2, 5):
                 content += f"[[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{t}{l} v) noexcept {{ return oc_{type}2{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y)}}; }}"
                 content += "\n"
@@ -730,6 +740,12 @@ def define_make_vecs():
 [[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type}2 xy, oc_{type} z) noexcept {{ return oc_{type}3{{xy.x, xy.y, z}}; }}""" + "\n"
 
         for t in scalar_types:
+            if type == "half":
+                if t in invalid_cast_half:
+                    continue
+            if type in invalid_cast_half:
+                if t == "half":
+                    continue
             for l in range(3, 5):
                 
                 content += f"[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{t}{l} v) noexcept {{ return oc_{type}3{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y), static_cast<oc_{type}>(v.z)}}; }}" 
@@ -745,6 +761,12 @@ def define_make_vecs():
 [[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type}3 xyz, oc_{type} w) noexcept {{ return oc_{type}4{{xyz.x, xyz.y, xyz.z, w}}; }}\n"""
 
         for t in scalar_types:
+            if type == "half":
+                if t in invalid_cast_half:
+                    continue
+            if type in invalid_cast_half:
+                if t == "half":
+                    continue
             content += f"[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{t}4 v) noexcept {{ return oc_{type}4{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y), static_cast<oc_{type}>(v.z), static_cast<oc_{type}>(v.w)}}; }}"
             content += "\n"
 
@@ -866,7 +888,6 @@ def main():
         file.close()
     
     save_to_inl(cuda_builtin, content, os.path.join(curr_dir, cuda_builtin + "_embed.h"))
-    # print(content)
 
 if __name__ == "__main__":
     main()
