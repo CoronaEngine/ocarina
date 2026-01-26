@@ -104,6 +104,7 @@ void VulkanShader::get_shader_variables(const ShaderReflection &reflection) {
         variable.descriptor_set = shader_resource.descriptor_set;
         variable.size = shader_resource.size;
         variable.count = 1;
+        variable.is_bindless = shader_resource.is_bindless;
         
         if (shader_resource.parameter_type == ShaderReflection::ResourceType::ConstantBuffer)
         {
@@ -115,6 +116,10 @@ void VulkanShader::get_shader_variables(const ShaderReflection &reflection) {
             variable.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         } else if (shader_resource.parameter_type == ShaderReflection::ResourceType::Sampler) {
             variable.type = VK_DESCRIPTOR_TYPE_SAMPLER;
+        }
+
+        if (variable.is_bindless) {
+            variable.count = get_vulkan_bindless_resource_max_count(variable.type);
         }
 
         variables_.push_back(variable);
@@ -131,12 +136,19 @@ void VulkanShader::get_shader_variables(const ShaderReflection &reflection) {
         variable.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         variable.shader_stage = stage_;
         variable.shader_variables_ = std::move(ubo.shader_variables);
+        variable.is_bindless = ubo.is_bindless;
         variables_.push_back(variable);
     }
 
     for (auto& push_constant : reflection.push_constant_buffers)
     {
-        push_constant_size_ += push_constant.size;
+        PushConstant pc;
+        pc.offset = push_constant.offset;
+        pc.size = push_constant.size;
+        pc.shader_variables = std::move(push_constant.shader_variables);
+        pc.name = push_constant.name;
+        pc.stage_flags = stage_;
+        push_constants_.push_back(pc);
     }
 }
 

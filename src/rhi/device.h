@@ -55,6 +55,7 @@ class DescriptorSet;
 class DescriptorSetLayout;
 struct RHIPipeline;
 class Image;
+class TextureSampler;
 
 class OC_RHI_API Device : public concepts::Noncopyable {
 public:
@@ -70,7 +71,7 @@ public:
         virtual void destroy_buffer(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_texture(uint3 res, PixelStorage pixel_storage,
                                                        uint level_num, const string &desc) noexcept = 0;
-        [[nodiscard]] virtual handle_ty create_texture(Image *image, const TextureViewCreation &texture_view) noexcept = 0;
+        [[nodiscard]] virtual handle_ty create_texture(Image *image, const TextureViewCreation &texture_view, const TextureSampler& sampler) noexcept = 0;
         virtual void destroy_texture(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_shader(const Function &function) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_shader_from_file(const std::string &file_name, ShaderType shader_type, const std::set<string> &options) noexcept = 0;
@@ -103,7 +104,7 @@ public:
         virtual void bind_pipeline(const handle_ty pipeline) noexcept = 0;
         virtual RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept = 0;
         virtual DescriptorSet *get_global_descriptor_set(const string &name) noexcept = 0;
-        virtual void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept = 0;
+        //virtual void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept = 0;
 
         virtual void memory_allocate(handle_ty *handle, size_t size, bool exported = true) {}
         virtual void memory_free(handle_ty *handle) {}
@@ -192,7 +193,7 @@ public:
     void init_rtx() noexcept { impl_->init_rtx(); }
     [[nodiscard]] Texture create_texture(uint3 res, PixelStorage storage, const string &desc = "") const noexcept;
     [[nodiscard]] Texture create_texture(uint2 res, PixelStorage storage, const string &desc = "") const noexcept;
-    [[nodiscard]] Texture create_texture(Image *image_resource, const TextureViewCreation &texture_view) const noexcept;
+    [[nodiscard]] Texture create_texture(Image *image_resource, const TextureViewCreation &texture_view, const TextureSampler& sampler) const noexcept;
     template<typename T>
     [[nodiscard]] auto compile(const Kernel<T> &kernel, const string &shader_desc = "", ShaderTag tag = CS) const noexcept {
         OC_INFO_FORMAT("compile shader : {}", shader_desc.c_str());
@@ -254,9 +255,9 @@ public:
         return impl_->get_global_descriptor_set(name);
     }
 
-    void bind_descriptor_sets(DescriptorSet **descriptor_sets, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept {
-        impl_->bind_descriptor_sets(descriptor_sets, descriptor_sets_num, pipeline);
-    }
+    //void bind_descriptor_sets(DescriptorSet **descriptor_sets, uint32_t descriptor_sets_num, RHIPipeline *pipeline) noexcept {
+    //    impl_->bind_descriptor_sets(descriptor_sets, descriptor_sets_num, pipeline);
+    //}
 
     [[nodiscard]] static Device create_device(const string &backend_name, const ocarina::InstanceCreation &instance_creation);
     [[nodiscard]] static Device create_device(const string &backend_name);

@@ -24,8 +24,17 @@ class VulkanDescriptorSetLayout;
 class DescriptorSetLayout;
 class VulkanDescriptorSet;
 class VulkanTexture;
+class TextureSampler;
 
 class VulkanDriver : public concepts::Noncopyable {
+private:
+    enum internal_textures {
+        INTERNAL_TEXTURE_WHITE,
+        INTERNAL_TEXTURE_BLACK,
+        INTERNAL_TEXTURE_NORMALMAP,
+        INTERNAL_TEXTURE_COUNT
+    };
+
 public:
     ~VulkanDriver();
     static VulkanDriver& instance()
@@ -33,7 +42,7 @@ public:
         static VulkanDriver s_instance;
         return s_instance;
     }
-    VulkanDevice *create_device(RHIContext *context, const InstanceCreation &instance_creation);
+    VulkanDevice *create_device(RHIContext *file_manager, const InstanceCreation &instance_creation);
     VulkanDevice *get_device() const { return vulkan_device_; }
     void bind_pipeline(const VulkanPipeline &pipeline);
     void terminate();
@@ -59,7 +68,7 @@ public:
     void end_frame();
 
     std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> create_descriptor_set_layout(VulkanShader *shaders[], uint32_t shaders_count);
-    VkPipelineLayout get_pipeline_layout(VkDescriptorSetLayout *descriptset_layouts, uint8_t descriptset_layouts_count, uint32_t push_constant_size);
+    //VkPipelineLayout get_pipeline_layout(VkDescriptorSetLayout *descriptset_layouts, uint8_t descriptset_layouts_count, VkPushConstantRange* push_constants, uint32_t push_constant_array_size);
 
     VulkanRenderPass* create_render_pass(const RenderPassCreation& render_pass_creation);
     void destroy_render_pass(VulkanRenderPass* render_pass);
@@ -76,7 +85,7 @@ public:
     void set_vertex_buffer(const VulkanVertexStreamBinding& vertex_stream);
     void draw_triangles(VulkanIndexBuffer* index_buffer);
 
-    void push_constants(VkPipelineLayout pipeline, void *data, uint32_t size, uint32_t offset);
+    void push_constants(VkPipelineLayout pipeline, void *data, uint32_t size, uint32_t offset, VkShaderStageFlags stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
     void add_global_descriptor_set(uint64_t name_id, VulkanDescriptorSet *descriptor_set);
 
@@ -93,13 +102,21 @@ public:
         return get_global_descriptor_set(name_id);
     }
 
-    void bind_descriptor_sets(VulkanDescriptorSet **descriptor_sets, uint32_t descriptor_sets_num, VkPipelineLayout pipeline_layout);
+    void bind_descriptor_sets(DescriptorSet **descriptor_sets, uint32_t first_set, uint32_t descriptor_sets_num, VkPipelineLayout pipeline_layout);
 
     VkRenderPass get_framebuffer_render_pass() const {
         return renderpass_framebuffer;
     }
 
     void flush_command_buffer(VkCommandBuffer cmd);
+
+    VulkanTexture* get_internal_white_texture()
+    {
+        return internal_textures_[INTERNAL_TEXTURE_WHITE];
+    }
+
+    VkSampler get_vulkan_sampler(const TextureSampler& sampler);
+    //VkDescriptorSetLayout get_empty_descriptor_set_layout();
 
 private:
     void setup_frame_buffer();
@@ -152,5 +169,13 @@ private:
 
     std::unordered_map<uint64_t, VulkanDescriptorSet *> global_descriptor_sets;
     std::vector<VulkanRenderPass *> render_passes_;
+    std::unordered_map<uint64_t, VkSampler> samplers_;
+
+    VulkanTexture *internal_textures_[INTERNAL_TEXTURE_COUNT] = {nullptr};
+
+    void create_internal_textures();
+    void destroy_internal_textures();
+
+    //VkDescriptorSetLayout empty_descriptorset_layout_ = VK_NULL_HANDLE;
 };
 }// namespace ocarina

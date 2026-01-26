@@ -365,7 +365,17 @@ namespace fs = std::filesystem;
 
 void clear_directory(const std::filesystem::path &dir_path);
 
-std::string get_file_name(const std::string& file_path);
+inline std::string get_file_name(const std::string& file_path) {
+    auto it = std::find_if(file_path.rbegin(), file_path.rend(), [](const char c) {
+        return c == '\\' || c == '/';
+        });
+    if (it == file_path.rend())
+    {
+        return file_path;
+    }
+
+    return file_path.substr(it.base() - file_path.begin());
+}
 
 inline std::string get_file_directory(const std::string& file_path)
 {

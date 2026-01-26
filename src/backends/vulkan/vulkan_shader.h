@@ -15,14 +15,6 @@ class VulkanDevice;
 class VulkanDescriptorSetLayout;
 struct ShaderKey;
 
-enum class DescriptorSetIndex : uint8_t {
-    GLOBAL_SET = 0,
-    MATERIAL_SET = 1,
-    PER_OBJECT_SET = 2,
-
-    MAX_DESCRIPTOR_SET = MAX_DESCRIPTOR_SETS_PER_SHADER
-};
-
 struct VulkanShaderVariableBinding
 {
     
@@ -33,6 +25,8 @@ struct VulkanShaderVariableBinding
     VkShaderStageFlags shader_stage = VK_SHADER_STAGE_VERTEX_BIT;
     uint32_t count = 1;
     uint32_t size = 0;// size in bytes, only used for constant buffer
+    uint32_t array_size = 0;// only used for texture array
+    bool is_bindless = false;
     VulkanShaderVariableBinding() = default;
     VulkanShaderVariableBinding(const VulkanShaderVariableBinding& other)
     {
@@ -43,6 +37,8 @@ struct VulkanShaderVariableBinding
         shader_stage = other.shader_stage;
         size = other.size;
         shader_variables_ = other.shader_variables_;
+        array_size = other.array_size;
+        is_bindless = other.is_bindless;
         strcpy(name, other.name);
     }
 
@@ -54,6 +50,8 @@ struct VulkanShaderVariableBinding
         count = other.count;
         shader_stage = other.shader_stage;
         size = other.size;
+        array_size = other.array_size;
+        is_bindless = other.is_bindless;
         strcpy(name, other.name);
         shader_variables_ = other.shader_variables_;
         return *this;
@@ -62,15 +60,32 @@ struct VulkanShaderVariableBinding
     std::vector<ShaderReflection::ShaderVariable> shader_variables_;
 };
 
+struct PushConstant
+{
+    std::string name;
+    uint32_t offset = 0;
+    uint32_t size = 0;
+    VkShaderStageFlags stage_flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    std::vector<ShaderReflection::ShaderVariable> shader_variables;
+
+    bool operator==(const PushConstant &other) const {
+        return name == other.name && offset == other.offset && size == other.size && shader_variables == other.shader_variables;
+    }
+
+    bool operator!=(const PushConstant &other) const {
+        return !(*this == other);
+    }
+};
+
 class VulkanShader : public Shader<>::Impl {
 public:
-    
 private:
     VkShaderModule shader_module_ = VK_NULL_HANDLE;
     std::string entry_;
     VulkanDevice *device_ = nullptr;
     VkShaderStageFlagBits stage_;
     std::vector< VulkanShaderVariableBinding> variables_;
+    std::vector<PushConstant> push_constants_;
     std::vector<VertexAttribute> vertex_attributes_;  //only exist in vertex shader
     static bool HLSLToSPRIV(std::span<char> hlsl, VkShaderStageFlagBits stage, const std::string_view &entryPoint, bool outputSymbols, std::vector<uint32_t> &outSpriv, std::string &errorLog);
     void get_shader_variables(const ShaderReflection &reflection);
@@ -130,6 +145,10 @@ public:
                 return VK_SHADER_STAGE_VERTEX_BIT;
                 break;
         }
+    }
+
+    const std::vector<PushConstant> &get_push_constants() const {
+        return push_constants_;
     }
     
     uint32_t get_shader_variables_count() const

@@ -24,6 +24,7 @@ class DescriptorSetLayout;
 class Device;
 class DescriptorSetWriter;
 struct RHIPipeline;
+class TextureSampler;
 
 class Primitive {
 public:
@@ -42,6 +43,7 @@ public:
     const PipelineState &get_pipeline_state() const { return pipeline_state_; }
 
     using GeometryDataSetup = ocarina::function<void(Primitive&)>;
+    using UpdatePushConstant = ocarina::function<void(Primitive&)>;
 
     void set_geometry_data_setup(Device *device, GeometryDataSetup setup);
     void set_draw_call_pre_render_function(DrawCallItem::PreRenderFunction pre_render_function) {
@@ -90,9 +92,44 @@ public:
         return world_matrix_;
     }
 
+    const float4x4 *get_world_matrix_ptr() {
+        if (transform_dirty_) {
+            //world_matrix_ = math::translate(position_);
+            transform_dirty_ = false;
+        }
+        return &world_matrix_;
+    }
+
     DrawCallItem get_draw_call_item(Device *device, RHIRenderPass *render_pass);
 
     void add_texture(uint64_t name_id, Texture* texture);
+
+    void add_bindless_texture(uint64_t name_id, Texture *texture);
+
+    void add_sampler(uint64_t name_id, const TextureSampler& sampler);
+
+    //void set_push_constant_data(const std::byte *data) {
+    //    push_constant_data_ = data;
+    //}
+
+    void set_update_push_constant_function(UpdatePushConstant func) {
+        update_push_constant_function_ = func;
+    }   
+
+    struct TextureHandle {
+        uint32_t bindless_index_ = InvalidUI32;
+        Texture *texture_ = nullptr;
+    };
+
+    TextureHandle get_texture_handle(uint64_t name_id) const {
+        auto it = textures_.find(name_id);
+        if (it != textures_.end()) {
+            return it->second;
+        }
+        return TextureHandle{InvalidUI32, nullptr};
+    }
+
+    void set_push_constant_variable(uint64_t name_id, const std::byte *data, size_t size);
 
 private:
     void update_descriptor_sets(Device *device);
@@ -105,6 +142,7 @@ private:
     //std::unique_ptr<VertexBuffer> vertex_buffer_;
     GeometryDataSetup geometry_data_setup_;
     DrawCallItem::PreRenderFunction drawcall_pre_draw_function_ = nullptr;
+    UpdatePushConstant update_push_constant_function_ = nullptr;
 
     float4x4 world_matrix_;
     float3 position_;
@@ -112,8 +150,11 @@ private:
     bool pipeline_state_dirty = true;
     bool shader_dirty = false;
     RHIPipeline *pipeline_ = nullptr;
-
-    std::unordered_map<uint64_t, Texture*> textures_;
+    std::byte *push_constant_data_ = nullptr;
+    
+    std::unordered_map<uint64_t, TextureHandle /*Texture**/> textures_;
+    std::unordered_map<uint64_t, TextureHandle /*Texture**/> bindless_textures_;
+    std::unordered_map<uint64_t, TextureSampler> samplers_;
     std::vector<DescriptorSet *> descriptor_sets_;
 
     DrawCallItem item_;

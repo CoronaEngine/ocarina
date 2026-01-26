@@ -5,6 +5,7 @@
 #define GLOBAL_SET 0
 #define MATERIAL_SET 1
 #define PER_OBJECT_SET 2
+#define BINDLESS_SET 3
 
 bool IsNaN(float x)
 {
@@ -54,8 +55,8 @@ bool IsFinite(float x)
 [[vk::binding(0, GLOBAL_SET)]] cbuffer global_ubo : register(b0) 
 { 
 	float4x4 projectionMatrix;
-
 	float4x4 viewMatrix;
 };
 
-[[vk::binding(1, GLOBAL_SET)]]Texture2D shadow_map : register(t1);
+//[[vk::binding(1, GLOBAL_SET)]]Texture2D shadow_map : register(t1);
+

@@ -6,6 +6,7 @@
 
 #include "core/stl.h"
 #include "rhi/resources/texture.h"
+#include "rhi/resources/texture_sampler.h"
 #include <vulkan/vulkan.h>
 
 namespace ocarina {
@@ -27,17 +28,18 @@ private:
     VkFormat image_format_;
     uint32_t mip_levels_ = 1;
     VkDeviceMemory image_memory_ = VK_NULL_HANDLE;
-
-    void transition_image_layout(VkImageLayout old_layout, VkImageLayout new_layout);
-
+    TextureSampler texture_sampler_;
 public:
-    VulkanTexture(VulkanDevice *device, Image *image, const TextureViewCreation& texture_view);
+    VulkanTexture(VulkanDevice *device, Image *image, const TextureViewCreation& texture_view, const TextureSampler& sampler);
+    VulkanTexture(VulkanDevice *device, uint32_t width, uint32_t height, uint32_t depth, PixelStorage format, const TextureViewCreation &texture_view, 
+        const TextureSampler& sampler, uint4 default_color);
     ~VulkanTexture() override;
     void init(Image *image, const TextureViewCreation &texture_view);
     void load_cpu_data(Image *image);
     void generate_mipmaps();
     void create_image_view(const TextureViewCreation &texture_view);
-    void create_sampler(const SamplerCreation& sampler_creation);
+    void create_sampler(const TextureSampler& sampler_creation);
+    void transition_image_layout(VkImageLayout old_layout, VkImageLayout new_layout);
     [[nodiscard]] uint3 resolution() const noexcept override { return res_; }
     [[nodiscard]] handle_ty array_handle() const noexcept override {
         return reinterpret_cast<handle_ty>(image_);
@@ -55,6 +57,7 @@ public:
     [[nodiscard]] size_t data_alignment() const noexcept override;
     [[nodiscard]] size_t max_member_size() const noexcept override;
     [[nodiscard]] PixelStorage pixel_storage() const noexcept override { return pixel_storage_; }
+    [[nodiscard]] const TextureSampler* get_sampler_pointer() const noexcept { return &texture_sampler_; }
     uint32_t mip_levels() const noexcept { return mip_levels_; }
     uint32_t width() const noexcept { return res_.x; }
     uint32_t height() const noexcept { return res_.y; }

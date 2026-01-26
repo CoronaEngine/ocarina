@@ -11,19 +11,19 @@
 namespace ocarina {
 struct RHIPipeline;
 class Texture;
+class TextureSampler;
 
 class DescriptorSet : concepts::Noncopyable {
 public:
     //DescriptorSet() {}
     virtual ~DescriptorSet() {}
-    void set_is_global(bool is_global) { is_global_ = is_global; }
-    bool is_global() const { return is_global_; }
 
     virtual void update_buffer(uint64_t name_id, void *data, uint32_t size) = 0;
     virtual void update_texture(uint64_t name_id, Texture *texture) = 0;
+    virtual void update_sampler(uint64_t name_id, const TextureSampler& sampler) = 0;
+    virtual uint32_t update_bindless_texture(uint64_t name_id, Texture *texture) = 0;
 
 private:
-    bool is_global_ = false;
 };
 
 class DescriptorSetLayout : concepts::Noncopyable {

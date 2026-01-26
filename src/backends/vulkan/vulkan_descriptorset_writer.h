@@ -20,20 +20,27 @@ public:
     VulkanDescriptorSetWriter(VulkanDevice* device, VulkanDescriptorSet* descriptor_set);
     ~VulkanDescriptorSetWriter();
     void bind_buffer(uint32_t binding, VkDescriptorBufferInfo* buffer);
-    void bind_texture(uint32_t binding, VkDescriptorImageInfo* texture);
+    void bind_texture(uint32_t binding, VkDescriptorImageInfo* texture, uint32_t element_index = 0, uint32_t texture_count = 1);
+    void bind_default_bindless_texture(uint32_t binding, uint32_t texture_count);
     void bind_sampler(uint32_t binding, VkDescriptorImageInfo* sampler);
     void build(VulkanDevice* device);
 
     void update_buffer(uint64_t name_id, void *data, uint32_t size) override;
     void update_push_constants(uint64_t name_id, void *data, uint32_t size, RHIPipeline *pipeline) override;
     void update_texture(uint64_t name_id, Texture *texture) override;
+    void update_sampler(uint64_t name_id, VkSampler sampler);
+    uint32_t update_bindless_texture(uint64_t name_id, Texture *texture);
 
 private:
     std::unordered_map<uint64_t, VulkanDescriptor*> descriptors_;
     std::unordered_map<uint32_t, VulkanBuffer*> buffers_;
     std::vector<VulkanDescriptor *> pending_writes_;
     std::vector<VkWriteDescriptorSet> writes_;
+    std::vector<Texture *> bindless_textures_;
+    std::unordered_map<Texture*, uint32_t> bindless_textures_indices_;
+    std::vector<VkDescriptorImageInfo> image_infos_;
     VulkanDescriptorSet *descriptor_set_ = nullptr;
+    VulkanDescriptor *bindless_textures_descriptor_ = nullptr;
 };
 
 }// namespace ocarina

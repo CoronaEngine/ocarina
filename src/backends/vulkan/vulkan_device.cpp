@@ -17,8 +17,8 @@
 
 namespace ocarina {
 
-VulkanDevice::VulkanDevice(RHIContext *context, const ocarina::InstanceCreation &instance_creation)
-    : Device::Impl(context), m_instance(instance_creation), m_windowHandle(instance_creation.windowHandle) {
+VulkanDevice::VulkanDevice(RHIContext *file_manager, const ocarina::InstanceCreation &instance_creation)
+    : Device::Impl(file_manager), m_instance(instance_creation), m_windowHandle(instance_creation.windowHandle) {
 
     init_vulkan();
 }
@@ -33,7 +33,7 @@ void VulkanDevice::init_hardware_info() {
 
 }
 
-handle_ty VulkanDevice::create_buffer(size_t size, const string &desc) noexcept {
+handle_ty VulkanDevice::create_buffer(size_t size, const string &desc, bool exported) noexcept {
     return 0;
 }
 
@@ -54,8 +54,8 @@ handle_ty VulkanDevice::create_texture(uint3 res, PixelStorage pixel_storage,
     return 0;
 }
 
-handle_ty VulkanDevice::create_texture(Image *image, const TextureViewCreation &texture_view) noexcept {
-    auto texture = ocarina::new_with_allocator<VulkanTexture>(this, image, texture_view);
+handle_ty VulkanDevice::create_texture(Image *image, const TextureViewCreation &texture_view, const TextureSampler& sampler) noexcept {
+    auto texture = ocarina::new_with_allocator<VulkanTexture>(this, image, texture_view, sampler);
     return reinterpret_cast<handle_ty>(texture);
 }
 
@@ -166,8 +166,57 @@ void VulkanDevice::init_vulkan()
     // Defaults to the first device unless specified by command line
     uint32_t selectedDevice = 0;
 
+    for (uint32_t index = 0; index < gpuCount; ++index) {
+        VkPhysicalDeviceSampleLocationsPropertiesEXT sampleLocs = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT};
+        VkPhysicalDeviceIDProperties physicalDeviceIDProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES, &sampleLocs};
+        VkPhysicalDeviceProperties2 physicalDeviceProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2, &physicalDeviceIDProperties};
+
+#ifdef VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME
+        VkPhysicalDeviceSampleLocationsPropertiesEXT sampleLocationsPropertiesEXT = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SAMPLE_LOCATIONS_PROPERTIES_EXT};
+        physicalDeviceIDProperties.pNext = &sampleLocationsPropertiesEXT;
+#endif
+
+        vkGetPhysicalDeviceProperties2(physicalDevices[index], &physicalDeviceProperties);
+
+#ifdef VK_EXT_SAMPLE_LOCATIONS_EXTENSION_NAME
+        //m_SampleLocationGridSize = sampleLocationsPropertiesEXT.maxSampleLocationGridSize;
+        //m_AdapterLimits.SamplePositionsSampleCounts = sampleLocationsPropertiesEXT.sampleLocationSampleCounts;
+#else
+        //m_AdapterLimits.SamplePositionsSampleCounts = 0;
+#endif
+
+        static_assert(sizeof(physicalDeviceIDProperties.deviceLUID) == sizeof(LUID), "The size of Other type must be the same size of LUID");
+    }
 
     physicalDevice_ = physicalDevices[selectedDevice];
+
+    support_bindless_ = verify_bindless_support(physicalDevice_);
+
+    indexing_features_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    if (support_bindless_)
+    {
+        // Required to chain in vkGetPhysicalDeviceFeatures2
+        VkPhysicalDeviceFeatures2 deviceFeatures2{};
+        deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        deviceFeatures2.pNext = &indexing_features_;
+
+        vkGetPhysicalDeviceFeatures2(physicalDevice_, &deviceFeatures2);
+
+        // 2. Check and enable the specific bindless features you need
+        // (only enable those your GPU supports)
+        indexing_features_.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        indexing_features_.shaderStorageImageArrayNonUniformIndexing = VK_TRUE;
+        indexing_features_.shaderStorageTexelBufferArrayNonUniformIndexing = VK_TRUE;
+        indexing_features_.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+        indexing_features_.shaderUniformBufferArrayNonUniformIndexing = VK_TRUE;
+        indexing_features_.shaderUniformTexelBufferArrayNonUniformIndexing = VK_TRUE;
+        indexing_features_.runtimeDescriptorArray = VK_TRUE;
+
+        indexing_features_.descriptorBindingPartiallyBound = VK_TRUE;
+        indexing_features_.descriptorBindingVariableDescriptorCount = VK_TRUE;
+        indexing_features_.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+        indexing_features_.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    }
 
     // Store properties (including limits), features and memory properties of the physical device (so that examples can check against them)
     vkGetPhysicalDeviceProperties(physicalDevice_, &m_deviceProperties);
@@ -184,6 +233,14 @@ void VulkanDevice::init_vulkan()
             {
                 m_supportedExtensions.push_back(ext.extensionName);
             }
+        }
+    }
+
+    if (support_bindless_)
+    {
+        if (std::find(m_supportedExtensions.begin(), m_supportedExtensions.end(), VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) == m_supportedExtensions.end()) {
+            m_supportedExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+            
         }
     }
 
@@ -219,7 +276,6 @@ void VulkanDevice::init_vulkan()
 
 void VulkanDevice::create_logical_device()
 {
-
     VkDeviceQueueCreateInfo queues[uint32_t(QueueType::NumQueueType)];
     memset(queues, 0, sizeof(VkDeviceQueueCreateInfo) * uint32_t(QueueType::NumQueueType));
     const float defaultQueuePriority(0.0f);
@@ -241,7 +297,7 @@ void VulkanDevice::create_logical_device()
     info.enabledExtensionCount = m_enableExtensions.size();
     info.ppEnabledExtensionNames = m_enableExtensions.data();
     info.pEnabledFeatures = &m_enabledFeatures;
-    //VkPhysicalDeviceFeatures physicalDeviceFeatures = m_Adapter.GetVulkanPhysicalDeviceFeatures();
+    info.pNext = support_bindless_ ? &indexing_features_ : nullptr;
 
     VkResult result = vkCreateDevice(physicalDevice_, &info, nullptr, &logicalDevice_);
     
@@ -257,6 +313,11 @@ void VulkanDevice::get_enable_extentions()
         // Swap chain extension - required
         if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, extension.c_str())) {
             m_enableExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        }
+
+        if (support_bindless_ && !strcmp(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, extension.c_str())) {
+            m_enableExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+            m_enableExtensions.push_back(VK_KHR_MAINTENANCE3_EXTENSION_NAME);
         }
     }
 }
@@ -329,15 +390,6 @@ DescriptorSet* VulkanDevice::get_global_descriptor_set(const string& name) noexc
     return VulkanDriver::instance().get_global_descriptor_set(name);
 }
 
-void VulkanDevice::bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline* pipeline) noexcept {
-    std::array<VulkanDescriptorSet *, MAX_DESCRIPTOR_SETS_PER_SHADER> vulkan_descriptor_sets;
-    for (uint32_t i = 0; i < descriptor_sets_num; ++i) {
-        vulkan_descriptor_sets[i] = static_cast<VulkanDescriptorSet *>(descriptor_set[i]);
-    }
-    VulkanPipeline *vulkan_pipeline = static_cast<VulkanPipeline *>(pipeline);
-    VulkanDriver::instance().bind_descriptor_sets(vulkan_descriptor_sets.data(), descriptor_sets_num, vulkan_pipeline->pipeline_layout_);
-}
-
 VulkanBuffer *VulkanDevice::create_vulkan_buffer(VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_property_flags, VkDeviceSize size, const void *data) {
     //return VulkanBufferManager::instance()->create_vulkan_buffer(this, usage_flags, memory_property_flags, size, data);
     return ocarina::new_with_allocator<VulkanBuffer>(this, usage_flags, memory_property_flags, size, data);
@@ -395,11 +447,41 @@ uint32_t VulkanDevice::get_memory_type(uint32_t typeBits, VkMemoryPropertyFlags 
     return 0;
 }
 
+bool VulkanDevice::verify_bindless_support(VkPhysicalDevice physical_device) const {
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexingFeatures{};
+    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+    // Required to chain in vkGetPhysicalDeviceFeatures2
+    VkPhysicalDeviceFeatures2 deviceFeatures2{};
+    deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    deviceFeatures2.pNext = &indexingFeatures;
+    vkGetPhysicalDeviceFeatures2(physical_device, &deviceFeatures2);
+    // 2. Check and enable the specific bindless features you need
+    // (only enable those your GPU supports)
+    if (!indexingFeatures.shaderSampledImageArrayNonUniformIndexing) {
+        OC_ERROR_FORMAT("Physical device does not support shaderSampledImageArrayNonUniformIndexing required for bindless", "");
+        return false;
+    }
+    if (!indexingFeatures.shaderStorageImageArrayNonUniformIndexing) {
+        OC_ERROR_FORMAT("Physical device does not support shaderStorageImageArrayNonUniformIndexing required for bindless", "");
+        return false;
+    }
+    if (!indexingFeatures.shaderStorageTexelBufferArrayNonUniformIndexing) {
+        OC_ERROR_FORMAT("Physical device does not support shaderStorageTexelBufferArrayNonUniformIndexing required for bindless", "");
+        return false;
+    }
+    if (!indexingFeatures.shaderStorageBufferArrayNonUniformIndexing) {
+        OC_ERROR_FORMAT("Physical device does not support shaderStorageBufferArrayNonUniformIndexing required for bindless", "");
+        return false;
+    }
+
+    return true;
+}
+
 }// namespace ocarina
 
-OC_EXPORT_API ocarina::VulkanDevice *create_device(ocarina::RHIContext *context, const ocarina::InstanceCreation& instance_creation) {
-    //return ocarina::new_with_allocator<ocarina::VulkanDevice>(context, instance_creation);
-    return ocarina::VulkanDriver::instance().create_device(context, instance_creation);
+OC_EXPORT_API ocarina::VulkanDevice *create_device(ocarina::RHIContext *file_manager, const ocarina::InstanceCreation& instance_creation) {
+    //return ocarina::new_with_allocator<ocarina::VulkanDevice>(file_manager, instance_creation);
+    return ocarina::VulkanDriver::instance().create_device(file_manager, instance_creation);
 }
 
 OC_EXPORT_API void destroy(ocarina::VulkanDevice *device) {

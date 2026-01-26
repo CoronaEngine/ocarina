@@ -292,6 +292,9 @@ void DXCCompiler::run_spriv_reflection(const std::vector<uint32_t> &spriv, Shade
         ubo.size = size;
         ubo.binding = binding;
 
+        std::vector<uint32_t> push_constan_offsets;
+        push_constan_offsets.reserve(8);
+        uint32_t push_constant_size = 0;
         // Now loop through all members
         for (uint32_t i = 0; i < type.member_types.size(); ++i) {
             ShaderReflection::ShaderVariable shader_variable{};
@@ -299,6 +302,13 @@ void DXCCompiler::run_spriv_reflection(const std::vector<uint32_t> &spriv, Shade
             shader_variable.size = spirvmodule.get_declared_struct_member_size(type, i);
             
             shader_variable.offset = spirvmodule.type_struct_member_offset(type, i);
+            auto it = std::find(push_constan_offsets.begin(), push_constan_offsets.end(), shader_variable.offset);
+            if (it != push_constan_offsets.end()) {
+                //already exist, skip
+                OC_ASSERT(false);
+                std::cout << "Push Constant[" <<shader_variable.name<<"] offset[ "<< shader_variable.offset <<" ] error! The offset should be [ "<< push_constant_size << " ].\n\n";
+            }
+            push_constan_offsets.push_back(shader_variable.offset);
             const spirv_cross::SPIRType &member_type = spirvmodule.get_type(type.member_types[i]);
             uint32_t vec_size = member_type.vecsize;// e.g. 4 for float4
             uint32_t columns = member_type.columns; // 4 columns = matrix
@@ -306,6 +316,7 @@ void DXCCompiler::run_spriv_reflection(const std::vector<uint32_t> &spriv, Shade
 
             shader_variable.variable_type = get_shader_variable_type(vec_size, columns, member_type);
             ubo.shader_variables.emplace_back(std::move(shader_variable)); 
+            push_constant_size += shader_variable.size;
         }
         shader_reflection.uniform_buffers.emplace_back(std::move(ubo));
     }
@@ -320,6 +331,9 @@ void DXCCompiler::run_spriv_reflection(const std::vector<uint32_t> &spriv, Shade
         ShaderReflection::UniformBuffer push_constant{};
         push_constant.name = spirvmodule.get_name(resource.id);
         push_constant.size = size;
+        push_constant.offset = spirvmodule.get_decoration(resource.id, spv::DecorationOffset);
+
+        spv::ExecutionModel stage = spirvmodule.get_execution_model();
 
         // Now loop through all members
         for (uint32_t i = 0; i < type.member_types.size(); ++i) {
@@ -358,12 +372,23 @@ void DXCCompiler::run_spriv_reflection(const std::vector<uint32_t> &spriv, Shade
     {
         uint32_t set = spirvmodule.get_decoration(resource.id, spv::DecorationDescriptorSet);
         uint32_t binding = spirvmodule.get_decoration(resource.id, spv::DecorationBinding);
+        auto &type = spirvmodule.get_type(resource.type_id);
+        
         ShaderReflection::ShaderResource shader_resource;
         shader_resource.name = spirvmodule.get_name(resource.id);
         shader_resource.descriptor_set = set;
         shader_resource.binding = binding;
         shader_resource.parameter_type = ShaderReflection::ResourceType::SRV;
         shader_resource.shader_type = (uint32_t)shader_type;
+        if (!type.array.empty()) {
+            //is a texture array
+            if (type.array[0] == 0)
+            {
+                shader_resource.is_bindless = true;
+            } else {
+                shader_resource.array_size = type.array[0];
+            }
+        }
         shader_reflection.shader_resources.push_back(std::move(shader_resource));
     }
 

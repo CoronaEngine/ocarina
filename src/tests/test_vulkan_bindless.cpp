@@ -30,7 +30,14 @@ struct GlobalUniformBuffer {
     math3d::Matrix4 view_matrix;
 };
 
+struct PushConstants {
+    float4x4 world_matrix;
+    uint32_t albedo_index;
+};
+
+
 int main(int argc, char *argv[]) {
+
     fs::path path(argv[0]);
     //FileManager &file_manager = FileManager::instance();
     RHIContext &file_manager = RHIContext::instance();
@@ -45,7 +52,7 @@ int main(int argc, char *argv[]) {
     //Shader
     std::set<string> options;
     handle_ty vertex_shader = device.create_shader_from_file("D:\\github\\Vision\\src\\ocarina\\src\\backends\\vulkan\\builtin\\texture.vert", ShaderType::VertexShader, options);
-    handle_ty pixel_shader = device.create_shader_from_file("D:\\github\\Vision\\src\\ocarina\\src\\backends\\vulkan\\builtin\\texture.frag", ShaderType::PixelShader, options);
+    handle_ty pixel_shader = device.create_shader_from_file("D:\\github\\Vision\\src\\ocarina\\src\\backends\\vulkan\\builtin\\bindless_texture.frag", ShaderType::PixelShader, options);
 
     Primitive quad;
     PipelineState pipeline_state;
@@ -61,6 +68,8 @@ int main(int argc, char *argv[]) {
     texture_view.usage = TextureUsageFlags::ShaderReadOnly;
     TextureSampler sampler{ TextureSampler::Filter::LINEAR_LINEAR, TextureSampler::Address::REPEAT };
     Texture texture = device.create_texture(&image, texture_view, sampler);
+
+    uint64_t albedo_name_id = hash64("albedo");
 
     auto setup_quad = [&](Primitive& quad) {
         quad.set_vertex_shader(vertex_shader);
@@ -85,11 +94,10 @@ int main(int argc, char *argv[]) {
         quad.set_index_buffer(index_buffer);
         quad.set_pipeline_state(pipeline_state);
 
-        uint64_t name_id = hash64("albedo");
-        quad.add_texture(name_id, &texture);
-        name_id = hash64("sampler_albedo");
+        
+        quad.add_bindless_texture(albedo_name_id, &texture);
+        uint64_t name_id = hash64("sampler_albedo");
         quad.add_sampler(name_id, *texture.get_sampler_pointer());
-        //opaques.push_back(triangle);
     };
 
     Camera camera;
@@ -111,13 +119,25 @@ int main(int argc, char *argv[]) {
         //item.descriptor_set_writer->update_push_constants(push_constant_name_id, (void *)&item.world_matrix, sizeof(item.world_matrix), item.pipeline_line);
     };
 
-    uint64_t model_matrix_name_id = hash64("modelMatrix");
+    PushConstants push_constants_data = {};
+
+    uint64_t name_id_world_matrix = hash64("modelMatrix");
+    uint64_t name_id_albedo_index = hash64("albedo_index");
+
     auto update_push_constant = [&](Primitive &primitive) {
         // Setup push constant data if needed
+        push_constants_data.world_matrix = primitive.get_world_matrix();
         primitive.set_push_constant_variable(
-            model_matrix_name_id,
-            reinterpret_cast<const std::byte*>(primitive.get_world_matrix_ptr()),
+            name_id_world_matrix,
+            reinterpret_cast<std::byte *>(const_cast<void *>(static_cast<const void *>(&primitive.get_world_matrix()))),
             sizeof(primitive.get_world_matrix()));
+        Primitive::TextureHandle albedo_texture_handle = primitive.get_texture_handle(albedo_name_id);
+        push_constants_data.albedo_index = albedo_texture_handle.bindless_index_;
+        //primitive.set_push_constant_data(reinterpret_cast<const std::byte *>(&push_constants_data));
+        primitive.set_push_constant_variable(
+            name_id_albedo_index,
+            reinterpret_cast<std::byte *>(&albedo_texture_handle.bindless_index_),
+            sizeof(push_constants_data.albedo_index));
     };
 
     quad.set_geometry_data_setup(&device, setup_quad);
@@ -136,10 +156,8 @@ int main(int argc, char *argv[]) {
     DescriptorSet *global_descriptor_set = device.get_global_descriptor_set("global_ubo");
     render_pass->add_global_descriptor_set("global_ubo", global_descriptor_set);
     render_pass->set_begin_renderpass_callback([&](RHIRenderPass *rp) {
-        //rp->set_clear_color(make_float4(0.1f, 0.1f, 0.1f, 1.0f));
         GlobalUniformBuffer global_ubo_data = {camera.get_projection_matrix().transpose(), camera.get_view_matrix().transpose()};
         global_descriptor_set->update_buffer(hash64("global_ubo"), &global_ubo_data, sizeof(GlobalUniformBuffer));
-        rp->clear_draw_call_items();
         auto draw_item = quad.get_draw_call_item(&device, rp);
         rp->add_draw_call(draw_item);
     });
@@ -148,7 +166,7 @@ int main(int argc, char *argv[]) {
     
     renderer.add_render_pass(render_pass);
 
-    auto image_io = Image::pure_color(make_float4(1, 0, 0, 1), ColorSpace::LINEAR, make_uint2(4));
+    auto image_io = Image::pure_color(make_float4(1, 0, 0, 1), ColorSpace::LINEAR, make_uint2(500));
     window->set_background(image_io.pixel_ptr<float4>(), make_uint2(800, 600));
     window->run([&](double d) {
         while (!window->should_close())

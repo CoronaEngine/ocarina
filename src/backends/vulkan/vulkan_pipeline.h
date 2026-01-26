@@ -13,10 +13,20 @@ namespace ocarina {
 class VulkanShader;
 class VulkanDevice;
 
+struct PushConstantRange
+{
+    uint32_t offset_ = 0;
+    uint32_t size_ = 0;
+    VkPipelineStageFlags shader_stages_ = 0;
+};
+
 struct VulkanPipeline : public RHIPipeline {
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
+    VkPipelineStageFlags push_constant_shader_stages_ = 0;
+
+    std::array<DescriptorSetLayout*, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_set_layouts_;
 };
 
 
@@ -80,8 +90,8 @@ struct PipelineKey
     DepthStencilState depth_stencil_state = {};
     VkPipelineLayout pipeline_layout;
     VkPrimitiveTopology topology;
-    VertexInputAttributeDescription vertex_input_attributes[MAX_VERTEX_ATTRIBUTES];
-    VertexInputBindingDescription vertex_input_binding[MAX_VERTEX_ATTRIBUTES];
+    VertexInputAttributeDescription vertex_input_attributes[MAX_VERTEX_ATTRIBUTES];   //can be erased
+    VertexInputBindingDescription vertex_input_binding[MAX_VERTEX_ATTRIBUTES];        //can be erased, since the same Shader Module will have the same binding description.
     MultiSampleState multi_sample_state = {};
 
     //we don't need to consider the vertex attribute here, because vertex attributes are assiociate to shader module.
@@ -112,16 +122,14 @@ struct PipelineKey
 
 struct PipelineLayoutKey
 {
-    constexpr static uint8_t MAX_DESCRIPTOR_SET = 4;
-    std::array < VkDescriptorSetLayout, MAX_DESCRIPTOR_SET> descriptor_set_layouts = {VK_NULL_HANDLE};
-    uint8_t descriptor_set_count = 0;
+    //constexpr static uint8_t MAX_DESCRIPTOR_SET = 4;
+    //std::array < VkDescriptorSetLayout, MAX_DESCRIPTOR_SET> descriptor_set_layouts = {VK_NULL_HANDLE};
+    //uint8_t descriptor_set_count = 0;
+    std::array<VkShaderModule, 8> shaders = { VK_NULL_HANDLE };
 
     bool operator==(const PipelineLayoutKey &other) const {
-        if (descriptor_set_count != other.descriptor_set_count) {
-            return false;
-        }
-        for (uint8_t i = 0; i < descriptor_set_count; ++i) {
-            if (descriptor_set_layouts[i] != other.descriptor_set_layouts[i]) {
+        for (uint8_t i = 0; i < 8; ++i) {
+            if (shaders[i] != other.shaders[i]) {
                 return false;
             }
         }
@@ -148,8 +156,8 @@ struct HashPipelineLayoutKeyFunction
 {
     uint64_t operator()(const PipelineLayoutKey &pipeline_layout_key) const {
         std::size_t res = 0;
-        for (uint8_t i = 0; i < pipeline_layout_key.descriptor_set_count; ++i) {
-            hash_combine(res, pipeline_layout_key.descriptor_set_layouts[i]);
+        for (uint8_t i = 0; i < 8; ++i) {
+            hash_combine(res, pipeline_layout_key.shaders[i]);
         }
         return res;
     }
@@ -177,9 +185,13 @@ public:
     VulkanPipeline* get_or_create_pipeline(const PipelineState &pipeline_state, VulkanDevice *device, VkRenderPass render_pass);
     void clear(VulkanDevice *device);
 
-    VkPipelineLayout get_pipeline_layout(VulkanDevice *device, VkDescriptorSetLayout *descriptset_layouts, uint8_t descriptset_layouts_count, uint32_t push_constant_size);
+    VkPipelineLayout create_pipeline_layout(VulkanDevice* device, VulkanShader** shaders, VkDescriptorSetLayout* descriptset_layouts, uint8_t descriptset_layouts_count,
+        VkPushConstantRange* push_constants, uint32_t push_constant_array_size);
+
+    void get_push_constants_ranges(VulkanShader** shaders, std::array<VkPushConstantRange, 8> &out_ranges, uint32_t &out_range_count);
 
 private:
+    VkPipelineLayout get_pipeline_layout(VulkanShader** shaders);
     std::unordered_map<PipelineKey, VulkanPipeline*, HashPipelineKeyFunction> vulkan_pipelines_;
     PipelineKey pipeline_key_cache_;
 

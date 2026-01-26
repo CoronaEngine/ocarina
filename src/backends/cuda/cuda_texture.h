@@ -41,5 +41,6 @@ public:
     [[nodiscard]] size_t data_alignment() const noexcept override;
     [[nodiscard]] size_t max_member_size() const noexcept override;
     [[nodiscard]] PixelStorage pixel_storage() const noexcept override { return proxy_.pixel_storage; }
+    [[nodiscard]] const TextureSampler* get_sampler_pointer() const noexcept { return nullptr; }
 };
 }// namespace ocarina

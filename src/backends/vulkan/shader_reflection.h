@@ -40,6 +40,8 @@ struct ShaderReflection{
             location = other.location;
             vertex_attribute_type = other.vertex_attribute_type;
             size = other.size;
+            array_size = other.array_size;
+            is_bindless = other.is_bindless;
         }
 
         ShaderResource &operator=(const ShaderResource &other) {
@@ -54,6 +56,8 @@ struct ShaderReflection{
             location = other.location;
             vertex_attribute_type = other.vertex_attribute_type;
             size = other.size;
+            array_size = other.array_size;
+            is_bindless = other.is_bindless;
             return *this;
         }
 
@@ -70,6 +74,8 @@ struct ShaderReflection{
             location = rvalue.location;
             vertex_attribute_type = rvalue.vertex_attribute_type;
             size = rvalue.size;
+            array_size = rvalue.array_size;
+            is_bindless = rvalue.is_bindless;
         }
 
         ShaderResource& operator=(ShaderResource&& rvalue) noexcept
@@ -85,6 +91,8 @@ struct ShaderReflection{
             location = rvalue.location;
             vertex_attribute_type = rvalue.vertex_attribute_type;
             size = rvalue.size;
+            array_size = rvalue.array_size;
+            is_bindless = rvalue.is_bindless;
             return *this;
         }
 
@@ -97,6 +105,8 @@ struct ShaderReflection{
         uint32_t binding : 4 = 0;
         uint32_t descriptor_set : 4 = 0;
         uint32_t size = 0;
+        uint32_t array_size = 0;
+        bool is_bindless = false;
         VkFormat format = VK_FORMAT_UNDEFINED;
         VertexAttributeType::Enum vertex_attribute_type = VertexAttributeType::Enum::Count;
 
@@ -162,6 +172,21 @@ struct ShaderReflection{
             size = rvalue.size;
             return *this;
         }
+
+        bool operator==(const ShaderVariable &other) const {
+            return (offset == other.offset) &&
+                   (register_ == other.register_) &&
+                   (register_count == other.register_count) &&
+                   (descriptor_set == other.descriptor_set) &&
+                   (variable_type == other.variable_type) &&
+                   (binding_ == other.binding_) &&
+                   (name == other.name) &&
+                   (size == other.size);
+        }
+
+        bool operator!=(const ShaderVariable &other) const {
+            return !(*this == other);
+        }
     };
 
     struct UniformBuffer {
@@ -169,6 +194,8 @@ struct ShaderReflection{
         uint8_t binding = 0;
         uint8_t descriptor_set = 0;
         uint32_t size = 0;
+        uint32_t offset = 0;  //only used for push constant buffer
+        bool is_bindless = false;
         std::vector<ShaderVariable> shader_variables;
         UniformBuffer() = default;
         UniformBuffer(const UniformBuffer &other) {
@@ -176,6 +203,7 @@ struct ShaderReflection{
             binding = other.binding;
             descriptor_set = other.descriptor_set;
             size = other.size;
+            offset = other.offset;
             shader_variables = other.shader_variables;
         }
 
@@ -184,6 +212,7 @@ struct ShaderReflection{
             binding = other.binding;
             descriptor_set = other.descriptor_set;
             size = other.size;
+            offset = other.offset;
             shader_variables = other.shader_variables;
             return *this;
         }
@@ -193,6 +222,7 @@ struct ShaderReflection{
             binding = rvalue.binding;
             descriptor_set = rvalue.descriptor_set;
             size = rvalue.size;
+            offset = rvalue.offset;
             shader_variables = std::move(rvalue.shader_variables);
         }
 
@@ -201,6 +231,7 @@ struct ShaderReflection{
             binding = rvalue.binding;
             descriptor_set = rvalue.descriptor_set;
             size = rvalue.size;
+            offset = rvalue.offset;
             shader_variables = std::move(rvalue.shader_variables);
             return *this;
         }

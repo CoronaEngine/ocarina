@@ -103,7 +103,7 @@ void VulkanRenderPass::draw_items() {
 
     for (const auto& queue : pipeline_render_queues_) {
         VulkanPipeline *vulkan_pipeline = static_cast<VulkanPipeline *>(queue.first);
-        driver.bind_descriptor_sets(reinterpret_cast<VulkanDescriptorSet **>(global_descriptor_sets_array_.data()), global_descriptor_sets_array_.size(), vulkan_pipeline->pipeline_layout_);
+        driver.bind_descriptor_sets(global_descriptor_sets_array_.data(), (uint32_t)DescriptorSetIndex::GLOBAL_SET, global_descriptor_sets_array_.size(), vulkan_pipeline->pipeline_layout_);
         driver.bind_pipeline(*vulkan_pipeline);
 
         for (auto &item : queue.second->draw_call_items) {
@@ -111,12 +111,20 @@ void VulkanRenderPass::draw_items() {
                 item.pre_render_function(item);
             }
             if (item.push_constant_data) {
-                driver.push_constants(vulkan_pipeline->pipeline_layout_, item.push_constant_data, item.push_constant_size, 0);
+                driver.push_constants(vulkan_pipeline->pipeline_layout_, item.push_constant_data, item.push_constant_size, 0, vulkan_pipeline->push_constant_shader_stages_);
             }
-            if (item.descriptor_set_count > 0)
+            
+            if (!item.descriptor_sets.empty())
             {
-                driver.bind_descriptor_sets(reinterpret_cast<VulkanDescriptorSet **>(item.descriptor_sets.data()), item.descriptor_set_count, vulkan_pipeline->pipeline_layout_);
+                driver.bind_descriptor_sets(item.descriptor_sets.data(), item.first_set, item.descriptor_sets.size(), vulkan_pipeline->pipeline_layout_);
             }
+            //for (uint32_t i = 0; i < item.descriptor_set_count; ++i)
+            //{
+            //    DescriptorSetsBinding& descriptor_set_group = item.descriptor_sets_binding_group[i];
+            //    driver.bind_descriptor_sets(descriptor_set_group.descriptor_sets.data(), descriptor_set_group.first_set,
+            //        descriptor_set_group.descriptor_set_count, vulkan_pipeline->pipeline_layout_);
+            //}
+
             VulkanVertexBuffer *vertex_buffer = static_cast<VulkanVertexBuffer *>(item.pipeline_state->vertex_buffer);
             VulkanShader *vertex_shader = reinterpret_cast<VulkanShader *>(item.pipeline_state->shaders[0]);//driver.get_shader(item.pipeline_state->shaders[0]);
             driver.set_vertex_buffer(*(vertex_buffer->get_or_create_vertex_binding(vertex_shader)));
@@ -139,76 +147,6 @@ void VulkanRenderPass::setup_render_pass() {
         size_ = swapChain->resolution();
         scissor_ = {0, 0, (int)size_.x, (int)size_.y};
         viewport_ = {0, 0, (float)size_.x, (float)size_.y};
-        /*
-        std::array<VkAttachmentDescription, 2> attachments = {};
-        // Color attachment
-        attachments[0].format = swapChain->color_format();
-        attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-        attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        // Depth attachment
-        attachments[1].format = swapChain->depth_format();
-        attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-        attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference colorReference = {};
-        colorReference.attachment = 0;
-        colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference depthReference = {};
-        depthReference.attachment = 1;
-        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpassDescription = {};
-        subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpassDescription.colorAttachmentCount = 1;
-        subpassDescription.pColorAttachments = &colorReference;
-        subpassDescription.pDepthStencilAttachment = &depthReference;
-        subpassDescription.inputAttachmentCount = 0;
-        subpassDescription.pInputAttachments = nullptr;
-        subpassDescription.preserveAttachmentCount = 0;
-        subpassDescription.pPreserveAttachments = nullptr;
-        subpassDescription.pResolveAttachments = nullptr;
-
-        // Subpass dependencies for layout transitions
-        std::array<VkSubpassDependency, 2> dependencies;
-
-        dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[0].dstSubpass = 0;
-        dependencies[0].srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[0].dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-        dependencies[0].srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        dependencies[0].dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-        dependencies[0].dependencyFlags = 0;
-
-        dependencies[1].srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependencies[1].dstSubpass = 0;
-        dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[1].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[1].srcAccessMask = 0;
-        dependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dependencies[1].dependencyFlags = 0;
-
-        VkRenderPassCreateInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        renderPassInfo.pAttachments = attachments.data();
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpassDescription;
-        renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
-        renderPassInfo.pDependencies = dependencies.data();
-
-        VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &render_pass_));
-        */
         render_pass_ = VulkanDriver::instance().get_framebuffer_render_pass();
     }
     else

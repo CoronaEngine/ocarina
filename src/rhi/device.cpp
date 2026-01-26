@@ -37,8 +37,8 @@ Texture Device::create_texture(uint2 res, PixelStorage storage, const string &de
     return create_texture(make_uint3(res, 1u), storage, desc);
 }
 
-Texture Device::create_texture(Image *image_resource, const TextureViewCreation &texture_view) const noexcept {
-    Texture tex(impl_.get(), image_resource, texture_view);
+Texture Device::create_texture(Image *image_resource, const TextureViewCreation &texture_view, const TextureSampler& sampler) const noexcept {
+    Texture tex(impl_.get(), image_resource, texture_view, sampler);
     return tex;
 }
 

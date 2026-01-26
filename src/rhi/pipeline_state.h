@@ -146,9 +146,15 @@ struct PipelineState {
     }
 };
 
+struct PushConstantVariable {
+    size_t offset;
+    size_t size;
+};
+
 struct RHIPipeline
 {
-
+    uint32_t push_constant_size = 0;
+    std::unordered_map<uint64_t, PushConstantVariable> push_constant_variables_;
 };
 
 }// namespace ocarina

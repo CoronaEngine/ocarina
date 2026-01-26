@@ -58,6 +58,7 @@ public:
         uint32_t binding,
         VkDescriptorType descriptor_type,
         VkShaderStageFlags stage_flags,
+        bool is_bindless,
         uint32_t size,
         uint32_t count = 1);
 
@@ -81,7 +82,7 @@ public:
 
     DescriptorSet* allocate_descriptor_set() override;
     void free_descriptor_set(VkDescriptorSet descriptor_set);
-    VulkanShaderVariableBinding get_binding(uint64_t binding);
+    VulkanShaderVariableBinding* get_binding(uint64_t index);
     size_t get_bindings_count() const {
         return bindings_.size();
     }
@@ -98,13 +99,33 @@ public:
         return descriptor_set_index_;
     }
 
+    VulkanShaderVariableBinding* get_binding_by_nameid(uint64_t name_id);
+
+    uint64_t generate_hash() {
+        if (hashkey_ != InvalidUI64) {
+            return hashkey_;
+        }
+        hashkey_ = 0;
+        uint32_t index = 1;
+        for (const auto& it : bindings_) {
+            const VulkanShaderVariableBinding& binding = it;
+            hashkey_ ^= std::hash<uint64_t>()(binding.binding) ^
+                std::hash<uint64_t>()(binding.descriptor_set) ^
+                std::hash<uint64_t>()(binding.count) ^
+                std::hash<uint64_t>()(binding.shader_stage) ^
+                std::hash<uint64_t>()(binding.size) ^
+                std::hash<uint64_t>()(binding.type);
+        }
+        return hashkey_;
+    }
 private:
     DescriptorCount descriptor_count_;
     VkDescriptorSetLayout layout_ = VK_NULL_HANDLE;
     //VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
 
     std::unordered_map<uint64_t, uint32_t> name_to_bindings_;
-    std::unordered_map<uint64_t, VulkanShaderVariableBinding> bindings_;
+    //std::unordered_map<uint64_t, VulkanShaderVariableBinding> bindings_;
+    std::vector<VulkanShaderVariableBinding> bindings_;
 
     VulkanDevice* device_ = nullptr;
 
@@ -114,6 +135,10 @@ private:
     uint32_t allocated_sets_count_ = 0;
     uint32_t pool_max_sets_count_ = 1;
     uint8_t descriptor_set_index_ = 0;
+
+    uint64_t hashkey_ = InvalidUI64;
+    bool has_bindless_ = false;
+    std::vector<VulkanDescriptorSet*> allocated_descriptor_sets_;
 };
 
 class VulkanDescriptorSet : public DescriptorSet {
@@ -131,6 +156,8 @@ public:
     //void copy_descriptors(VulkanDescriptor *descriptor);
     void update_buffer(uint64_t name_id, void *data, uint32_t size) override;
     void update_texture(uint64_t name_id, Texture *texture) override;
+    void update_sampler(uint64_t name_id, const TextureSampler& sampler) override;
+    uint32_t update_bindless_texture(uint64_t name_id, Texture *texture) override;
     VulkanDescriptorSetLayout *get_layout() const {
         return layout_;
     }
@@ -194,10 +221,14 @@ public:
         std::vector<VulkanShaderVariableBinding> bindings;
 
         // Sort bindings for deterministic comparison
-        void Normalize() {
+        void normalize() {
             std::sort(bindings.begin(), bindings.end(), [](const auto &a, const auto &b) {
                 return a.binding < b.binding;
             });
+        }
+
+        void add_binding(const VulkanShaderVariableBinding& binding) {
+            bindings.emplace_back(binding);
         }
 
         bool operator==(const DescriptorLayoutKey &other) const {
@@ -208,7 +239,7 @@ public:
 
             for (size_t i = 0; i < bindings.size(); ++i) {
                 if (bindings[i].binding != other.bindings[i].binding ||
-                    bindings[i].descriptor_set != other.bindings[i].descriptor_set ||
+                    //bindings[i].descriptor_set != other.bindings[i].descriptor_set ||
                     bindings[i].count != other.bindings[i].count ||
                     bindings[i].shader_stage != other.bindings[i].shader_stage ||
                     bindings[i].size != other.bindings[i].size ||
@@ -219,6 +250,25 @@ public:
 
             return true;
         }
+
+        void clear()
+        {
+            bindings.clear();
+        }
+
+        uint64_t generate_hash() {
+            uint64_t hashkey = 0;
+            for (const auto& binding : bindings) {
+                //const VulkanShaderVariableBinding& binding = pair.second;
+                hashkey ^= std::hash<uint64_t>()(binding.binding) ^
+                    //std::hash<uint64_t>()(binding.descriptor_set) ^
+                    std::hash<uint64_t>()(binding.count) ^
+                    std::hash<uint64_t>()(binding.shader_stage) ^
+                    std::hash<uint64_t>()(binding.size) ^
+                    std::hash<uint64_t>()(binding.type);
+            }
+            return hashkey;
+        }
     };
 
     struct HashDescriptorLayoutKeyFunction {
@@ -226,7 +276,7 @@ public:
             std::size_t h = 0;
             for (const auto &b : key.bindings) {
                 h ^= std::hash<uint64_t>()(b.binding) ^
-                     std::hash<uint64_t>()(b.descriptor_set) ^
+                     //std::hash<uint64_t>()(b.descriptor_set) ^
                      std::hash<uint64_t>()(b.count) ^
                      std::hash<uint64_t>()(b.shader_stage) ^
                      std::hash<uint64_t>()(b.size) ^
@@ -236,11 +286,17 @@ public:
         }
     };
 
+    //VulkanDescriptorSetLayout* get_empty_descriptor_set_layout();
 private:
     VulkanDevice *device_ = nullptr;
     //std::unordered_map<DescriptorLayoutKey, VulkanDescriptorSetLayout *, HashDescriptorLayoutKeyFunction> descriptor_set_layouts_;
-    std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_set_layouts_ = {};
+    //std::array<DescriptorSetLayout*, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_set_layouts_ = {};  //we should not define here, since different shader may have different layout
     VulkanDescriptorSetLayout *global_descriptor_set_layouts_ = nullptr;
+    VulkanDescriptorSetLayout *bindless_descriptor_set_layouts_ = nullptr;
+    //VulkanDescriptorSetLayout* empty_descriptor_set_layout_ = nullptr;
+
+    std::unordered_map<uint64_t, VulkanDescriptorSetLayout*> descriptor_set_layouts_;
+    std::array<DescriptorLayoutKey, MAX_DESCRIPTOR_SETS_PER_SHADER> cached_descriptor_set_layout_keys_ = {};
 };
 
 }// namespace ocarina

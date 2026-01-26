@@ -11,9 +11,71 @@
 
 namespace ocarina {
 
-VulkanTexture::VulkanTexture(VulkanDevice *device, Image *image, const TextureViewCreation &texture_view)
+VulkanTexture::VulkanTexture(VulkanDevice *device, Image *image, const TextureViewCreation &texture_view, const TextureSampler& sampler)
     : device_(device) {
+    texture_sampler_ = sampler;
     init(image, texture_view);
+}
+
+VulkanTexture::VulkanTexture(VulkanDevice *device, uint32_t width, uint32_t height, uint32_t depth, PixelStorage format, const TextureViewCreation &texture_view,
+    const TextureSampler& sampler, uint4 default_color) 
+    : device_(device) {
+    res_.x = width;
+    res_.y = height;
+    res_.z = depth;
+    image_format_ = get_vulkan_format(format, false);
+    texture_sampler_ = sampler;
+
+    uint32_t max_mip_levels = static_cast<uint32_t>(std::floor(std::log2(std::max(res_.x, res_.y)))) + 1;
+    mip_levels_ = texture_view.mip_level_count == 0 ? max_mip_levels : std::min(max_mip_levels, texture_view.mip_level_count);
+
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (mip_levels_ > 1) {
+        usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    }
+
+    VkImageCreateInfo image_info{};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.format = image_format_;
+    image_info.mipLevels = mip_levels_;
+    image_info.arrayLayers = texture_view.array_layer_count;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.extent = {static_cast<uint32_t>(res_.x), static_cast<uint32_t>(res_.y), 1};
+    image_info.usage = usage;
+
+    VK_CHECK_RESULT(vkCreateImage(device_->logicalDevice(), &image_info, nullptr, &image_));
+
+    VkMemoryRequirements mem_requirements;
+    vkGetImageMemoryRequirements(device_->logicalDevice(), image_, &mem_requirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = mem_requirements.size;
+    allocInfo.memoryTypeIndex = device_->get_memory_type(mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    VK_CHECK_RESULT(vkAllocateMemory(device_->logicalDevice(), &allocInfo, nullptr, &image_memory_));
+
+    VK_CHECK_RESULT(vkBindImageMemory(device_->logicalDevice(), image_, image_memory_, 0));
+
+    std::vector<uint4> pixels(width * height * depth, default_color);
+
+    VkDeviceSize image_size = pixels.size() * sizeof(uint4);
+    VulkanBuffer staging_buffer(device_, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                image_size, pixels.data());
+    transition_image_layout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VulkanDriver::instance().copy_image(&staging_buffer, this);
+
+
+    if (mip_levels_ > 1) {
+        generate_mipmaps();
+    }
+
+    create_image_view(texture_view);
+    create_sampler(sampler);
 }
 
 void VulkanTexture::init(Image *image, const TextureViewCreation &texture_view) {
@@ -65,7 +127,7 @@ void VulkanTexture::init(Image *image, const TextureViewCreation &texture_view) 
 
     create_image_view(texture_view);
 
-    create_sampler(texture_view.sampler);
+    create_sampler(texture_sampler_);
 }
 
 void VulkanTexture::load_cpu_data(Image *image) {
@@ -199,15 +261,15 @@ void VulkanTexture::create_image_view(const TextureViewCreation &texture_view) {
     VK_CHECK_RESULT(vkCreateImageView(device_->logicalDevice(), &view_info, nullptr, &image_view_));
 }
 
-void VulkanTexture::create_sampler(const SamplerCreation &sampler_creation) {
+void VulkanTexture::create_sampler(const TextureSampler &sampler_creation) {
     VkSamplerCreateInfo sampler_info{};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_info.magFilter = get_vulkan_filter(sampler_creation.filter);
-    sampler_info.minFilter = get_vulkan_filter(sampler_creation.filter);
-    sampler_info.mipmapMode = get_vulkan_sampler_mipmap_mode(sampler_creation.mipmap_filter);
-    sampler_info.addressModeU = get_vulkan_sampler_address(sampler_creation.address_u);
-    sampler_info.addressModeV = get_vulkan_sampler_address(sampler_creation.address_v);
-    sampler_info.addressModeW = get_vulkan_sampler_address(sampler_creation.address_w);
+    sampler_info.magFilter = get_vulkan_filter(sampler_creation.filter());
+    sampler_info.minFilter = get_vulkan_filter(sampler_creation.filter());
+    sampler_info.mipmapMode = get_vulkan_sampler_mipmap_mode(sampler_creation.mipmap_filter());
+    sampler_info.addressModeU = get_vulkan_sampler_address(sampler_creation.u_address());
+    sampler_info.addressModeV = get_vulkan_sampler_address(sampler_creation.v_address());
+    sampler_info.addressModeW = get_vulkan_sampler_address(sampler_creation.w_address());
     sampler_info.mipLodBias = 0.0f;
     sampler_info.compareOp = VK_COMPARE_OP_NEVER;
     sampler_info.minLod = 0.0f;

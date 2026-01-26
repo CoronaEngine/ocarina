@@ -15,19 +15,29 @@ class DescriptorSetWriter;
 class DescriptorSet;
 struct RHIPipeline;
 
+struct DescriptorSetsBinding
+{
+    std::vector<DescriptorSet*> descriptor_sets;
+    uint32_t first_set = 0;
+    uint32_t descriptor_set_count = 0;
+};
+
 struct DrawCallItem {
     PipelineState* pipeline_state = nullptr;
     IndexBuffer* index_buffer = nullptr;
     //float4x4 world_matrix;
     //DescriptorSetWriter *descriptor_set_writer = nullptr;
-    std::array<DescriptorSet *, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_sets = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-    uint32_t descriptor_set_count = 0;
+    //std::array<DescriptorSet *, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_sets = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+    //std::array<DescriptorSetsBinding, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_sets_binding_group = {};
+    std::vector<DescriptorSet*> descriptor_sets;
+    //uint32_t descriptor_set_count = 0;
+    uint32_t first_set = 0;
      
     using PreRenderFunction = ocarina::function<void(const DrawCallItem&)>;
 
     PreRenderFunction pre_render_function = nullptr;
     RHIPipeline *pipeline = nullptr;
-    void *push_constant_data = nullptr;
+    std::byte *push_constant_data = nullptr;
     uint8_t push_constant_size = 0;
 };
 

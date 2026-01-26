@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 #include "core/image_base.h"
 #include "rhi/graphics_descriptions.h"
+#include "rhi/resources/texture_sampler.h"
 
 static std::string errorString(VkResult errorCode) {
     switch (errorCode) {
@@ -365,6 +366,51 @@ static VkFilter get_vulkan_filter(FilterMode filter) {
     }
 }
 
+static VkFilter get_vulkan_filter(TextureSampler::Filter filter)
+{
+    switch (filter)
+    {
+    case TextureSampler::Filter::POINT:
+        return VK_FILTER_NEAREST;
+    case TextureSampler::Filter::LINEAR_LINEAR:
+    case TextureSampler::Filter::LINEAR_POINT:
+        return VK_FILTER_LINEAR;
+    case TextureSampler::Filter::ANISOTROPIC:
+        return VK_FILTER_CUBIC_EXT;
+    default:
+        return VK_FILTER_LINEAR;
+    }
+}
+
+static VkSamplerAddressMode get_vulkan_sampler_address(TextureSampler::Address address)
+{
+    switch (address)
+    {
+    case TextureSampler::Address::CLAMP:
+        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    case TextureSampler::Address::EDGE:
+        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+    case TextureSampler::Address::MIRROR:
+        return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+    case TextureSampler::Address::REPEAT:
+        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    default:
+        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    }
+}
+
+static VkSamplerMipmapMode get_vulkan_sampler_mipmap_mode(TextureSampler::Filter filter) {
+    switch (filter) {
+    case TextureSampler::Filter::POINT:
+        return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    case TextureSampler::Filter::LINEAR_LINEAR:
+    case TextureSampler::Filter::ANISOTROPIC:
+        return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    default:
+        return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    }
+}
+
 static VkSamplerAddressMode get_vulkan_sampler_address(AddressMode address_mode) {
     switch (address_mode) {
         case AddressMode::WRAP:
@@ -393,6 +439,32 @@ static VkSamplerMipmapMode get_vulkan_sampler_mipmap_mode(FilterMode filter) {
             return VK_SAMPLER_MIPMAP_MODE_LINEAR;
         default:
             return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    }
+}
+
+constexpr uint32_t MAX_BINDLESS_TEXTURE_ARRAY_SIZE = 1024;
+constexpr uint32_t MAX_BINDLESS_SAMPLER_ARRAY_SIZE = 64;
+constexpr uint32_t MAX_BINDLESS_BUFFER_ARRAY_SIZE = 128;
+
+static uint32_t get_vulkan_bindless_resource_max_count(VkDescriptorType descriptor_type /*, VkPhysicalDeviceProperties device_properties*/) {
+    switch (descriptor_type) {
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+            return MAX_BINDLESS_TEXTURE_ARRAY_SIZE;//device_properties.limits.maxPerStageDescriptorSampledImages;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+            //return device_properties.limits.maxPerStageDescriptorUniformTexelBuffers;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+            return MAX_BINDLESS_BUFFER_ARRAY_SIZE;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+            return MAX_BINDLESS_BUFFER_ARRAY_SIZE;//device_properties.limits.maxPerStageDescriptorStorageBuffers;
+        case VK_DESCRIPTOR_TYPE_SAMPLER:
+            return MAX_BINDLESS_BUFFER_ARRAY_SIZE;//device_properties.limits.maxPerStageDescriptorSamplers;
+        default:
+            return 1;
     }
 }
 

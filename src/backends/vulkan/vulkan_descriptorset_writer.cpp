@@ -11,6 +11,7 @@
 #include "vulkan_device.h"
 #include "vulkan_driver.h"
 #include "vulkan_texture.h"
+#include "util.h"
 
 namespace ocarina {
 VulkanDescriptorSetWriter::VulkanDescriptorSetWriter(VulkanDevice *device, VulkanDescriptorSet *descriptor_set) 
@@ -19,30 +20,36 @@ VulkanDescriptorSetWriter::VulkanDescriptorSetWriter(VulkanDevice *device, Vulka
     size_t bindings_count = layout->get_bindings_count();
     for (size_t i = 0; i < bindings_count; ++i)
     {
-        VulkanShaderVariableBinding binding = layout->get_binding(i);
-        if (binding.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+        VulkanShaderVariableBinding* binding = layout->get_binding(i);
+        if (binding && binding->type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
             VulkanBuffer *buffer = ocarina::new_with_allocator<VulkanBuffer>(device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, binding.size);
+                                                                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, binding->size);
             // Create a descriptor for uniform buffer
             VulkanDescriptorBuffer *descriptor_buffer = ocarina::new_with_allocator<VulkanDescriptorBuffer>();
-            descriptor_buffer->binding = binding.binding;
-            descriptor_buffer->name_ = binding.name;
+            descriptor_buffer->binding = binding->binding;
+            descriptor_buffer->name_ = binding->name;
             descriptor_buffer->buffer_ = buffer;
-            bind_buffer(binding.binding, buffer->get_descriptor_info());
-            buffers_.insert(std::make_pair(binding.binding, buffer));
+            bind_buffer(binding->binding, buffer->get_descriptor_info());
+            buffers_.insert(std::make_pair(binding->binding, buffer));
             descriptors_.insert(std::make_pair(hash64(descriptor_buffer->name_), descriptor_buffer));
         } 
-        else if (binding.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+        else if (binding->type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
 
             VulkanDescriptorImage *descriptor_image = ocarina::new_with_allocator<VulkanDescriptorImage>();
-            descriptor_image->binding = binding.binding;
-            descriptor_image->name_ = binding.name;
-            descriptor_image->default_sampler_name_ = std::string("sampler_") + binding.name;
+            descriptor_image->binding = binding->binding;
+            descriptor_image->name_ = binding->name;
+            descriptor_image->default_sampler_name_ = std::string("sampler_") + binding->name;
             descriptors_.insert(std::make_pair(hash64(descriptor_image->name_), descriptor_image));
-        } else if (binding.type == VK_DESCRIPTOR_TYPE_SAMPLER) {
+            if (binding->is_bindless) {
+                // Handle bindless texture descriptor if needed
+                //bind_texture(binding->binding, descriptor_image->get_de, 0, binding->count);
+                bindless_textures_descriptor_ = descriptor_image;
+                bind_default_bindless_texture(binding->binding, MAX_BINDLESS_TEXTURE_ARRAY_SIZE);
+            }
+        } else if (binding->type == VK_DESCRIPTOR_TYPE_SAMPLER) {
             VulkanDescriptorSampler *descriptor_sampler = ocarina::new_with_allocator<VulkanDescriptorSampler>();
-            descriptor_sampler->binding = binding.binding;
-            descriptor_sampler->name_ = binding.name;
+            descriptor_sampler->binding = binding->binding;
+            descriptor_sampler->name_ = binding->name;
             descriptors_.insert(std::make_pair(hash64(descriptor_sampler->name_), descriptor_sampler));
         } 
         // Add other types of descriptors as needed
@@ -83,15 +90,33 @@ void VulkanDescriptorSetWriter::bind_buffer(uint32_t binding, VkDescriptorBuffer
     writes_.push_back(write);
 }
 
-void VulkanDescriptorSetWriter::bind_texture(uint32_t binding, VkDescriptorImageInfo* texture)
-{
+void VulkanDescriptorSetWriter::bind_texture(uint32_t binding, VkDescriptorImageInfo *texture, uint32_t element_index, uint32_t texture_count) {
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = descriptor_set_->descriptor_set();
     write.dstBinding = binding;
-    write.descriptorCount = 1;
+    write.dstArrayElement = element_index;
+    write.descriptorCount = texture_count;
     write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     write.pImageInfo = texture;
+    writes_.push_back(write);
+}
+
+void VulkanDescriptorSetWriter::bind_default_bindless_texture(uint32_t binding, uint32_t texture_count) {
+    image_infos_.resize(texture_count);
+    VulkanTexture *default_white = VulkanDriver::instance().get_internal_white_texture();
+
+    for (uint32_t i = 0; i < texture_count; ++i) {
+        image_infos_[i] = default_white->get_descriptor_info();
+    }
+
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = descriptor_set_->descriptor_set();
+    write.dstBinding = binding;
+    write.descriptorCount = texture_count;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.pImageInfo = image_infos_.data();// For bindless, we may not have specific image info at this point
     writes_.push_back(write);
 }
 
@@ -159,6 +184,62 @@ void VulkanDescriptorSetWriter::update_texture(uint64_t name_id, Texture *textur
         VulkanDevice *device = VulkanDriver::instance().get_device();
         build(device);
     }
+}
+
+void VulkanDescriptorSetWriter::update_sampler(uint64_t name_id, VkSampler sampler)
+{
+    auto it = descriptors_.find(name_id);
+    if (it != descriptors_.end()) {
+        VulkanDescriptorSampler* descriptor_sampler = static_cast<VulkanDescriptorSampler*>(it->second);
+        VkDescriptorImageInfo descriptor_info{};
+        descriptor_info.sampler = sampler;
+        descriptor_info.imageView = VK_NULL_HANDLE;   // ignored
+        descriptor_info.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        bind_sampler(descriptor_sampler->binding, &descriptor_info);
+
+        VulkanDevice* device = VulkanDriver::instance().get_device();
+        build(device);
+    }
+}
+
+uint32_t VulkanDescriptorSetWriter::update_bindless_texture(uint64_t name_id, Texture *texture) {
+    // Implementation for bindless textures can be added here
+    // This is a placeholder for actual bindless texture update logic
+    //auto it = descriptors_.find(name_id);
+    if (bindless_textures_descriptor_) {
+        auto it_index = bindless_textures_indices_.find(texture);
+        if (it_index == bindless_textures_indices_.end()) {
+            uint32_t index = static_cast<uint32_t>(bindless_textures_.size());
+            bindless_textures_.push_back(texture);
+            bindless_textures_indices_.insert(std::make_pair(texture, index));
+
+            VulkanTexture *vulkan_texture = static_cast<VulkanTexture *>(texture->impl());
+            //VulkanDescriptorImage *descriptor_image = static_cast<VulkanDescriptorImage *>(it->second);
+            VkDescriptorImageInfo descriptor_info = vulkan_texture->get_descriptor_info();
+
+            VkWriteDescriptorSet update{};
+            update.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            update.dstSet = descriptor_set_->descriptor_set();
+            update.dstBinding = bindless_textures_descriptor_->binding;
+            update.dstArrayElement = index;
+            update.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            update.descriptorCount = 1;
+            update.pImageInfo = &descriptor_info;
+
+            VulkanDevice *device = VulkanDriver::instance().get_device();
+            vkUpdateDescriptorSets(device->logicalDevice(), 1, &update, 0, nullptr);
+            //VulkanDevice *device = VulkanDriver::instance().get_device();
+            //build(device);
+
+            return index;
+        }
+        else
+        {
+            return it_index->second;
+        }
+    }
+
+    return InvalidUI32;
 }
 
 }// namespace ocarina

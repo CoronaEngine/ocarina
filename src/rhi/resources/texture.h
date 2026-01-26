@@ -40,6 +40,7 @@ public:
         [[nodiscard]] virtual handle_ty array_handle() const noexcept = 0;
         [[nodiscard]] virtual const handle_ty *array_handle_ptr() const noexcept = 0;
         [[nodiscard]] virtual handle_ty tex_handle() const noexcept = 0;
+        [[nodiscard]] virtual const TextureSampler* get_sampler_pointer() const noexcept = 0;
 
         /// for device side structure
         [[nodiscard]] virtual const void *handle_ptr() const noexcept = 0;
@@ -58,9 +59,9 @@ public:
                                              detail::compute_mip_level_num(res, level_num), desc)),
           channel_num_(ocarina::channel_num(pixel_storage)) {}
 
-    explicit Texture(Device::Impl *device, Image* image_resource, const TextureViewCreation& texture_view)
+    explicit Texture(Device::Impl *device, Image* image_resource, const TextureViewCreation& texture_view, const TextureSampler& sampler)
         : RHIResource(device, Tag::TEXTURE,
-                      device->create_texture(image_resource, texture_view)),
+                      device->create_texture(image_resource, texture_view, sampler)),
           channel_num_(ocarina::channel_num(texture_view.format)) {}
 
     OC_MAKE_MEMBER_GETTER(channel_num, )
@@ -170,6 +171,9 @@ public:
     [[nodiscard]] size_t data_size() const noexcept override { return impl()->data_size(); }
     [[nodiscard]] size_t data_alignment() const noexcept override { return impl()->data_alignment(); }
     [[nodiscard]] size_t max_member_size() const noexcept override { return impl()->max_member_size(); }
+    [[nodiscard]] const TextureSampler* get_sampler_pointer() const noexcept {
+        return impl()->get_sampler_pointer();
+    }
     [[nodiscard]] TextureUploadCommand *upload(const void *data, bool async = true) const noexcept {
         return TextureUploadCommand::create(data, array_handle(), impl()->resolution(),
                                             impl()->pixel_storage(), async);

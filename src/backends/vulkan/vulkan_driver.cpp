@@ -10,6 +10,7 @@
 #include "vulkan_vertex_buffer.h"
 #include "vulkan_index_buffer.h"
 #include "vulkan_texture.h"
+#include "rhi/resources/texture_sampler.h"
 
 namespace ocarina {
 
@@ -21,9 +22,9 @@ VulkanDriver::~VulkanDriver() {
    
 }
 
-VulkanDevice* VulkanDriver::create_device(RHIContext* context, const InstanceCreation& instance_creation)
+VulkanDevice* VulkanDriver::create_device(RHIContext* file_manager, const InstanceCreation& instance_creation)
 {
-    vulkan_device_ = ocarina::new_with_allocator<ocarina::VulkanDevice>(context, instance_creation);
+    vulkan_device_ = ocarina::new_with_allocator<ocarina::VulkanDevice>(file_manager, instance_creation);
 
     // Semaphore used to ensures that image presentation is complete before starting to submit again
     VkSemaphoreCreateInfo semaphoreCreateInfo = {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
@@ -44,10 +45,6 @@ void VulkanDriver::bind_pipeline(const VulkanPipeline &pipeline) {
 void VulkanDriver::terminate()
 {
     release_frame_buffer();
-    for (auto &it : global_descriptor_sets) {
-        ocarina::delete_with_allocator(it.second);
-    }
-    global_descriptor_sets.clear();
 
     for (auto &it : render_passes_) {
         ocarina::delete_with_allocator(it);
@@ -61,6 +58,18 @@ void VulkanDriver::terminate()
     vkDestroySemaphore(device(), semaphores.renderComplete, nullptr);
     release_command_buffers();
     release_command_pool();
+
+    destroy_internal_textures();
+
+    for (auto& it : samplers_)
+    {
+        vkDestroySampler(device(), it.second, nullptr);
+    }
+    samplers_.clear();
+    //if (empty_descriptorset_layout_ != VK_NULL_HANDLE) {
+    //    vkDestroyDescriptorSetLayout(device(), empty_descriptorset_layout_, nullptr);
+    //    empty_descriptorset_layout_ = VK_NULL_HANDLE;
+    //}
 }
 
 void VulkanDriver::submit_frame() {
@@ -328,6 +337,8 @@ void VulkanDriver::initialize()
     submit_info.pWaitSemaphores = &semaphores.presentComplete;
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = &semaphores.renderComplete;
+
+    create_internal_textures();
 }
 
 void VulkanDriver::window_resize()
@@ -353,6 +364,36 @@ void VulkanDriver::flush_command_buffer(VkCommandBuffer cmd)
     // Wait for the fence to signal that command buffer has finished executing
     VK_CHECK_RESULT(vkWaitForFences(device(), 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max()));
     vkDestroyFence(device(), fence, nullptr);
+}
+
+VkSampler VulkanDriver::get_vulkan_sampler(const TextureSampler& sampler) {
+    const Hashable* hash = reinterpret_cast<const Hashable*>(&sampler);
+    auto it = samplers_.find(hash->hash());
+    if (it != samplers_.end()) {
+        return it->second;
+    }
+
+    VkSamplerCreateInfo sampler_info{};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter = get_vulkan_filter(sampler.filter());
+    sampler_info.minFilter = get_vulkan_filter(sampler.filter());
+    sampler_info.mipmapMode = get_vulkan_sampler_mipmap_mode(sampler.mipmap_filter());
+    sampler_info.addressModeU = get_vulkan_sampler_address(sampler.u_address());
+    sampler_info.addressModeV = get_vulkan_sampler_address(sampler.v_address());
+    sampler_info.addressModeW = get_vulkan_sampler_address(sampler.w_address());
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.compareOp = VK_COMPARE_OP_NEVER;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = VK_LOD_CLAMP_NONE;
+    sampler_info.maxAnisotropy = 1.0f;
+    sampler_info.anisotropyEnable = VK_FALSE;
+    sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+
+    VkSampler vk_sampler;
+    VK_CHECK_RESULT(vkCreateSampler(device(), &sampler_info, nullptr, &vk_sampler));
+
+    samplers_.insert(std::make_pair(hash->hash(), vk_sampler));
+    return vk_sampler;
 }
 
 VulkanPipeline* VulkanDriver::get_pipeline(const PipelineState &pipeline_state, VkRenderPass render_pass) {
@@ -462,9 +503,9 @@ void VulkanDriver::draw_triangles(VulkanIndexBuffer* index_buffer) {
     vkCmdDrawIndexed(current_buffer, index_buffer->get_index_count(), 1, 0, 0, 0);
 }
 
-void VulkanDriver::push_constants(VkPipelineLayout pipeline_layout, void *data, uint32_t size, uint32_t offset) {
+void VulkanDriver::push_constants(VkPipelineLayout pipeline_layout, void *data, uint32_t size, uint32_t offset, VkShaderStageFlags stage_flags) {
     VkCommandBuffer current_buffer = get_current_command_buffer();
-    vkCmdPushConstants(current_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, offset, size, data);
+    vkCmdPushConstants(current_buffer, pipeline_layout, stage_flags, offset, size, data);
 }
 
 void VulkanDriver::add_global_descriptor_set(uint64_t name_id, VulkanDescriptorSet *descriptor_set) {
@@ -479,18 +520,18 @@ void VulkanDriver::add_global_descriptor_set(uint64_t name_id, VulkanDescriptorS
     global_descriptor_sets[name_id] = descriptor_set;
 }
 
-void VulkanDriver::bind_descriptor_sets(VulkanDescriptorSet **descriptor_sets, uint32_t descriptor_sets_num, VkPipelineLayout pipeline_layout) {
+void VulkanDriver::bind_descriptor_sets(DescriptorSet **descriptor_sets, uint32_t first_set, uint32_t descriptor_sets_num, VkPipelineLayout pipeline_layout) {
     VkCommandBuffer current_buffer = get_current_command_buffer();
     std::array<VkDescriptorSet, MAX_DESCRIPTOR_SETS_PER_SHADER> descriptor_set_handles = {VK_NULL_HANDLE};
-    uint32_t first_set = -1;
+    //uint32_t first_set = -1;
     for (uint32_t i = 0; i < descriptor_sets_num; ++i) {
-        if (descriptor_sets[i] == nullptr) {
-            continue;
-        }
-        if (first_set == -1) {
-            first_set = descriptor_sets[i]->get_layout()->get_descriptor_set_index();
-        }
-        descriptor_set_handles[i] = descriptor_sets[i]->descriptor_set();
+        //if (descriptor_sets[i] == nullptr) {
+        //    continue;
+        //}
+        //if (first_set == -1) {
+        //    first_set = descriptor_sets[i]->get_layout()->get_descriptor_set_index();
+        //}
+        descriptor_set_handles[i] = static_cast<VulkanDescriptorSet*>(descriptor_sets[i])->descriptor_set();
     }
     vkCmdBindDescriptorSets(current_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, first_set, descriptor_sets_num, descriptor_set_handles.data(), 0, nullptr);
 }
@@ -499,9 +540,45 @@ std::array<DescriptorSetLayout *, MAX_DESCRIPTOR_SETS_PER_SHADER> VulkanDriver::
     return vulkan_descriptor_manager->create_descriptor_set_layout(shaders, shaders_count);
 }
 
-VkPipelineLayout VulkanDriver::get_pipeline_layout(VkDescriptorSetLayout *descriptset_layouts, uint8_t descriptset_layouts_count, uint32_t push_constant_size) {
-    return vulkan_pipeline_manager->get_pipeline_layout(vulkan_device_, descriptset_layouts, descriptset_layouts_count, push_constant_size);
+//VkPipelineLayout VulkanDriver::get_pipeline_layout(VkDescriptorSetLayout *descriptset_layouts, uint8_t descriptset_layouts_count, VkPushConstantRange *push_constants, uint32_t push_constant_array_size) {
+//    return vulkan_pipeline_manager->get_pipeline_layout(vulkan_device_, descriptset_layouts, descriptset_layouts_count, push_constant_size);
+//}
+
+void VulkanDriver::create_internal_textures() {
+    if (internal_textures_[INTERNAL_TEXTURE_WHITE] == nullptr)
+    {
+        TextureViewCreation texture_view = {};
+        texture_view.mip_level_count = 1;
+        texture_view.usage = TextureUsageFlags::ShaderReadOnly;
+        TextureSampler sampler = {TextureSampler::Filter::LINEAR_LINEAR, TextureSampler::Address::REPEAT};
+        internal_textures_[INTERNAL_TEXTURE_WHITE] = ocarina::new_with_allocator<VulkanTexture>(vulkan_device_, 4, 4, 1, PixelStorage::BYTE4, texture_view, sampler, uint4(255,255,255,255));
+    }
 }
+
+void VulkanDriver::destroy_internal_textures()
+{
+    for (size_t i = 0; i < INTERNAL_TEXTURE_COUNT; ++i) {
+        if (internal_textures_[i] != nullptr) {
+            ocarina::delete_with_allocator<VulkanTexture>(internal_textures_[i]);
+            internal_textures_[i] = nullptr;
+        }
+    }
+}
+
+//VkDescriptorSetLayout VulkanDriver::get_empty_descriptor_set_layout()
+//{
+//    if (empty_descriptorset_layout_ == VK_NULL_HANDLE) {
+//        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+//        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+//        layoutInfo.bindingCount = 0;   // <-- No bindings
+//        layoutInfo.pBindings = nullptr;// <-- No bindings array
+//
+//        VkDescriptorSetLayout emptySetLayout;
+//        VkResult result = vkCreateDescriptorSetLayout(vulkan_device_->logicalDevice(), &layoutInfo, nullptr, &empty_descriptorset_layout_);
+//    }
+//
+//    return empty_descriptorset_layout_;
+//}
 
 }// namespace ocarina
 

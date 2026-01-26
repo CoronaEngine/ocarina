@@ -6,6 +6,7 @@
 
 #include "core/stl.h"
 #include "core/image_base.h"
+#include "rhi/resources/texture_sampler.h"
 
 namespace ocarina {
 
@@ -170,10 +171,10 @@ enum class AddressMode : uint8_t {
 };
 
 struct DescriptorCount {
-    uint32_t ubo : 8;
-    uint32_t srv : 8;
-    uint32_t uav : 8;
-    uint32_t samplers : 8;
+    uint32_t ubo = 0;
+    uint32_t srv = 0;
+    uint32_t uav = 0;
+    uint32_t samplers = 0;
 
     bool operator==(DescriptorCount const &right) const {
         return ubo == right.ubo && srv == right.srv && uav == right.uav &&
@@ -369,9 +370,17 @@ struct TextureViewCreation {
     uint32_t mip_level_count = 1;                     ///< mip level count
     uint32_t array_layer_count = 1;                   ///< array layer count
     TextureUsageFlags usage = TextureUsageFlags::None;///< texture usage
-    SamplerCreation sampler;                          ///< sampler creation
+    //SamplerCreation sampler;                          ///< sampler creation
 };
 
 #define MAX_DESCRIPTOR_SETS_PER_SHADER 8
+
+enum class DescriptorSetIndex : uint8_t {
+    GLOBAL_SET = 0,
+    MATERIAL_SET = 1,
+    PER_OBJECT_SET = 2,
+    BINDLESS_SET = 3,
+    MAX_DESCRIPTOR_SET = MAX_DESCRIPTOR_SETS_PER_SHADER
+};
 
 }// namespace ocarina

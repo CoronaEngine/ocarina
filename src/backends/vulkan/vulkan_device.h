@@ -17,6 +17,7 @@ class VulkanDevice : public Device::Impl {
 private:
     /** @brief Physical device representation */
     VkPhysicalDevice physicalDevice_;
+    VkPhysicalDeviceFeatures2 physical_device_features2_;
     /** @brief Logical device representation (application's view of the device) */
     VkDevice logicalDevice_;
     /** @brief Properties of the physical device including limits that the application can check against */
@@ -34,16 +35,16 @@ private:
     std::vector<const char *> m_enableExtensions;
 
 public:
-    explicit VulkanDevice(RHIContext *context, const ocarina::InstanceCreation &instance_creation);
+    explicit VulkanDevice(RHIContext *file_manager, const ocarina::InstanceCreation &instance_creation);
     ~VulkanDevice();
     void init_hardware_info();
 
-    [[nodiscard]] handle_ty create_buffer(size_t size, const string &desc) noexcept override;
+    [[nodiscard]] handle_ty create_buffer(size_t size, const string &desc, bool exported) noexcept override;
     void destroy_buffer(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_texture(uint3 res, PixelStorage pixel_storage,
                                            uint level_num,
                                            const string &desc) noexcept override;
-    [[nodiscard]] handle_ty create_texture(Image *image, const TextureViewCreation &texture_view) noexcept override;
+    [[nodiscard]] handle_ty create_texture(Image *image, const TextureViewCreation &texture_view, const TextureSampler& sampler) noexcept override;
     void destroy_texture(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_shader(const Function &function) noexcept override;
     [[nodiscard]] handle_ty create_shader_from_file(const std::string &file_name, ShaderType shader_type, const std::set<string>& options) noexcept override;
@@ -78,7 +79,7 @@ public:
     void bind_pipeline(const handle_ty pipeline) noexcept override;
     RHIPipeline *get_pipeline(const PipelineState &pipeline_state, RHIRenderPass *render_pass) noexcept override;
     DescriptorSet *get_global_descriptor_set(const string &name) noexcept override;
-    void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline* pipeline) noexcept override;
+    //void bind_descriptor_sets(DescriptorSet **descriptor_set, uint32_t descriptor_sets_num, RHIPipeline* pipeline) noexcept override;
 
     OC_MAKE_MEMBER_GETTER(logicalDevice, );
 
@@ -116,6 +117,10 @@ public:
     //uint32_t queueFamilyIndexPerQueue_[(uint32_t)QueueType::NumQueueType];
     std::vector<VkQueueFamilyProperties> queueFamilyProperties_;
     uint32_t queueFamilyCount_ = 0;
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT indexing_features_{};
+    bool support_bindless_ = false;
     uint32_t getQueueFamilyIndex(uint32_t queueFlags) const;
+
+    bool verify_bindless_support(VkPhysicalDevice physical_device) const;
 };
 }// namespace ocarina

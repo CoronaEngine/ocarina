@@ -189,12 +189,6 @@ public:
         virtual ~Impl() = default;
         virtual void launch(handle_ty stream, ShaderDispatchCommand *cmd) noexcept = 0;
         virtual void compute_fit_size() noexcept {};
-        uint8_t get_push_constant_size() const noexcept {
-            return push_constant_size_;// Default implementation, can be overridden
-        }
-
-    protected:
-        uint8_t push_constant_size_ = 0;// size in bytes
     };
 };
 
