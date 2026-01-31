@@ -187,7 +187,6 @@ public:
         return copy_from_buffer_impl(buffer.handle(), buffer_offset * buffer.element_size(), async);
     }
 
-    void destroy() noexcept = 0;
     [[nodiscard]] uint3 resolution() const noexcept { return impl()->resolution(); }
     [[nodiscard]] handle_ty array_handle() const noexcept { return impl()->array_handle(); }
     [[nodiscard]] handle_ty tex_handle() const noexcept { return impl()->tex_handle(); }
@@ -219,7 +218,6 @@ public:
     [[nodiscard]] BufferToTextureCommand *copy_from_buffer_impl(handle_ty buffer_handle,
                                                          size_t buffer_offset_in_byte,
                                                          bool async) const noexcept override;
-    void destroy() noexcept override;
     /// for dsl
     [[nodiscard]] const Expression *expression() const noexcept override;
 };
@@ -243,7 +241,6 @@ public:
     [[nodiscard]] BufferToTextureCommand *copy_from_buffer_impl(handle_ty buffer_handle,
                                                          size_t buffer_offset_in_byte,
                                                          bool async) const noexcept override;
-    void destroy() noexcept override;
     /// for dsl
     [[nodiscard]] const Expression *expression() const noexcept override;
 };
