@@ -139,7 +139,7 @@ template<typename T, size_t N, size_t M>
     }(std::make_index_sequence<M>());
 }
 
-template<typename T,typename S, size_t N, size_t M>
+template<typename T, typename S, size_t N, size_t M>
 requires ocarina::is_scalar_v<S>
 [[nodiscard]] constexpr auto operator*(ocarina::Matrix<T, N, M> m, S s) {
     using scalar_type = decltype(T{} * s);
@@ -167,7 +167,7 @@ template<typename T, typename S, size_t N, size_t M>
     }(std::make_index_sequence<M>());
 }
 
-template<typename T,typename S, size_t N, size_t M, size_t Dim>
+template<typename T, typename S, size_t N, size_t M, size_t Dim>
 [[nodiscard]] constexpr auto operator*(ocarina::Matrix<T, N, Dim> lhs, ocarina::Matrix<S, Dim, M> rhs) noexcept {
     using scalar_type = decltype(T{} * S{});
     return [&]<size_t... i>(std::index_sequence<i...>) {
