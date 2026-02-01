@@ -28,6 +28,18 @@ int main() {
     stream << synchronize() << commit();
 
     half h = 0.66f;
+
+
+
+    float3 f3 = make_float3(1.f, 2.f, 3.f);
+    half3 h2(f3);
+
+
+    float3x3 f3x3 = make_float3x3(3.f);
+    half3x3 h3x3(f3x3);
+
+    cout << to_str(h3x3 * h3x3) << endl;
+
     h = 100.66;
     auto a = 1.f+h ;
 

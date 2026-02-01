@@ -40,7 +40,7 @@ public:
     requires(NN >= N && MM >= M)
     explicit constexpr Matrix(Matrix<TT, NN, MM> mat) noexcept
         : cols_{[&]<size_t... i>(std::index_sequence<i...>) {
-              return std::array<Vector<TT, N>, M>{Vector<TT, N>{mat[i]}...};
+              return std::array<Vector<T, N>, M>{Vector<T, N>{mat[i]}...};
           }(std::make_index_sequence<M>())} {}
 
     constexpr Matrix(scalar_type s = 1) noexcept
