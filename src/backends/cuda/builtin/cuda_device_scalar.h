@@ -26,6 +26,6 @@ Dst oc_static_cast(Src src) {
 }
 
 template<typename Dst>
-Dst oc_static_cast(half src) {
+Dst oc_static_cast(oc_half src) {
     return static_cast<Dst>(oc_half2float(src));
 }

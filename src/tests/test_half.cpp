@@ -22,6 +22,7 @@ int main() {
 
     Kernel kernel = [&](Float f) {
         $info("{} ", f);
+        Half3 h3 = make_half3(make_float3(f));
     };
     auto shader = device.compile(kernel);
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();
