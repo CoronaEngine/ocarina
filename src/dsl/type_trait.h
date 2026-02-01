@@ -669,50 +669,6 @@ struct scalar {
 template<typename T>
 using scalar_t = typename detail::scalar<T>::type;
 
-namespace detail {
-
-template<typename T, size_t N>
-requires(!is_dsl_v<T>) && is_scalar_v<expr_value_t<T>>
-Vector<expr_value_t<T>, N> vector_deduce();
-template<typename T, size_t N>
-requires is_dsl_v<T> && is_scalar_v<expr_value_t<T>>
-Var<Vector<expr_value_t<T>, N>> vector_deduce();
-
-template<typename T, size_t N>
-requires(!is_dsl_v<T>) && is_vector_v<T>
-auto vector_deduce() {
-    return Vector<vector_expr_element_t<T>, N>();
-}
-
-template<typename T, size_t N>
-requires is_dsl_v<T> && is_vector_expr_v<T>
-auto vector_deduce() {
-    return Var<Vector<vector_expr_element_t<T>, N>>();
-}
-
-template<typename T, size_t N>
-requires(!is_dsl_v<T>) && is_matrix_v<T>
-Vector<float, N> vector_deduce();
-template<typename T, size_t N>
-requires is_dsl_v<T> && is_matrix_expr_v<T>
-Var<Vector<float, N>> vector_deduce();
-
-template<typename T, size_t N>
-struct vec {
-    using type = decltype(vector_deduce<std::remove_cvref_t<T>, N>());
-};
-
-}// namespace detail
-
-template<typename T, size_t N>
-using vec_t = typename detail::vec<T, N>::type;
-template<typename T>
-using vec2_t = vec_t<T, 2>;
-template<typename T>
-using vec3_t = vec_t<T, 3>;
-template<typename T>
-using vec4_t = vec_t<T, 4>;
-
 }// namespace ocarina
 
 namespace ocarina {
