@@ -36,5 +36,26 @@ struct enable_if<true, T> {
 template<bool B, typename T = void>
 using enable_if_t = typename enable_if<B, T>::type;
 
-}
+template<typename T, unsigned int N>
+class array {
+private:
+    T _data[N];
 
+public:
+    __device__ constexpr array() noexcept : _data{} {}
+    template<typename... Elem>
+    __device__ constexpr array(Elem... elem) noexcept : _data{elem...} {}
+    __device__ constexpr array(array &&) noexcept = default;
+    __device__ constexpr array(const array &) noexcept = default;
+    __device__ constexpr array &operator=(array &&) noexcept = default;
+    __device__ constexpr array &operator=(const array &) noexcept = default;
+    __device__ constexpr T *data() noexcept { return &_data[0]; }
+    __device__ constexpr const T *data() const noexcept { return &_data[0]; }
+    [[nodiscard]] __device__ T &operator[](size_t i) noexcept { return _data[i]; }
+    [[nodiscard]] __device__ T operator[](size_t i) const noexcept { return _data[i]; }
+};
+
+}// namespace ocarina
+
+template<typename T, unsigned int N>
+using oc_array = ocarina::array<T, N>;
