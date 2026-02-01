@@ -39,10 +39,10 @@ struct LiteralPrinter {
             }
         }
     }
-    template<size_t N, size_t M>
-    void operator()(Matrix<N, M> m) {
+    template<typename T, size_t N, size_t M>
+    void operator()(Matrix<T, N, M> m) {
         auto printer = *this;
-        scratch << TYPE_PREFIX << Type::of<Matrix<N, M>>()->name() << "(";
+        scratch << TYPE_PREFIX << Type::of<Matrix<T, N, M>>()->name() << "(";
         for (int i = 0; i < M; ++i) {
             const char *token = i == M - 1 ? ")" : ",";
             printer(m[i]);

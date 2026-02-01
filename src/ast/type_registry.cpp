@@ -222,16 +222,16 @@ void TypeRegistry::parse_matrix(Type *type, ocarina::string_view desc) noexcept 
     auto [start, end] = detail::bracket_matching_far(desc, '<', '>');
     auto dimension_str = desc.substr(start + 1, end - start - 1);
     auto dims = string_split(dimension_str, ',');
-    int N = std::stoi(string(dims[0]));
-    int M = std::stoi(string(dims[1]));
+    int N = std::stoi(string(dims[1]));
+    int M = std::stoi(string(dims[2]));
     type->dimension_ = N;
     auto tmp_desc = ocarina::format("vector<float,{}>", M);
     type->members_.push_back(parse_type((tmp_desc)));
 
 #define OC_SIZE_ALIGN(NN, MM)                       \
     if (N == (NN) && M == (MM)) {                   \
-        type->size_ = sizeof(Matrix<NN, MM>);       \
-        type->alignment_ = alignof(Matrix<NN, MM>); \
+        type->size_ = sizeof(Matrix<float,NN, MM>);       \
+        type->alignment_ = alignof(Matrix<float, NN, MM>); \
     } else
     OC_SIZE_ALIGN(2, 2)
     OC_SIZE_ALIGN(2, 3)

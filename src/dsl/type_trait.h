@@ -717,11 +717,11 @@ namespace detail {
 
 template<typename T, size_t N, size_t M>
 requires(!is_dsl_v<T>)
-Matrix<N, M> matrix_deduce();
+Matrix<float, N, M> matrix_deduce();
 
 template<typename T, size_t N, size_t M>
 requires is_dsl_v<T>
-Var<Matrix<N, M>> matrix_deduce();
+Var<Matrix<float, N, M>> matrix_deduce();
 
 template<typename T, size_t N, size_t M>
 struct matrix {

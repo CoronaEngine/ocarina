@@ -248,7 +248,7 @@ OC_MAKE_DSL_TYPE(Bool, bool)
 #undef OC_MAKE_DSL_TYPE_IMPL
 
 #define OC_MAKE_DSL_MATRIX(N, M) \
-    using Float##N##x##M = Var<Matrix<N, M>>;
+    using Float##N##x##M = Var<Matrix<float, N, M>>;
 
 OC_MAKE_DSL_MATRIX(2, 2)
 OC_MAKE_DSL_MATRIX(2, 3)

@@ -40,8 +40,8 @@ struct is_3row_matrix {
     static constexpr bool value = false;
 };
 
-template<size_t N>
-struct is_3row_matrix<Matrix<3, N>> {
+template<typename T, size_t N>
+struct is_3row_matrix<Matrix<T, 3, N>> {
     static constexpr bool value = true;
 };
 
