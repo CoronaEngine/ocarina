@@ -713,31 +713,6 @@ using vec3_t = vec_t<T, 3>;
 template<typename T>
 using vec4_t = vec_t<T, 4>;
 
-namespace detail {
-
-template<typename T, size_t N, size_t M>
-requires(!is_dsl_v<T>)
-Matrix<float, N, M> matrix_deduce();
-
-template<typename T, size_t N, size_t M>
-requires is_dsl_v<T>
-Var<Matrix<float, N, M>> matrix_deduce();
-
-template<typename T, size_t N, size_t M>
-struct matrix {
-    using type = decltype(matrix_deduce<std::remove_cvref_t<T>, N, M>());
-};
-}// namespace detail
-
-template<typename T, size_t N, size_t M>
-using matrix_t = typename detail::matrix<T, N, M>::type;
-template<typename T, size_t M>
-using matrix2_t = matrix_t<T, 2, M>;
-template<typename T, size_t M>
-using matrix3_t = matrix_t<T, 3, M>;
-template<typename T, size_t M>
-using matrix4_t = matrix_t<T, 4, M>;
-
 }// namespace ocarina
 
 namespace ocarina {

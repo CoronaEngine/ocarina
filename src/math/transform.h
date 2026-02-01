@@ -14,9 +14,8 @@ namespace ocarina {
 
 inline namespace transform {
 
-template<typename T>
-requires is_vector3_expr_v<T>
-[[nodiscard]] constexpr matrix4_t<T, 4> translation(const T &t) noexcept {
+template<EPort p = D>
+[[nodiscard]] constexpr oc_float4x4<p> translation(const oc_float3<p> &t) noexcept {
     return make_float4x4(
         1.f, 0.f, 0.f, 0.f,
         0.f, 1.f, 0.f, 0.f,
@@ -24,15 +23,13 @@ requires is_vector3_expr_v<T>
         t.x, t.y, t.z, 1.f);
 }
 
-template<typename T>
-requires is_scalar_expr_v<T>
-[[nodiscard]] constexpr matrix4_t<T, 4> translation(const T &x, const T &y, const T &z) noexcept {
-    return translation(make_float3(x, y, z));
+template<EPort p = D>
+[[nodiscard]] constexpr oc_float4x4<p> translation(const oc_float<p> &x, const oc_float<p> &y, const oc_float<p> &z) noexcept {
+    return translation<p>(make_float3(x, y, z));
 }
 
-template<typename T>
-requires is_vector3_expr_v<T>
-[[nodiscard]] constexpr matrix4_t<T, 4> scale(const T &s) noexcept {
+template<EPort p = D>
+[[nodiscard]] constexpr oc_float4x4<p> scale(const oc_float3<p> &s) noexcept {
     return make_float4x4(
         s.x, 0.f, 0.f, 0.f,
         0.f, s.y, 0.f, 0.f,
@@ -40,13 +37,16 @@ requires is_vector3_expr_v<T>
         0.f, 0.f, 0.f, 1.f);
 }
 
-template<typename T>
-requires is_scalar_expr_v<T>
-[[nodiscard]] constexpr matrix4_t<T, 4> scale(const T &x, const T &y, const T &z) noexcept { return scale(make_float3(x, y, z)); }
+template<EPort p = D>
+[[nodiscard]] constexpr oc_float4x4<p> scale(const oc_float<p> &x, const oc_float<p> &y,
+                                             const oc_float<p> &z) noexcept {
+    return scale<p>(make_float3(x, y, z));
+}
 
-template<typename T>
-requires is_scalar_expr_v<T>
-[[nodiscard]] constexpr matrix4_t<T, 4> scale(const T &s) noexcept { return scale(make_float3(s)); }
+template<EPort p = D>
+[[nodiscard]] constexpr oc_float4x4<p> scale(const oc_float<p> &s) noexcept {
+    return scale<p>(make_float3(s));
+}
 
 template<EPort p = D>
 [[nodiscard]] inline oc_float4x4<p> perspective(oc_float<p> fov_y, const oc_float<p> &z_near,
@@ -94,9 +94,9 @@ template<EPort p = D>
 template<EPort p = D>
 [[nodiscard]] oc_float4x4<p> TRS(const oc_float3<p> &t, const oc_float4<p> &r,
                                  const oc_float3<p> &s) noexcept {
-    oc_float4x4<p> T = translation(t);
+    oc_float4x4<p> T = translation<p>(t);
     oc_float4x4<p> R = rotation<p>(make_float3(r), r.w, false);
-    oc_float4x4<p> S = scale(s);
+    oc_float4x4<p> S = scale<p>(s);
     return T * R * S;
 }
 
