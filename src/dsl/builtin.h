@@ -361,29 +361,32 @@ OC_MAKE_VEC_MAKER(uchar, UCHAR)
 #undef OC_MAKE_VEC_MAKER_DIM
 #undef OC_MAKE_VEC_MAKER
 
-#define OC_MAKE_MATRIX(N, M)                                                                            \
-    template<typename... Args>                                                                          \
-    requires(any_dsl_v<Args...> && requires {                                                           \
-        make_float##N##x##M(expr_value_t<Args>{}...);                                                   \
-    })                                                                                                  \
-    OC_NODISCARD auto make_float##N##x##M(const Args &...args) {                                        \
-        auto expr = Function::current()->call_builtin(Type::of<float##N##x##M>(),                       \
-                                                      CallOp::MAKE_FLOAT##N##X##M, {OC_EXPR(args)...}); \
-        return eval<float##N##x##M>(expr);                                                              \
+#define OC_MAKE_MATRIX(type, TYPE, N, M)                                                                 \
+    template<typename... Args>                                                                           \
+    requires(any_dsl_v<Args...> && requires {                                                            \
+        make_##type##N##x##M(expr_value_t<Args>{}...);                                                   \
+    })                                                                                                   \
+    OC_NODISCARD auto make_##type##N##x##M(const Args &...args) {                                        \
+        auto expr = Function::current()->call_builtin(Type::of<type##N##x##M>(),                         \
+                                                      CallOp::MAKE_##TYPE##N##X##M, {OC_EXPR(args)...}); \
+        return eval<type##N##x##M>(expr);                                                                \
     }
 
-OC_MAKE_MATRIX(2, 2)
-OC_MAKE_MATRIX(2, 3)
-OC_MAKE_MATRIX(2, 4)
+#define OC_MAKE_MATRIX_FOR_TYPE(type, TYPE) \
+    OC_MAKE_MATRIX(type, TYPE, 2, 2)        \
+    OC_MAKE_MATRIX(type, TYPE, 2, 3)        \
+    OC_MAKE_MATRIX(type, TYPE, 2, 4)        \
+    OC_MAKE_MATRIX(type, TYPE, 3, 2)        \
+    OC_MAKE_MATRIX(type, TYPE, 3, 3)        \
+    OC_MAKE_MATRIX(type, TYPE, 3, 4)        \
+    OC_MAKE_MATRIX(type, TYPE, 4, 2)        \
+    OC_MAKE_MATRIX(type, TYPE, 4, 3)        \
+    OC_MAKE_MATRIX(type, TYPE, 4, 4)
 
-OC_MAKE_MATRIX(3, 2)
-OC_MAKE_MATRIX(3, 3)
-OC_MAKE_MATRIX(3, 4)
+OC_MAKE_MATRIX_FOR_TYPE(float, FLOAT)
+OC_MAKE_MATRIX_FOR_TYPE(half, HALF)
 
-OC_MAKE_MATRIX(4, 2)
-OC_MAKE_MATRIX(4, 3)
-OC_MAKE_MATRIX(4, 4)
-
+#undef OC_MAKE_MATRIX_FOR_TYPE
 #undef OC_MAKE_MATRIX
 
 template<typename Ret = void, typename... Args>
