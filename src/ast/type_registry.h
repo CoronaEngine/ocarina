@@ -55,7 +55,6 @@ template<typename T>
         } else {
             return std::to_string(val);
         }
-
     } else if constexpr (is_struct_v<T>) {
         string ret = ocarina::format("{}[", struct_member_tuple<T>::struct_name);
         traverse_tuple(struct_member_tuple_t<T>{}, [&]<typename Elm>(const Elm &_, uint index) {

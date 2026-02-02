@@ -42,9 +42,9 @@ public:
         : Ref<T>(ocarina::move(another)) {}
 
     Var<T> &set_symbol(const string &name) {
-         auto variable_expr = static_cast<const VariableExpr *>(Super::expression());
-         const_cast<VariableExpr *>(variable_expr)->variable().set_suffix(name);
-         return *this;
+        auto variable_expr = static_cast<const VariableExpr *>(Super::expression());
+        const_cast<VariableExpr *>(variable_expr)->variable().set_suffix(name);
+        return *this;
     }
 
     Var(const Var &another) noexcept
@@ -247,19 +247,24 @@ OC_MAKE_DSL_TYPE(Bool, bool)
 #undef OC_MAKE_DSL_TYPE
 #undef OC_MAKE_DSL_TYPE_IMPL
 
-#define OC_MAKE_DSL_MATRIX(N, M) \
-    using Float##N##x##M = Var<Matrix<float, N, M>>;
+#define OC_MAKE_DSL_MATRIX(Alias, type, N, M) \
+    using Alias##N##x##M = Var<Matrix<type, N, M>>;
 
-OC_MAKE_DSL_MATRIX(2, 2)
-OC_MAKE_DSL_MATRIX(2, 3)
-OC_MAKE_DSL_MATRIX(2, 4)
-OC_MAKE_DSL_MATRIX(3, 2)
-OC_MAKE_DSL_MATRIX(3, 3)
-OC_MAKE_DSL_MATRIX(3, 4)
-OC_MAKE_DSL_MATRIX(4, 2)
-OC_MAKE_DSL_MATRIX(4, 3)
-OC_MAKE_DSL_MATRIX(4, 4)
+#define OC_MAKE_DSL_FOR_TYPE(Alias, type) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 2, 2) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 2, 3) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 2, 4) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 3, 2) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 3, 3) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 3, 4) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 4, 2) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 4, 3) \
+    OC_MAKE_DSL_MATRIX(Alias, type, 4, 4)
 
+OC_MAKE_DSL_FOR_TYPE(Float, float)
+OC_MAKE_DSL_FOR_TYPE(Half, half)
+
+#undef OC_MAKE_DSL_FOR_TYPE
 #undef OC_MAKE_DSL_MATRIX
 
 template<typename T>
@@ -268,7 +273,8 @@ Var(T &&) -> Var<expr_value_t<T>>;
 template<typename T>
 Var(const Buffer<T> &) -> Var<Buffer<T>>;
 
-#define Def(Type, var_name) Type var_name; \
+#define Def(Type, var_name) \
+    Type var_name;          \
     var_name.set_symbol(#var_name)
 
 }// namespace ocarina

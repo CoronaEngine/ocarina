@@ -20,9 +20,11 @@ int main() {
     Stream stream = device.create_stream();
     Env::printer().init(device);
 
+    auto ts = TypeDesc<half3x3>::name();
+
     Kernel kernel = [&](Float f) {
         $info("{} ", f);
-        Half3 h3 = make_half3(make_float3(f));
+        Half3x3 h3;
         h3 = h3 * h3;
     };
     auto shader = device.compile(kernel);

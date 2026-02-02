@@ -102,7 +102,8 @@ void Type::update_name(ocarina::string_view desc) noexcept {
             name_ = ocarina::format("{}{}", element()->name(), dimension());
             break;
         case Tag::MATRIX:
-            name_ = ocarina::format("float{}x{}", dimension(), element()->dimension());
+            name_ = ocarina::format("{}{}x{}", element()->element()->name(),
+                                    dimension(), element()->dimension());
             break;
         default:
             name_ = desc;
