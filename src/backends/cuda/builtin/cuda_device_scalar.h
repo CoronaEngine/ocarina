@@ -29,3 +29,26 @@ template<typename Dst>
 Dst oc_static_cast(oc_half src) {
     return static_cast<Dst>(oc_half2float(src));
 }
+
+namespace ocarina {
+namespace detail {
+template<typename T>
+struct is_half_op_enable : ocarina::false_type {};
+
+template<>
+struct is_half_op_enable<float> : ocarina::true_type {};
+
+template<>
+struct is_half_op_enable<int> : ocarina::true_type {};
+
+template<>
+struct is_half_op_enable<oc_uint> : ocarina::true_type {};
+
+template<>
+struct is_half_op_enable<double> : ocarina::true_type {};
+}// namespace detail
+
+template<typename T>
+static constexpr auto is_half_op_enable_v = detail::is_half_op_enable<remove_cvref_t<T>>::value;
+
+}// namespace ocarina
