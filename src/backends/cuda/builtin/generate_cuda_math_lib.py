@@ -466,12 +466,8 @@ def define_unary_func(func_name, need_array, param):
     global content, name_lst
     body, types = param
     for elm in types:
-        if len(elm) == 1:
-            scalar = elm[0]
-            ret_t = elm[0]
-        else:
-            scalar = elm[0]
-            ret_t = elm[1]
+        scalar = elm.get("arg_type");
+        ret_t = elm.get("ret_type") if "ret_type" in elm else scalar
         ret_type = f"{prefix}_{ret_t}"
         arg_type = f"{prefix}_{scalar}"
         func = f"__device__ {ret_type} {prefix}_{func_name}({arg_type} v) {{ {body} }}\n"
@@ -500,46 +496,46 @@ def define_unary_func(func_name, need_array, param):
     
 def define_unary_funcs():
     tab = [
-        ["rcp", True , ["return 1.f / v;", [["int"], ["uint"], ["float"]]]],
-        ["sign", True , ["return v >= 0 ? 1: -1;", [["int"], ["float"]]]],
-        ["popcount", False , ["return __popc(v);", [["uint"]]]],
-        ["popcount", False , ["return __popcll(v);", [["ulong"]]]],
-        ["clz", False , ["return __clz(v);", [["uint"]]]],
-        ["clz", False , ["return __clzll(v);", [["ulong"]]]],
-        ["abs", False , ["return fabsf(v);", [["float"]]]],
-        ["abs", True , ["return abs(v);", [["int"]]]],
-        ["ceil", True , ["return ceilf(v);", [["float"]]]],
-        ["floor", True , ["return floorf(v);", [["float"]]]],
-        ["fract", True , ["return v - oc_floor(v);", [["float"]]]],
-        ["round", True , ["return roundf(v);", [["float"]]]],
-        ["sin", True , ["return sinf(v);",[["float"]]]],
-        ["cos", True , ["return cosf(v);", [["float"]]]],
-        ["tan", True , ["return tanf(v);", [["float"]]]],
-        ["sinh", True , ["return sinhf(v);",[["float"]]]],
-        ["cosh", True , ["return coshf(v);", [["float"]]]],
-        ["tanh", True , ["return tanhf(v);", [["float"]]]],
-        ["asin", True , ["return asinf(v);", [["float"]]]],
-        ["acos", True , ["return acosf(v);", [["float"]]]],
-        ["atan", True , ["return atanf(v);", [["float"]]]],
-        ["asinh", True , ["return asinhf(v);", [["float"]]]],
-        ["acosh", True , ["return acoshf(v);", [["float"]]]],
-        ["atanh", True , ["return atanhf(v);", [["float"]]]],
-        ["is_inf", False , ["return isinf(v);", [["float", "bool"]]]],
-        ["is_nan", False , ["return isnan(v);", [["float", "bool"]]]],
-        ["is_inf", True , ["return false;", [["int","bool"], ["uint","bool"]]]],
-        ["is_nan", True , ["return false;", [["int","bool"], ["uint","bool"]]]],
-        ["exp", True , ["return expf(v);",[["float"]]]],
-        ["exp2", True , ["return exp2f(v);",[["float"]]]],
-        ["exp10", True , ["return exp10f(v);",[["float"]]]],
-        ["log", True , ["return logf(v);",[["float"]]]],
-        ["log2", True , ["return log2f(v);",[["float"]]]],
-        ["log10", True , ["return log10f(v);",[["float"]]]],
-        ["sqr", True , ["return v * v;",[["int"],["uint"],["float"]]]],
-        ["sqrt", True , ["return sqrtf(v);",[["float"]]]],
-        ["rsqrt", True , ["return rsqrtf(v);",[["float"]]]],
-        ["degrees", True , ["return v * (180.f / 3.1415926535f);",[["float"]]]],
-        ["radians", True , ["return v * (3.1415926535f / 180.f);",[["float"]]]],
-        ["saturate", True , ["return fminf(1.f, fmaxf(0.f, v));",[["float"]]]],
+        ["rcp", True , ["return 1.f / v;", [{ "arg_type" :"int"}, { "arg_type" :"uint"}, { "arg_type" :"float"}]]],
+        ["sign", True , ["return v >= 0 ? 1: -1;", [{ "arg_type" :"int"}, { "arg_type" :"float"}]]],
+        ["popcount", False , ["return __popc(v);", [{ "arg_type" :"uint"}]]],
+        ["popcount", False , ["return __popcll(v);", [{ "arg_type" :"ulong"}]]],
+        ["clz", False , ["return __clz(v);", [{ "arg_type" :"uint"}]]],
+        ["clz", False , ["return __clzll(v);", [{ "arg_type" :"ulong"}]]],
+        ["abs", False , ["return fabsf(v);", [{ "arg_type" :"float"}]]],
+        ["abs", True , ["return abs(v);", [{ "arg_type" :"int"}]]],
+        ["ceil", True , ["return ceilf(v);", [{ "arg_type" :"float"}]]],
+        ["floor", True , ["return floorf(v);", [{ "arg_type" :"float"}]]],
+        ["fract", True , ["return v - oc_floor(v);", [{ "arg_type" :"float"}]]],
+        ["round", True , ["return roundf(v);", [{ "arg_type" :"float"}]]],
+        ["sin", True , ["return sinf(v);",[{ "arg_type" :"float"}]]],
+        ["cos", True , ["return cosf(v);", [{ "arg_type" :"float"}]]],
+        ["tan", True , ["return tanf(v);", [{ "arg_type" :"float"}]]],
+        ["sinh", True , ["return sinhf(v);",[{ "arg_type" :"float"}]]],
+        ["cosh", True , ["return coshf(v);", [{ "arg_type" :"float"}]]],
+        ["tanh", True , ["return tanhf(v);", [{ "arg_type" :"float"}]]],
+        ["asin", True , ["return asinf(v);", [{ "arg_type" :"float"}]]],
+        ["acos", True , ["return acosf(v);", [{ "arg_type" :"float"}]]],
+        ["atan", True , ["return atanf(v);", [{ "arg_type" :"float"}]]],
+        ["asinh", True , ["return asinhf(v);", [{ "arg_type" :"float"}]]],
+        ["acosh", True , ["return acoshf(v);", [{ "arg_type" :"float"}]]],
+        ["atanh", True , ["return atanhf(v);", [{ "arg_type" :"float"}]]],
+        ["is_inf", False , ["return isinf(v);", [{ "arg_type" :"float", "ret_type" : "bool"}]]],
+        ["is_nan", False , ["return isnan(v);", [{ "arg_type" :"float", "ret_type" :"bool"}]]],
+        ["is_inf", True , ["return false;", [{ "arg_type" :"int","ret_type" :"bool"}, { "arg_type" :"uint","ret_type" :"bool"}]]],
+        ["is_nan", True , ["return false;", [{ "arg_type" :"int","ret_type" :"bool"}, { "arg_type" :"uint","ret_type" :"bool"}]]],
+        ["exp", True , ["return expf(v);",[{ "arg_type" :"float"}]]],
+        ["exp2", True , ["return exp2f(v);",[{ "arg_type" :"float"}]]],
+        ["exp10", True , ["return exp10f(v);",[{ "arg_type" :"float"}]]],
+        ["log", True , ["return logf(v);",[{ "arg_type" :"float"}]]],
+        ["log2", True , ["return log2f(v);",[{ "arg_type" :"float"}]]],
+        ["log10", True , ["return log10f(v);",[{ "arg_type" :"float"}]]],
+        ["sqr", True , ["return v * v;",[{ "arg_type" :"int"},{ "arg_type" :"uint"},{ "arg_type" :"float"}]]],
+        ["sqrt", True , ["return sqrtf(v);",[{ "arg_type" :"float"}]]],
+        ["rsqrt", True , ["return rsqrtf(v);",[{ "arg_type" :"float"}]]],
+        ["degrees", True , ["return v * (180.f / 3.1415926535f);",[{ "arg_type" :"float"}]]],
+        ["radians", True , ["return v * (3.1415926535f / 180.f);",[{ "arg_type" :"float"}]]],
+        ["saturate", True , ["return fminf(1.f, fmaxf(0.f, v));",[{ "arg_type" :"float"}]]],
     ]
     for k, a, v in tab:
         define_unary_func(k,a, v)
