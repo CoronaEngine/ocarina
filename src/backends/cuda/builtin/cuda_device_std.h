@@ -61,6 +61,23 @@ struct remove_cvref {
 template<typename T>
 using remove_cvref_t = typename remove_cvref<T>::type;
 
+namespace detail {
+template<typename T>
+struct is_integral : public false_type {};
+
+template<>
+struct is_integral<int> : public true_type {};
+
+template<>
+struct is_integral<unsigned int> : public true_type {};
+
+template<>
+struct is_integral<unsigned long long> : public true_type {};
+}// namespace detail
+
+template<typename T>
+static constexpr bool is_integral_v = detail::is_integral<remove_cvref_t<T>>::value;
+
 template<size_t... Ints>
 struct index_sequence {};
 
