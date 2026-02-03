@@ -863,21 +863,21 @@ def define_unary_funcs():
 
 def define_binary_func(func_name, param):
     global content, name_lst
-    body, types = param
+    org_body, types = param
     for scalar in types:
         ret_type = f"{prefix}_{scalar}"
-        func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body} }}\n"
+        func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {org_body} }}\n"
         content += func
         for dim in range(2, 5):
             ret_type = f"{prefix}_{scalar}{dim}"
-            body2 = f"return {ret_type}("
+            body_vec = f"return {ret_type}("
             for d in range(0, dim):
                 split = ", " if d != dim - 1 else ");"
                 field_name = name_lst[d]
-                body2 += (
+                body_vec += (
                     f"{prefix}_{func_name}(lhs.{field_name}, rhs.{field_name})" + split
                 )
-            func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body2} }}\n"
+            func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body_vec} }}\n"
             content += func
     string = f"""template<typename T, oc_uint N>
 oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> {prefix}_{func_name}(oc_array<T, N> lhs, oc_array<T, N> rhs) {{
