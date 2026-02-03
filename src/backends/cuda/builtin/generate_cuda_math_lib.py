@@ -521,11 +521,11 @@ template<typename P, typename T, oc_uint N>
 
 def define_unary_func(func_name, need_array, param):
     global content, name_lst
-    body, types = param
+    org_body, types = param
     for elm in types:
         scalar = elm.get("arg_type")
         ret_t = elm.get("ret_type", scalar)
-        body = elm.get("body", body)
+        body = elm.get("body", org_body)
         ret_type = f"{prefix}_{ret_t}"
         arg_type = f"{prefix}_{scalar}"
         func = (
@@ -677,9 +677,18 @@ def define_unary_funcs():
             [
                 "return false;",
                 [
+                    {
+                        "arg_type": "float",
+                        "ret_type": "bool",
+                        "body": "return isinf(v);",
+                    },
+                    {
+                        "arg_type": "half",
+                        "ret_type": "bool",
+                        "body": "return __hisinf(v);",
+                    },
                     {"arg_type": "int", "ret_type": "bool"},
                     {"arg_type": "uint", "ret_type": "bool"},
-                    {"arg_type": "float", "ret_type": "bool", "body":"return isinf(v);"},
                 ],
             ],
         ],
@@ -689,14 +698,43 @@ def define_unary_funcs():
             [
                 "return false;",
                 [
+                    {
+                        "arg_type": "float",
+                        "ret_type": "bool",
+                        "body": "return isnan(v);",
+                    },
+                    {
+                        "arg_type": "half",
+                        "ret_type": "bool",
+                        "body": "return __hisnan(v);",
+                    },
                     {"arg_type": "int", "ret_type": "bool"},
                     {"arg_type": "uint", "ret_type": "bool"},
-                    {"arg_type": "float", "ret_type": "bool" , "body" :"return isnan(v);"}
                 ],
             ],
         ],
-        ["exp", True, ["return expf(v);", [{"arg_type": "float"}]]],
-        ["exp2", True, ["return exp2f(v);", [{"arg_type": "float"}]]],
+        [
+            "exp",
+            True,
+            [
+                "return expf(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hexp(v);"},
+                ],
+            ],
+        ],
+        [
+            "exp2",
+            True,
+            [
+                "return exp2f(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hexp2(v);"},
+                ],
+            ],
+        ],
         ["exp10", True, ["return exp10f(v);", [{"arg_type": "float"}]]],
         ["log", True, ["return logf(v);", [{"arg_type": "float"}]]],
         ["log2", True, ["return log2f(v);", [{"arg_type": "float"}]]],
