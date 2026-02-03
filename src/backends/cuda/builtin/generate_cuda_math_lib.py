@@ -735,10 +735,50 @@ def define_unary_funcs():
                 ],
             ],
         ],
-        ["exp10", True, ["return exp10f(v);", [{"arg_type": "float"}]]],
-        ["log", True, ["return logf(v);", [{"arg_type": "float"}]]],
-        ["log2", True, ["return log2f(v);", [{"arg_type": "float"}]]],
-        ["log10", True, ["return log10f(v);", [{"arg_type": "float"}]]],
+        [
+            "exp10",
+            True,
+            [
+                "return exp10f(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hexp10(v);"},
+                ],
+            ],
+        ],
+        [
+            "log",
+            True,
+            [
+                "return logf(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hlog(v);"},
+                ],
+            ],
+        ],
+        [
+            "log2",
+            True,
+            [
+                "return log2f(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hlog2(v);"},
+                ],
+            ],
+        ],
+        [
+            "log10",
+            True,
+            [
+                "return log10f(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hlog10(v);"},
+                ],
+            ],
+        ],
         [
             "sqr",
             True,
