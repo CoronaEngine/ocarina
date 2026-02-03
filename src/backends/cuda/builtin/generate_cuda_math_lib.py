@@ -929,7 +929,7 @@ def define_binary_funcs():
             ],
         ],
         "atan2": ["return atan2f(lhs, rhs);", [{"arg_type": "float"}, {"arg_type": "half"}]],
-        "copysign": ["return ::copysignf(lhs, rhs);", [{"arg_type": "float"}]],
+        "copysign": ["return ::copysignf(lhs, rhs);", [{"arg_type": "float"},{"arg_type": "half"}]],
     }
     for k, v in tab.items():
         define_binary_func(k, v)

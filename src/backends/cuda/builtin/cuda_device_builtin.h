@@ -1574,6 +1574,10 @@ __device__ oc_float oc_copysign(oc_float lhs, oc_float rhs) { return ::copysignf
 __device__ oc_float2 oc_copysign(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_copysign(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_copysign(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z), oc_copysign(lhs.w, rhs.w)); }
+__device__ oc_half oc_copysign(oc_half lhs, oc_half rhs) { return ::copysignf(lhs, rhs); }
+__device__ oc_half2 oc_copysign(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y)); }
+__device__ oc_half3 oc_copysign(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z)); }
+__device__ oc_half4 oc_copysign(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z), oc_copysign(lhs.w, rhs.w)); }
 template<typename T, oc_uint N>
 oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_copysign(T{}, T{})), N> ret;
