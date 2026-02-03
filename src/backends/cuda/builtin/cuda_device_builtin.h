@@ -993,7 +993,6 @@ __device__ oc_uint oc_popcount(oc_uint v) { return __popc(v); }
 __device__ oc_uint2 oc_popcount(oc_uint2 v) { return oc_uint2(oc_popcount(v.x), oc_popcount(v.y)); }
 __device__ oc_uint3 oc_popcount(oc_uint3 v) { return oc_uint3(oc_popcount(v.x), oc_popcount(v.y), oc_popcount(v.z)); }
 __device__ oc_uint4 oc_popcount(oc_uint4 v) { return oc_uint4(oc_popcount(v.x), oc_popcount(v.y), oc_popcount(v.z), oc_popcount(v.w)); }
-
 __device__ oc_ulong oc_popcount(oc_ulong v) { return __popcll(v); }
 __device__ oc_ulong2 oc_popcount(oc_ulong2 v) { return oc_ulong2(oc_popcount(v.x), oc_popcount(v.y)); }
 __device__ oc_ulong3 oc_popcount(oc_ulong3 v) { return oc_ulong3(oc_popcount(v.x), oc_popcount(v.y), oc_popcount(v.z)); }
@@ -1003,7 +1002,6 @@ __device__ oc_uint oc_clz(oc_uint v) { return __clz(v); }
 __device__ oc_uint2 oc_clz(oc_uint2 v) { return oc_uint2(oc_clz(v.x), oc_clz(v.y)); }
 __device__ oc_uint3 oc_clz(oc_uint3 v) { return oc_uint3(oc_clz(v.x), oc_clz(v.y), oc_clz(v.z)); }
 __device__ oc_uint4 oc_clz(oc_uint4 v) { return oc_uint4(oc_clz(v.x), oc_clz(v.y), oc_clz(v.z), oc_clz(v.w)); }
-
 __device__ oc_ulong oc_clz(oc_ulong v) { return __clzll(v); }
 __device__ oc_ulong2 oc_clz(oc_ulong2 v) { return oc_ulong2(oc_clz(v.x), oc_clz(v.y)); }
 __device__ oc_ulong3 oc_clz(oc_ulong3 v) { return oc_ulong3(oc_clz(v.x), oc_clz(v.y), oc_clz(v.z)); }
@@ -1013,7 +1011,6 @@ __device__ oc_float oc_abs(oc_float v) { return fabsf(v); }
 __device__ oc_float2 oc_abs(oc_float2 v) { return oc_float2(oc_abs(v.x), oc_abs(v.y)); }
 __device__ oc_float3 oc_abs(oc_float3 v) { return oc_float3(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z)); }
 __device__ oc_float4 oc_abs(oc_float4 v) { return oc_float4(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z), oc_abs(v.w)); }
-
 __device__ oc_int oc_abs(oc_int v) { return abs(v); }
 __device__ oc_int2 oc_abs(oc_int2 v) { return oc_int2(oc_abs(v.x), oc_abs(v.y)); }
 __device__ oc_int3 oc_abs(oc_int3 v) { return oc_int3(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z)); }
@@ -1059,6 +1056,10 @@ __device__ oc_float oc_fract(oc_float v) { return v - oc_floor(v); }
 __device__ oc_float2 oc_fract(oc_float2 v) { return oc_float2(oc_fract(v.x), oc_fract(v.y)); }
 __device__ oc_float3 oc_fract(oc_float3 v) { return oc_float3(oc_fract(v.x), oc_fract(v.y), oc_fract(v.z)); }
 __device__ oc_float4 oc_fract(oc_float4 v) { return oc_float4(oc_fract(v.x), oc_fract(v.y), oc_fract(v.z), oc_fract(v.w)); }
+__device__ oc_half oc_fract(oc_half v) { return v - oc_floor(v); }
+__device__ oc_half2 oc_fract(oc_half2 v) { return oc_half2(oc_fract(v.x), oc_fract(v.y)); }
+__device__ oc_half3 oc_fract(oc_half3 v) { return oc_half3(oc_fract(v.x), oc_fract(v.y), oc_fract(v.z)); }
+__device__ oc_half4 oc_fract(oc_half4 v) { return oc_half4(oc_fract(v.x), oc_fract(v.y), oc_fract(v.z), oc_fract(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_fract(oc_array<T, N> x) {
     oc_array<T, N> ret{};
@@ -1070,6 +1071,10 @@ __device__ oc_float oc_round(oc_float v) { return roundf(v); }
 __device__ oc_float2 oc_round(oc_float2 v) { return oc_float2(oc_round(v.x), oc_round(v.y)); }
 __device__ oc_float3 oc_round(oc_float3 v) { return oc_float3(oc_round(v.x), oc_round(v.y), oc_round(v.z)); }
 __device__ oc_float4 oc_round(oc_float4 v) { return oc_float4(oc_round(v.x), oc_round(v.y), oc_round(v.z), oc_round(v.w)); }
+__device__ oc_half oc_round(oc_half v) { float f = __half2float(v); f = roundf(f);return __float2half_rn(f); }
+__device__ oc_half2 oc_round(oc_half2 v) { return oc_half2(oc_round(v.x), oc_round(v.y)); }
+__device__ oc_half3 oc_round(oc_half3 v) { return oc_half3(oc_round(v.x), oc_round(v.y), oc_round(v.z)); }
+__device__ oc_half4 oc_round(oc_half4 v) { return oc_half4(oc_round(v.x), oc_round(v.y), oc_round(v.z), oc_round(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_round(oc_array<T, N> x) {
     oc_array<T, N> ret{};
@@ -1081,6 +1086,10 @@ __device__ oc_float oc_sin(oc_float v) { return sinf(v); }
 __device__ oc_float2 oc_sin(oc_float2 v) { return oc_float2(oc_sin(v.x), oc_sin(v.y)); }
 __device__ oc_float3 oc_sin(oc_float3 v) { return oc_float3(oc_sin(v.x), oc_sin(v.y), oc_sin(v.z)); }
 __device__ oc_float4 oc_sin(oc_float4 v) { return oc_float4(oc_sin(v.x), oc_sin(v.y), oc_sin(v.z), oc_sin(v.w)); }
+__device__ oc_half oc_sin(oc_half v) { return hsin(v); }
+__device__ oc_half2 oc_sin(oc_half2 v) { return oc_half2(oc_sin(v.x), oc_sin(v.y)); }
+__device__ oc_half3 oc_sin(oc_half3 v) { return oc_half3(oc_sin(v.x), oc_sin(v.y), oc_sin(v.z)); }
+__device__ oc_half4 oc_sin(oc_half4 v) { return oc_half4(oc_sin(v.x), oc_sin(v.y), oc_sin(v.z), oc_sin(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_sin(oc_array<T, N> x) {
     oc_array<T, N> ret{};

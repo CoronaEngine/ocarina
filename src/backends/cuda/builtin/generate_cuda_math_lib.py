@@ -575,12 +575,36 @@ def define_unary_funcs():
             True,
             ["return v >= 0 ? 1: -1;", [{"arg_type": "int"}, {"arg_type": "float"}]],
         ],
-        ["popcount", False, ["return __popc(v);", [{"arg_type": "uint"}]]],
-        ["popcount", False, ["return __popcll(v);", [{"arg_type": "ulong"}]]],
-        ["clz", False, ["return __clz(v);", [{"arg_type": "uint"}]]],
-        ["clz", False, ["return __clzll(v);", [{"arg_type": "ulong"}]]],
-        ["abs", False, ["return fabsf(v);", [{"arg_type": "float"}]]],
-        ["abs", True, ["return abs(v);", [{"arg_type": "int"}]]],
+        [
+            "popcount",
+            False,
+            [
+                "return __popc(v);",
+                [
+                    {"arg_type": "uint"},
+                    {"arg_type": "ulong", "body": "return __popcll(v);"},
+                ],
+            ],
+        ],
+        [
+            "clz",
+            False,
+            [
+                "return __clz(v);",
+                [
+                    {"arg_type": "uint"},
+                    {"arg_type": "ulong", "body": "return __clzll(v);"},
+                ],
+            ],
+        ],
+        [
+            "abs",
+            True,
+            [
+                "return fabsf(v);",
+                [{"arg_type": "float"}, {"arg_type": "int", "body": "return abs(v);"}],
+            ],
+        ],
         [
             "ceil",
             True,
@@ -603,9 +627,39 @@ def define_unary_funcs():
                 ],
             ],
         ],
-        ["fract", True, ["return v - oc_floor(v);", [{"arg_type": "float"}]]],
-        ["round", True, ["return roundf(v);", [{"arg_type": "float"}]]],
-        ["sin", True, ["return sinf(v);", [{"arg_type": "float"}]]],
+        [
+            "fract",
+            True,
+            [
+                "return v - oc_floor(v);",
+                [{"arg_type": "float"}, {"arg_type": "half"}],
+            ],
+        ],
+        [
+            "round",
+            True,
+            [
+                "return roundf(v);",
+                [
+                    {"arg_type": "float"},
+                    {
+                        "arg_type": "half",
+                        "body": "float f = __half2float(v); f = roundf(f);return __float2half_rn(f);",
+                    },
+                ],
+            ],
+        ],
+        [
+            "sin",
+            True,
+            [
+                "return sinf(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hsin(v);"},
+                ],
+            ],
+        ],
         ["cos", True, ["return cosf(v);", [{"arg_type": "float"}]]],
         ["tan", True, ["return tanf(v);", [{"arg_type": "float"}]]],
         ["sinh", True, ["return sinhf(v);", [{"arg_type": "float"}]]],
