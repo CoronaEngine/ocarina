@@ -581,8 +581,28 @@ def define_unary_funcs():
         ["clz", False, ["return __clzll(v);", [{"arg_type": "ulong"}]]],
         ["abs", False, ["return fabsf(v);", [{"arg_type": "float"}]]],
         ["abs", True, ["return abs(v);", [{"arg_type": "int"}]]],
-        ["ceil", True, ["return ceilf(v);", [{"arg_type": "float"}]]],
-        ["floor", True, ["return floorf(v);", [{"arg_type": "float"}]]],
+        [
+            "ceil",
+            True,
+            [
+                "return ceilf(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hceil(v);"},
+                ],
+            ],
+        ],
+        [
+            "floor",
+            True,
+            [
+                "return floorf(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hfloor(v);"},
+                ],
+            ],
+        ],
         ["fract", True, ["return v - oc_floor(v);", [{"arg_type": "float"}]]],
         ["round", True, ["return roundf(v);", [{"arg_type": "float"}]]],
         ["sin", True, ["return sinf(v);", [{"arg_type": "float"}]]],

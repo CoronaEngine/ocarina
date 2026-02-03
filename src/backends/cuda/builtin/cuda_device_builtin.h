@@ -1029,6 +1029,10 @@ __device__ oc_float oc_ceil(oc_float v) { return ceilf(v); }
 __device__ oc_float2 oc_ceil(oc_float2 v) { return oc_float2(oc_ceil(v.x), oc_ceil(v.y)); }
 __device__ oc_float3 oc_ceil(oc_float3 v) { return oc_float3(oc_ceil(v.x), oc_ceil(v.y), oc_ceil(v.z)); }
 __device__ oc_float4 oc_ceil(oc_float4 v) { return oc_float4(oc_ceil(v.x), oc_ceil(v.y), oc_ceil(v.z), oc_ceil(v.w)); }
+__device__ oc_half oc_ceil(oc_half v) { return hceil(v); }
+__device__ oc_half2 oc_ceil(oc_half2 v) { return oc_half2(oc_ceil(v.x), oc_ceil(v.y)); }
+__device__ oc_half3 oc_ceil(oc_half3 v) { return oc_half3(oc_ceil(v.x), oc_ceil(v.y), oc_ceil(v.z)); }
+__device__ oc_half4 oc_ceil(oc_half4 v) { return oc_half4(oc_ceil(v.x), oc_ceil(v.y), oc_ceil(v.z), oc_ceil(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_ceil(oc_array<T, N> x) {
     oc_array<T, N> ret{};
@@ -1040,6 +1044,10 @@ __device__ oc_float oc_floor(oc_float v) { return floorf(v); }
 __device__ oc_float2 oc_floor(oc_float2 v) { return oc_float2(oc_floor(v.x), oc_floor(v.y)); }
 __device__ oc_float3 oc_floor(oc_float3 v) { return oc_float3(oc_floor(v.x), oc_floor(v.y), oc_floor(v.z)); }
 __device__ oc_float4 oc_floor(oc_float4 v) { return oc_float4(oc_floor(v.x), oc_floor(v.y), oc_floor(v.z), oc_floor(v.w)); }
+__device__ oc_half oc_floor(oc_half v) { return hfloor(v); }
+__device__ oc_half2 oc_floor(oc_half2 v) { return oc_half2(oc_floor(v.x), oc_floor(v.y)); }
+__device__ oc_half3 oc_floor(oc_half3 v) { return oc_half3(oc_floor(v.x), oc_floor(v.y), oc_floor(v.z)); }
+__device__ oc_half4 oc_floor(oc_half4 v) { return oc_half4(oc_floor(v.x), oc_floor(v.y), oc_floor(v.z), oc_floor(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_floor(oc_array<T, N> x) {
     oc_array<T, N> ret{};
