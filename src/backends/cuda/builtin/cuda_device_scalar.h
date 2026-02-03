@@ -25,10 +25,10 @@ Dst oc_static_cast(Src src) {
     return static_cast<Dst>(src);
 }
 
-template<typename Dst>
-Dst oc_static_cast(oc_half src) {
-    return static_cast<Dst>(oc_half2float(src));
-}
+// template<typename Dst>
+// Dst oc_static_cast(oc_half src) {
+//     return static_cast<Dst>(oc_half2float(src));
+// }
 
 namespace ocarina {
 namespace detail {
@@ -66,16 +66,30 @@ using binary_op_half_target_t = typename detail::binary_op_half_target<ocarina::
 }// namespace ocarina
 
 // Half operator implementations
-#define OC_HALF_BINARY_AND_ASSIGN_OP(op)                                       \
-    template<typename T, ocarina::enable_if_t<ocarina::is_half_op_enable_v<T>> \
-                             ocarina::binary_op_half_target_t<T>               \
-                             operator op(oc_half lhs, T rhs) {                 \
-        using ret_type = ocarina::binary_op_half_target_t<T>;                  \
-        return oc_static_cast<ret_type>(lhs) op oc_static_cast<ret_type>(rhs); \
-    }                                                                          \
-    template<typename T, ocarina::enable_if_t<ocarina::is_half_op_enable_v<T>> \
-                             ocarina::binary_op_half_target_t<T>               \
-                             operator op(T lhs, oc_half rhs) {                 \
-        using ret_type = ocarina::binary_op_half_target_t<T>;                  \
-        return oc_static_cast<ret_type>(lhs) op oc_static_cast<ret_type>(rhs); \
+#define OC_HALF_BINARY_AND_ASSIGN_OP(op)                                                 \
+    template<typename T, ocarina::enable_if_t<ocarina::is_half_op_enable_v<T>, int> = 0> \
+    constexpr ocarina::binary_op_half_target_t<T>                                        \
+    operator op(oc_half lhs, T rhs) {                                                    \
+        using ret_type = ocarina::binary_op_half_target_t<T>;                            \
+        return oc_static_cast<ret_type>(lhs) op oc_static_cast<ret_type>(rhs);           \
+    }                                                                                    \
+    template<typename T, ocarina::enable_if_t<ocarina::is_half_op_enable_v<T>, int> = 0> \
+    constexpr ocarina::binary_op_half_target_t<T>                                        \
+    operator op(T lhs, oc_half rhs) {                                                    \
+        using ret_type = ocarina::binary_op_half_target_t<T>;                            \
+        return oc_static_cast<ret_type>(lhs) op oc_static_cast<ret_type>(rhs);           \
+    }                                                                                    \
+    template<typename T, ocarina::enable_if_t<ocarina::is_half_op_enable_v<T>, int> = 0> \
+    constexpr oc_half &                                                                  \
+    operator op## = (oc_half & lhs, T rhs) {                                             \
+        lhs = lhs op rhs;                                                                \
+        return lhs;                                                                      \
     }
+
+
+OC_HALF_BINARY_AND_ASSIGN_OP(+)
+OC_HALF_BINARY_AND_ASSIGN_OP(-)
+OC_HALF_BINARY_AND_ASSIGN_OP(*)
+OC_HALF_BINARY_AND_ASSIGN_OP(/)
+
+#undef OC_HALF_BINARY_AND_ASSIGN_OP
