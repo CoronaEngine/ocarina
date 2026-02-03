@@ -773,32 +773,6 @@ def define_make_vecs():
 
     content += "\n"
 
-def define_make_matrix():
-    global content,name_lst
-    for i in range(2, 5):
-        def init(j):
-            return ', '.join(["0.0f", "0.0f", "0.0f", "s", "0.0f", "0.0f", "0.0f"][3 - j:3 + i - j])
-
-
-        content += f"""
-[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}(oc_float s = 1.0f) noexcept {{ return oc_float{i}x{i}{{{", ".join(f"oc_make_float{i}({init(j)})" for j in range(i))}}}; }}
-[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}({', '.join(', '.join(f"oc_float m{j}{k}" for k in range(i)) for j in range(i))}) noexcept {{ return oc_float{i}x{i}{{{", ".join(f"oc_make_float{i}({', '.join(f'm{j}{k}' for k in range(i))})" for j in range(i))}}}; }}
-[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}({", ".join(f"oc_float{i} c{j}" for j in range(i))}) noexcept {{ return oc_float{i}x{i}{{{", ".join(f"c{j}" for j in range(i))}}}; }}"""
-        content += "\n"
-        if i == 3:
-            
-            content += f"[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}(oc_float2x2 m) noexcept {{ return oc_float3x3{{oc_make_float3(m[0], 0.0f), oc_make_float3(m[1], 0.0f), oc_make_float3(0.0f, 0.0f, 1.0f)}}; }}"
-            content += "\n"
-        if i == 4:
-            content += f"[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}(oc_float2x2 m) noexcept {{ return oc_float4x4{{oc_make_float4(m[0], 0.0f, 0.0f), oc_make_float4(m[1], 0.0f, 0.0f), oc_make_float4(0.0f, 0.0f, 0.0f, 0.0f), oc_make_float4(0.0f, 0.0f, 0.0f, 1.0f)}}; }}"
-            content += "\n"
-            content += f"[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}(oc_float3x3 m) noexcept {{ return oc_float4x4{{oc_make_float4(m[0], 0.0f), oc_make_float4(m[1], 0.0f), oc_make_float4(m[2], 0.0f), oc_make_float4(0.0f, 0.0f, 0.0f, 1.0f)}}; }}"
-            content += "\n"
-        content += f"[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}(oc_float{i}x{i} m) noexcept {{ return m; }}"
-        content += "\n"
-        for t in range(i + 1, 5):
-            content += f"[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}(oc_float{t}x{t} m) noexcept {{ return oc_float{i}x{i}{{{', '.join(f'oc_make_float{i}(m[{j}])' for j in range(i))}}}; }}"
-            content += "\n"
 
 def main():
     global content
