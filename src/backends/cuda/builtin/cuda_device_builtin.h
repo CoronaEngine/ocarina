@@ -1366,6 +1366,10 @@ __device__ oc_float oc_sqr(oc_float v) { return v * v; }
 __device__ oc_float2 oc_sqr(oc_float2 v) { return oc_float2(oc_sqr(v.x), oc_sqr(v.y)); }
 __device__ oc_float3 oc_sqr(oc_float3 v) { return oc_float3(oc_sqr(v.x), oc_sqr(v.y), oc_sqr(v.z)); }
 __device__ oc_float4 oc_sqr(oc_float4 v) { return oc_float4(oc_sqr(v.x), oc_sqr(v.y), oc_sqr(v.z), oc_sqr(v.w)); }
+__device__ oc_half oc_sqr(oc_half v) { return v * v; }
+__device__ oc_half2 oc_sqr(oc_half2 v) { return oc_half2(oc_sqr(v.x), oc_sqr(v.y)); }
+__device__ oc_half3 oc_sqr(oc_half3 v) { return oc_half3(oc_sqr(v.x), oc_sqr(v.y), oc_sqr(v.z)); }
+__device__ oc_half4 oc_sqr(oc_half4 v) { return oc_half4(oc_sqr(v.x), oc_sqr(v.y), oc_sqr(v.z), oc_sqr(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_sqr(oc_array<T, N> x) {
     oc_array<T, N> ret{};
@@ -1377,6 +1381,10 @@ __device__ oc_float oc_sqrt(oc_float v) { return sqrtf(v); }
 __device__ oc_float2 oc_sqrt(oc_float2 v) { return oc_float2(oc_sqrt(v.x), oc_sqrt(v.y)); }
 __device__ oc_float3 oc_sqrt(oc_float3 v) { return oc_float3(oc_sqrt(v.x), oc_sqrt(v.y), oc_sqrt(v.z)); }
 __device__ oc_float4 oc_sqrt(oc_float4 v) { return oc_float4(oc_sqrt(v.x), oc_sqrt(v.y), oc_sqrt(v.z), oc_sqrt(v.w)); }
+__device__ oc_half oc_sqrt(oc_half v) { return hsqrt(v); }
+__device__ oc_half2 oc_sqrt(oc_half2 v) { return oc_half2(oc_sqrt(v.x), oc_sqrt(v.y)); }
+__device__ oc_half3 oc_sqrt(oc_half3 v) { return oc_half3(oc_sqrt(v.x), oc_sqrt(v.y), oc_sqrt(v.z)); }
+__device__ oc_half4 oc_sqrt(oc_half4 v) { return oc_half4(oc_sqrt(v.x), oc_sqrt(v.y), oc_sqrt(v.z), oc_sqrt(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_sqrt(oc_array<T, N> x) {
     oc_array<T, N> ret{};
@@ -1388,6 +1396,10 @@ __device__ oc_float oc_rsqrt(oc_float v) { return rsqrtf(v); }
 __device__ oc_float2 oc_rsqrt(oc_float2 v) { return oc_float2(oc_rsqrt(v.x), oc_rsqrt(v.y)); }
 __device__ oc_float3 oc_rsqrt(oc_float3 v) { return oc_float3(oc_rsqrt(v.x), oc_rsqrt(v.y), oc_rsqrt(v.z)); }
 __device__ oc_float4 oc_rsqrt(oc_float4 v) { return oc_float4(oc_rsqrt(v.x), oc_rsqrt(v.y), oc_rsqrt(v.z), oc_rsqrt(v.w)); }
+__device__ oc_half oc_rsqrt(oc_half v) { return hrsqrt(v); }
+__device__ oc_half2 oc_rsqrt(oc_half2 v) { return oc_half2(oc_rsqrt(v.x), oc_rsqrt(v.y)); }
+__device__ oc_half3 oc_rsqrt(oc_half3 v) { return oc_half3(oc_rsqrt(v.x), oc_rsqrt(v.y), oc_rsqrt(v.z)); }
+__device__ oc_half4 oc_rsqrt(oc_half4 v) { return oc_half4(oc_rsqrt(v.x), oc_rsqrt(v.y), oc_rsqrt(v.z), oc_rsqrt(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_rsqrt(oc_array<T, N> x) {
     oc_array<T, N> ret{};

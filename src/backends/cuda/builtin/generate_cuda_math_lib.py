@@ -784,11 +784,36 @@ def define_unary_funcs():
             True,
             [
                 "return v * v;",
-                [{"arg_type": "int"}, {"arg_type": "uint"}, {"arg_type": "float"}],
+                [
+                    {"arg_type": "int"},
+                    {"arg_type": "uint"},
+                    {"arg_type": "float"},
+                    {"arg_type": "half"},
+                ],
             ],
         ],
-        ["sqrt", True, ["return sqrtf(v);", [{"arg_type": "float"}]]],
-        ["rsqrt", True, ["return rsqrtf(v);", [{"arg_type": "float"}]]],
+        [
+            "sqrt",
+            True,
+            [
+                "return sqrtf(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hsqrt(v);"},
+                ],
+            ],
+        ],
+        [
+            "rsqrt",
+            True,
+            [
+                "return rsqrtf(v);",
+                [
+                    {"arg_type": "float"},
+                    {"arg_type": "half", "body": "return hrsqrt(v);"},
+                ],
+            ],
+        ],
         [
             "degrees",
             True,
