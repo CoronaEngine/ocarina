@@ -86,10 +86,30 @@ using binary_op_half_target_t = typename detail::binary_op_half_target<ocarina::
         return lhs;                                                                      \
     }
 
-
 OC_HALF_BINARY_AND_ASSIGN_OP(+)
 OC_HALF_BINARY_AND_ASSIGN_OP(-)
 OC_HALF_BINARY_AND_ASSIGN_OP(*)
 OC_HALF_BINARY_AND_ASSIGN_OP(/)
 
 #undef OC_HALF_BINARY_AND_ASSIGN_OP
+
+#define OC_HALF_COMPARE_OP(op)                                                           \
+    template<typename T, ocarina::enable_if_t<ocarina::is_half_op_enable_v<T>, int> = 0> \
+    constexpr bool operator op(oc_half lhs, T rhs) {                                     \
+        using type = ocarina::binary_op_half_target_t<T>;                                \
+        return oc_static_cast<type>(lhs) op oc_static_cast<type>(rhs);                   \
+    }                                                                                    \
+    template<typename T, ocarina::enable_if_t<ocarina::is_half_op_enable_v<T>, int> = 0> \
+    constexpr bool operator op(T lhs, oc_half rhs) {                                     \
+        using type = ocarina::binary_op_half_target_t<T>;                                \
+        return oc_static_cast<type>(lhs) op oc_static_cast<type>(rhs);                   \
+    }
+
+OC_HALF_COMPARE_OP(==)
+OC_HALF_COMPARE_OP(!=)
+OC_HALF_COMPARE_OP(>)
+OC_HALF_COMPARE_OP(<)
+OC_HALF_COMPARE_OP(>=)
+OC_HALF_COMPARE_OP(<=)
+
+#undef OC_HALF_COMPARE_OP
