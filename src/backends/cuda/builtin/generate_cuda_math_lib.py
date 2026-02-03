@@ -276,64 +276,12 @@ def define_operator():
     global content
     unary = ["+", "-", "!", "~"]
     define_array_unary(unary)    
-    # for i, scalar in enumerate(scalar_types):
-    #     for dim in range(2, 5):
-    #         for op in unary:
-    #             if op == "~" and scalar == "float":
-    #                 continue
-    #             class_name = f"{prefix}_{scalar}{dim}"
-    #             args = ""
-    #             for d in range(0, dim):
-    #                 split = ", " if d != dim - 1 else ""
-    #                 args += f"{op}vec.{name_lst[d]}" + split
-    #             func = f"{device_flag} {class_name} operator{op}({class_name} vec) {{ return {class_name}({args}); }}"
-    #             content += func + "\n"
-    #         content += "\n"
-    # content += "\n"     
+     
     cal_binary = ["+", "-", "*", "/", "%"]
     cmp_binary = ["==", "!=", ">" , "<", ">=", "<=","&&", "||"]
     bit_binary = ["&", "|", "^", "<<", ">>"]
     
     define_array_binary(cal_binary, cmp_binary, bit_binary)
-    # cal_binary = []
-    binary = cal_binary + cmp_binary + bit_binary
-    # for i, scalar in enumerate(scalar_types):
-    #     for dim in range(2, 5):
-    #         for op in binary:
-    #             if scalar == "bool" and (op in cal_binary):
-    #                 continue
-    #             if scalar == "float" and (op == "%" or op in bit_binary):
-    #                 continue
-    #             vec_name = f"{prefix}_{scalar}{dim}"
-    #             ret_type = vec_name
-    #             if op in cmp_binary:
-    #                 ret_type = f"{prefix}_bool{dim}"
-    #             scalar_name = f"{prefix}_{scalar}"
-    #             args = ""
-    #             args1 = ""
-    #             args2 = ""
-    #             for d in range(0, dim):
-    #                 field_name = name_lst[d]
-    #                 split = ", " if d != dim - 1 else ""
-    #                 args += f"lhs.{field_name} {op} rhs.{field_name}" + split
-    #                 args1 += f"lhs.{field_name} {op} rhs" + split
-    #                 args2 += f"lhs {op} rhs.{field_name}" + split
-                    
-    #             func = f"{device_flag} {ret_type} operator{op}({vec_name} lhs, {vec_name} rhs) {{ return {ret_type}({args}); }}\n"
-    #             func += f"{device_flag} {ret_type} operator{op}({vec_name} lhs, {scalar_name} rhs) {{ return {ret_type}({args1}); }}\n"
-    #             func += f"{device_flag} {ret_type} operator{op}({scalar_name} lhs, {vec_name} rhs) {{ return {ret_type}({args2}); }}\n"
-    #             content += func
-    #     content += "\n"
-
-    # for i,scalar in enumerate(scalar_types[:3]):
-    #     for dim in range(2, 5):
-    #         for op in cal_binary:
-    #             if scalar == "float" and op == "%":
-    #                 continue
-    #             vec_name = f"{prefix}_{scalar}{dim}"
-    #             func = f"__device__ {vec_name}& operator{op}=({vec_name} &lhs, {vec_name} rhs) {{ lhs = lhs {op} rhs; return lhs; }}\n"
-    #             content += func
-    #     content += "\n"
 
     func_lst = ["oc_any", "oc_all", "oc_none"]
     for func in func_lst:
