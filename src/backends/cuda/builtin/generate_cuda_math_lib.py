@@ -866,8 +866,9 @@ def define_binary_func(func_name, param):
     org_body, types = param
     for v in types:
         scalar = v.get("arg_type")
+        body = v.get("body", org_body)
         ret_type = f"{prefix}_{scalar}"
-        func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {org_body} }}\n"
+        func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body} }}\n"
         content += func
         for dim in range(2, 5):
             ret_type = f"{prefix}_{scalar}{dim}"
@@ -894,21 +895,40 @@ oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> {prefix}_{func_name}(o
 
 def define_binary_funcs():
     tab = {
-        "pow": ["return powf(lhs, rhs);", [{"arg_type": "float"}]],
-        "fmod": ["return fmodf(lhs, rhs);", [{"arg_type": "float"}]],
+        "pow": [
+            "return powf(lhs, rhs);",
+            [
+                {"arg_type": "float"},
+                {"arg_type": "half"},
+            ],
+        ],
+        "fmod": [
+            "return fmodf(lhs, rhs);",
+            [{"arg_type": "float"}, {"arg_type": "half"}],
+        ],
         "mod": [
             "return lhs - rhs * oc_floor(lhs / rhs);",
             [{"arg_type": "float"}, {"arg_type": "half"}],
         ],
         "min": [
             "return fminf(lhs, rhs);",
-            [{"arg_type": "int"}, {"arg_type": "uint"}, {"arg_type": "float"}],
+            [
+                {"arg_type": "int", "body": "return min(lhs, rhs);"},
+                {"arg_type": "uint", "body": "return min(lhs, rhs);"},
+                {"arg_type": "float"},
+                {"arg_type": "half", "body": "return __hmin(lhs, rhs);"},
+            ],
         ],
         "max": [
             "return fmaxf(lhs, rhs);",
-            [{"arg_type": "int"}, {"arg_type": "uint"}, {"arg_type": "float"}],
+            [
+                {"arg_type": "int", "body": "return max(lhs, rhs);"},
+                {"arg_type": "uint", "body": "return max(lhs, rhs);"},
+                {"arg_type": "float"},
+                {"arg_type": "half", "body": "return __hmax(lhs, rhs);"},
+            ],
         ],
-        "atan2": ["return atan2f(lhs, rhs);", [{"arg_type": "float"}]],
+        "atan2": ["return atan2f(lhs, rhs);", [{"arg_type": "float"}, {"arg_type": "half"}]],
         "copysign": ["return ::copysignf(lhs, rhs);", [{"arg_type": "float"}]],
     }
     for k, v in tab.items():
