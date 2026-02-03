@@ -895,7 +895,7 @@ def define_binary_funcs():
     tab = {
         "pow": ["return powf(lhs, rhs);", ["float"]],
         "fmod": ["return fmodf(lhs, rhs);", ["float"]],
-        "mod": ["return lhs - rhs * oc_floor(lhs / rhs);", ["float"]],
+        "mod": ["return lhs - rhs * oc_floor(lhs / rhs);", ["float", "half"]],
         "min": ["return fminf(lhs, rhs);", ["int", "uint", "float"]],
         "max": ["return fmaxf(lhs, rhs);", ["int", "uint", "float"]],
         "atan2": ["return atan2f(lhs, rhs);", ["float"]],

@@ -1482,6 +1482,10 @@ __device__ oc_float oc_mod(oc_float lhs, oc_float rhs) { return lhs - rhs * oc_f
 __device__ oc_float2 oc_mod(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_mod(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_mod(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z), oc_mod(lhs.w, rhs.w)); }
+__device__ oc_half oc_mod(oc_half lhs, oc_half rhs) { return lhs - rhs * oc_floor(lhs / rhs); }
+__device__ oc_half2 oc_mod(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y)); }
+__device__ oc_half3 oc_mod(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z)); }
+__device__ oc_half4 oc_mod(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z), oc_mod(lhs.w, rhs.w)); }
 template<typename T, oc_uint N>
 oc_array<decltype(oc_mod(T{}, T{})), N> oc_mod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_mod(T{}, T{})), N> ret;
