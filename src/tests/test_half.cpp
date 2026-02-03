@@ -24,7 +24,7 @@ int main() {
 
     Kernel kernel = [&](Float f) {
         $info("{} ", f);
-        Half3x3 h3;
+        Half3x3 h3 = make_half3x3(f);
         h3 = h3 * h3;
     };
     auto shader = device.compile(kernel);

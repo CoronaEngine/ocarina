@@ -126,6 +126,18 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
         case CallOp::FLOAT2HALF: OC_GEN_FUNC_NAME(float2half); break;
         case CallOp::HALF2FLOAT: OC_GEN_FUNC_NAME(half2float); break;
 
+        case CallOp::MAKE_HALF2X2: OC_GEN_FUNC_NAME(make_half2x2); break;
+        case CallOp::MAKE_HALF2X3: OC_GEN_FUNC_NAME(make_half2x3); break;
+        case CallOp::MAKE_HALF2X4: OC_GEN_FUNC_NAME(make_half2x4); break;
+
+        case CallOp::MAKE_HALF3X2: OC_GEN_FUNC_NAME(make_half3x2); break;
+        case CallOp::MAKE_HALF3X3: OC_GEN_FUNC_NAME(make_half3x3); break;
+        case CallOp::MAKE_HALF3X4: OC_GEN_FUNC_NAME(make_half3x4); break;
+
+        case CallOp::MAKE_HALF4X2: OC_GEN_FUNC_NAME(make_half4x2); break;
+        case CallOp::MAKE_HALF4X3: OC_GEN_FUNC_NAME(make_half4x3); break;
+        case CallOp::MAKE_HALF4X4: OC_GEN_FUNC_NAME(make_half4x4); break;
+
         case CallOp::MAKE_FLOAT2X2: OC_GEN_FUNC_NAME(make_float2x2); break;
         case CallOp::MAKE_FLOAT2X3: OC_GEN_FUNC_NAME(make_float2x3); break;
         case CallOp::MAKE_FLOAT2X4: OC_GEN_FUNC_NAME(make_float2x4); break;
