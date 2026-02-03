@@ -817,17 +817,44 @@ def define_unary_funcs():
         [
             "degrees",
             True,
-            ["return v * (180.f / 3.1415926535f);", [{"arg_type": "float"}]],
+            [
+                "return v * (180.f / 3.1415926535f);",
+                [
+                    {"arg_type": "float"},
+                    {
+                        "arg_type": "half",
+                        "body": "return v * oc_half(180.f / 3.1415926535f);",
+                    },
+                ],
+            ],
         ],
         [
             "radians",
             True,
-            ["return v * (3.1415926535f / 180.f);", [{"arg_type": "float"}]],
+            [
+                "return v * (3.1415926535f / 180.f);",
+                [
+                    {"arg_type": "float"},
+                    {
+                        "arg_type": "half",
+                        "body": "return v * half(3.1415926535f / 180.f);",
+                    },
+                ],
+            ],
         ],
         [
             "saturate",
             True,
-            ["return fminf(1.f, fmaxf(0.f, v));", [{"arg_type": "float"}]],
+            [
+                "return fminf(1.f, fmaxf(0.f, v));",
+                [
+                    {"arg_type": "float"},
+                    {
+                        "arg_type": "half",
+                        "body": "return __hmin(half(1.f), __hmax(half(0.f), v));",
+                    },
+                ],
+            ],
         ],
     ]
     for k, a, v in tab:

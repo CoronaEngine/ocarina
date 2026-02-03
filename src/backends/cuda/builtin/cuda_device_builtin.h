@@ -1411,6 +1411,10 @@ __device__ oc_float oc_degrees(oc_float v) { return v * (180.f / 3.1415926535f);
 __device__ oc_float2 oc_degrees(oc_float2 v) { return oc_float2(oc_degrees(v.x), oc_degrees(v.y)); }
 __device__ oc_float3 oc_degrees(oc_float3 v) { return oc_float3(oc_degrees(v.x), oc_degrees(v.y), oc_degrees(v.z)); }
 __device__ oc_float4 oc_degrees(oc_float4 v) { return oc_float4(oc_degrees(v.x), oc_degrees(v.y), oc_degrees(v.z), oc_degrees(v.w)); }
+__device__ oc_half oc_degrees(oc_half v) { return v * oc_half(180.f / 3.1415926535f); }
+__device__ oc_half2 oc_degrees(oc_half2 v) { return oc_half2(oc_degrees(v.x), oc_degrees(v.y)); }
+__device__ oc_half3 oc_degrees(oc_half3 v) { return oc_half3(oc_degrees(v.x), oc_degrees(v.y), oc_degrees(v.z)); }
+__device__ oc_half4 oc_degrees(oc_half4 v) { return oc_half4(oc_degrees(v.x), oc_degrees(v.y), oc_degrees(v.z), oc_degrees(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_degrees(oc_array<T, N> x) {
     oc_array<T, N> ret{};
@@ -1422,6 +1426,10 @@ __device__ oc_float oc_radians(oc_float v) { return v * (3.1415926535f / 180.f);
 __device__ oc_float2 oc_radians(oc_float2 v) { return oc_float2(oc_radians(v.x), oc_radians(v.y)); }
 __device__ oc_float3 oc_radians(oc_float3 v) { return oc_float3(oc_radians(v.x), oc_radians(v.y), oc_radians(v.z)); }
 __device__ oc_float4 oc_radians(oc_float4 v) { return oc_float4(oc_radians(v.x), oc_radians(v.y), oc_radians(v.z), oc_radians(v.w)); }
+__device__ oc_half oc_radians(oc_half v) { return v * half(3.1415926535f / 180.f); }
+__device__ oc_half2 oc_radians(oc_half2 v) { return oc_half2(oc_radians(v.x), oc_radians(v.y)); }
+__device__ oc_half3 oc_radians(oc_half3 v) { return oc_half3(oc_radians(v.x), oc_radians(v.y), oc_radians(v.z)); }
+__device__ oc_half4 oc_radians(oc_half4 v) { return oc_half4(oc_radians(v.x), oc_radians(v.y), oc_radians(v.z), oc_radians(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_radians(oc_array<T, N> x) {
     oc_array<T, N> ret{};
@@ -1433,6 +1441,10 @@ __device__ oc_float oc_saturate(oc_float v) { return fminf(1.f, fmaxf(0.f, v)); 
 __device__ oc_float2 oc_saturate(oc_float2 v) { return oc_float2(oc_saturate(v.x), oc_saturate(v.y)); }
 __device__ oc_float3 oc_saturate(oc_float3 v) { return oc_float3(oc_saturate(v.x), oc_saturate(v.y), oc_saturate(v.z)); }
 __device__ oc_float4 oc_saturate(oc_float4 v) { return oc_float4(oc_saturate(v.x), oc_saturate(v.y), oc_saturate(v.z), oc_saturate(v.w)); }
+__device__ oc_half oc_saturate(oc_half v) { return __hmin(half(1.f), __hmax(half(0.f), v)); }
+__device__ oc_half2 oc_saturate(oc_half2 v) { return oc_half2(oc_saturate(v.x), oc_saturate(v.y)); }
+__device__ oc_half3 oc_saturate(oc_half3 v) { return oc_half3(oc_saturate(v.x), oc_saturate(v.y), oc_saturate(v.z)); }
+__device__ oc_half4 oc_saturate(oc_half4 v) { return oc_half4(oc_saturate(v.x), oc_saturate(v.y), oc_saturate(v.z), oc_saturate(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_saturate(oc_array<T, N> x) {
     oc_array<T, N> ret{};
