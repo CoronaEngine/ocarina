@@ -963,6 +963,10 @@ __device__ oc_float oc_rcp(oc_float v) { return 1.f / v; }
 __device__ oc_float2 oc_rcp(oc_float2 v) { return oc_float2(oc_rcp(v.x), oc_rcp(v.y)); }
 __device__ oc_float3 oc_rcp(oc_float3 v) { return oc_float3(oc_rcp(v.x), oc_rcp(v.y), oc_rcp(v.z)); }
 __device__ oc_float4 oc_rcp(oc_float4 v) { return oc_float4(oc_rcp(v.x), oc_rcp(v.y), oc_rcp(v.z), oc_rcp(v.w)); }
+__device__ oc_half oc_rcp(oc_half v) { return half(1) / v; }
+__device__ oc_half2 oc_rcp(oc_half2 v) { return oc_half2(oc_rcp(v.x), oc_rcp(v.y)); }
+__device__ oc_half3 oc_rcp(oc_half3 v) { return oc_half3(oc_rcp(v.x), oc_rcp(v.y), oc_rcp(v.z)); }
+__device__ oc_half4 oc_rcp(oc_half4 v) { return oc_half4(oc_rcp(v.x), oc_rcp(v.y), oc_rcp(v.z), oc_rcp(v.w)); }
 template<typename T, oc_uint N>
 __device__ oc_array<T, N> oc_rcp(oc_array<T, N> x) {
     oc_array<T, N> ret{};

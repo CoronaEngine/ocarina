@@ -467,7 +467,8 @@ def define_unary_func(func_name, need_array, param):
     body, types = param
     for elm in types:
         scalar = elm.get("arg_type");
-        ret_t = elm.get("ret_type") if "ret_type" in elm else scalar
+        ret_t = elm.get("ret_type", scalar)
+        body = elm.get("body", body)
         ret_type = f"{prefix}_{ret_t}"
         arg_type = f"{prefix}_{scalar}"
         func = f"__device__ {ret_type} {prefix}_{func_name}({arg_type} v) {{ {body} }}\n"
@@ -496,7 +497,8 @@ def define_unary_func(func_name, need_array, param):
     
 def define_unary_funcs():
     tab = [
-        ["rcp", True , ["return 1.f / v;", [{ "arg_type" :"int"}, { "arg_type" :"uint"}, { "arg_type" :"float"}]]],
+        ["rcp", True , ["return 1.f / v;", [{ "arg_type" :"int"}, { "arg_type" :"uint"}, { "arg_type" :"float"}, 
+                                            {"arg_type" : "half", "body" : "return half(1) / v;"}]]],
         ["sign", True , ["return v >= 0 ? 1: -1;", [{ "arg_type" :"int"}, { "arg_type" :"float"}]]],
         ["popcount", False , ["return __popc(v);", [{ "arg_type" :"uint"}]]],
         ["popcount", False , ["return __popcll(v);", [{ "arg_type" :"ulong"}]]],
