@@ -1456,9 +1456,9 @@ __device__ oc_float oc_pow(oc_float lhs, oc_float rhs) { return powf(lhs, rhs); 
 __device__ oc_float2 oc_pow(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_pow(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y), oc_pow(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_pow(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y), oc_pow(lhs.z, rhs.z), oc_pow(lhs.w, rhs.w)); }
-template<oc_uint N>
-oc_array<oc_float, N> oc_pow(oc_array<oc_float, N> lhs, oc_array<oc_float, N> rhs) {
-    oc_array<oc_float, N> ret;
+template<typename T, oc_uint N>
+oc_array<decltype(oc_pow(T{}, T{})), N> oc_pow(oc_array<T, N> lhs, oc_array<T, N> rhs) {
+    oc_array<decltype(oc_pow(T{}, T{})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_pow(lhs[i], rhs[i]);
     }
@@ -1469,9 +1469,9 @@ __device__ oc_float oc_fmod(oc_float lhs, oc_float rhs) { return fmodf(lhs, rhs)
 __device__ oc_float2 oc_fmod(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_fmod(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y), oc_fmod(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_fmod(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y), oc_fmod(lhs.z, rhs.z), oc_fmod(lhs.w, rhs.w)); }
-template<oc_uint N>
-oc_array<oc_float, N> oc_fmod(oc_array<oc_float, N> lhs, oc_array<oc_float, N> rhs) {
-    oc_array<oc_float, N> ret;
+template<typename T, oc_uint N>
+oc_array<decltype(oc_fmod(T{}, T{})), N> oc_fmod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
+    oc_array<decltype(oc_fmod(T{}, T{})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_fmod(lhs[i], rhs[i]);
     }
@@ -1482,9 +1482,9 @@ __device__ oc_float oc_mod(oc_float lhs, oc_float rhs) { return lhs - rhs * oc_f
 __device__ oc_float2 oc_mod(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_mod(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_mod(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z), oc_mod(lhs.w, rhs.w)); }
-template<oc_uint N>
-oc_array<oc_float, N> oc_mod(oc_array<oc_float, N> lhs, oc_array<oc_float, N> rhs) {
-    oc_array<oc_float, N> ret;
+template<typename T, oc_uint N>
+oc_array<decltype(oc_mod(T{}, T{})), N> oc_mod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
+    oc_array<decltype(oc_mod(T{}, T{})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_mod(lhs[i], rhs[i]);
     }
@@ -1503,9 +1503,9 @@ __device__ oc_float oc_min(oc_float lhs, oc_float rhs) { return fminf(lhs, rhs);
 __device__ oc_float2 oc_min(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_min(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y), oc_min(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_min(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y), oc_min(lhs.z, rhs.z), oc_min(lhs.w, rhs.w)); }
-template<oc_uint N>
-oc_array<oc_float, N> oc_min(oc_array<oc_float, N> lhs, oc_array<oc_float, N> rhs) {
-    oc_array<oc_float, N> ret;
+template<typename T, oc_uint N>
+oc_array<decltype(oc_min(T{}, T{})), N> oc_min(oc_array<T, N> lhs, oc_array<T, N> rhs) {
+    oc_array<decltype(oc_min(T{}, T{})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_min(lhs[i], rhs[i]);
     }
@@ -1524,9 +1524,9 @@ __device__ oc_float oc_max(oc_float lhs, oc_float rhs) { return fmaxf(lhs, rhs);
 __device__ oc_float2 oc_max(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_max(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y), oc_max(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_max(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y), oc_max(lhs.z, rhs.z), oc_max(lhs.w, rhs.w)); }
-template<oc_uint N>
-oc_array<oc_float, N> oc_max(oc_array<oc_float, N> lhs, oc_array<oc_float, N> rhs) {
-    oc_array<oc_float, N> ret;
+template<typename T, oc_uint N>
+oc_array<decltype(oc_max(T{}, T{})), N> oc_max(oc_array<T, N> lhs, oc_array<T, N> rhs) {
+    oc_array<decltype(oc_max(T{}, T{})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_max(lhs[i], rhs[i]);
     }
@@ -1537,9 +1537,9 @@ __device__ oc_float oc_atan2(oc_float lhs, oc_float rhs) { return atan2f(lhs, rh
 __device__ oc_float2 oc_atan2(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_atan2(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y), oc_atan2(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_atan2(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y), oc_atan2(lhs.z, rhs.z), oc_atan2(lhs.w, rhs.w)); }
-template<oc_uint N>
-oc_array<oc_float, N> oc_atan2(oc_array<oc_float, N> lhs, oc_array<oc_float, N> rhs) {
-    oc_array<oc_float, N> ret;
+template<typename T, oc_uint N>
+oc_array<decltype(oc_atan2(T{}, T{})), N> oc_atan2(oc_array<T, N> lhs, oc_array<T, N> rhs) {
+    oc_array<decltype(oc_atan2(T{}, T{})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_atan2(lhs[i], rhs[i]);
     }
@@ -1550,9 +1550,9 @@ __device__ oc_float oc_copysign(oc_float lhs, oc_float rhs) { return ::copysignf
 __device__ oc_float2 oc_copysign(oc_float2 lhs, oc_float2 rhs) { return oc_float2(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y)); }
 __device__ oc_float3 oc_copysign(oc_float3 lhs, oc_float3 rhs) { return oc_float3(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z)); }
 __device__ oc_float4 oc_copysign(oc_float4 lhs, oc_float4 rhs) { return oc_float4(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z), oc_copysign(lhs.w, rhs.w)); }
-template<oc_uint N>
-oc_array<oc_float, N> oc_copysign(oc_array<oc_float, N> lhs, oc_array<oc_float, N> rhs) {
-    oc_array<oc_float, N> ret;
+template<typename T, oc_uint N>
+oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_array<T, N> rhs) {
+    oc_array<decltype(oc_copysign(T{}, T{})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_copysign(lhs[i], rhs[i]);
     }

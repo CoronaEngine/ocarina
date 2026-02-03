@@ -879,9 +879,9 @@ def define_binary_func(func_name, param):
                 )
             func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body2} }}\n"
             content += func
-    string = f"""template<oc_uint N>
-oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, N> lhs, oc_array<{prefix}_{scalar}, N> rhs) {{
-    oc_array<{prefix}_{scalar}, N> ret;
+    string = f"""template<typename T, oc_uint N>
+oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> {prefix}_{func_name}(oc_array<T, N> lhs, oc_array<T, N> rhs) {{
+    oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> ret;
     for(oc_uint i = 0; i < N; ++i) {{
         ret[i] = {prefix}_{func_name}(lhs[i], rhs[i]);
     }}
