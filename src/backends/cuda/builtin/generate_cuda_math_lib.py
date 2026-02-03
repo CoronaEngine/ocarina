@@ -673,22 +673,13 @@ def define_unary_funcs():
         ["atanh", True, ["return atanhf(v);", [{"arg_type": "float"}]]],
         [
             "is_inf",
-            False,
-            ["return isinf(v);", [{"arg_type": "float", "ret_type": "bool"}]],
-        ],
-        [
-            "is_nan",
-            False,
-            ["return isnan(v);", [{"arg_type": "float", "ret_type": "bool"}]],
-        ],
-        [
-            "is_inf",
             True,
             [
                 "return false;",
                 [
                     {"arg_type": "int", "ret_type": "bool"},
                     {"arg_type": "uint", "ret_type": "bool"},
+                    {"arg_type": "float", "ret_type": "bool", "body":"return isinf(v);"},
                 ],
             ],
         ],
@@ -700,6 +691,7 @@ def define_unary_funcs():
                 [
                     {"arg_type": "int", "ret_type": "bool"},
                     {"arg_type": "uint", "ret_type": "bool"},
+                    {"arg_type": "float", "ret_type": "bool" , "body" :"return isnan(v);"}
                 ],
             ],
         ],
