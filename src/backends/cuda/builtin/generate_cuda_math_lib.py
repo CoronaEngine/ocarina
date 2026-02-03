@@ -864,7 +864,8 @@ def define_unary_funcs():
 def define_binary_func(func_name, param):
     global content, name_lst
     org_body, types = param
-    for scalar in types:
+    for v in types:
+        scalar = v.get("arg_type")
         ret_type = f"{prefix}_{scalar}"
         func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {org_body} }}\n"
         content += func
@@ -893,13 +894,22 @@ oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> {prefix}_{func_name}(o
 
 def define_binary_funcs():
     tab = {
-        "pow": ["return powf(lhs, rhs);", ["float"]],
-        "fmod": ["return fmodf(lhs, rhs);", ["float"]],
-        "mod": ["return lhs - rhs * oc_floor(lhs / rhs);", ["float", "half"]],
-        "min": ["return fminf(lhs, rhs);", ["int", "uint", "float"]],
-        "max": ["return fmaxf(lhs, rhs);", ["int", "uint", "float"]],
-        "atan2": ["return atan2f(lhs, rhs);", ["float"]],
-        "copysign": ["return ::copysignf(lhs, rhs);", ["float"]],
+        "pow": ["return powf(lhs, rhs);", [{"arg_type": "float"}]],
+        "fmod": ["return fmodf(lhs, rhs);", [{"arg_type": "float"}]],
+        "mod": [
+            "return lhs - rhs * oc_floor(lhs / rhs);",
+            [{"arg_type": "float"}, {"arg_type": "half"}],
+        ],
+        "min": [
+            "return fminf(lhs, rhs);",
+            [{"arg_type": "int"}, {"arg_type": "uint"}, {"arg_type": "float"}],
+        ],
+        "max": [
+            "return fmaxf(lhs, rhs);",
+            [{"arg_type": "int"}, {"arg_type": "uint"}, {"arg_type": "float"}],
+        ],
+        "atan2": ["return atan2f(lhs, rhs);", [{"arg_type": "float"}]],
+        "copysign": ["return ::copysignf(lhs, rhs);", [{"arg_type": "float"}]],
     }
     for k, v in tab.items():
         define_binary_func(k, v)
