@@ -51,4 +51,16 @@ struct is_half_op_enable<double> : ocarina::true_type {};
 template<typename T>
 static constexpr auto is_half_op_enable_v = detail::is_half_op_enable<remove_cvref_t<T>>::value;
 
+// namespace detail {
+
+// template<typename T, ocarina::enable_if_t<is_half_op_enable_v<T>, int> = 0>
+// struct binary_op_half_target {
+//     using type = ocarina::conditional_t<is_integral_v<T>, half, T>;
+// };
+
+// }// namespace detail
+
+// template<typename T>
+// using binary_op_half_target_t = typename detail::binary_op_half_target<ocarina::remove_cvref_t<T>>::type;
+
 }// namespace ocarina

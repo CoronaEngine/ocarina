@@ -10,6 +10,57 @@ struct always_false {
 template<typename... Ts>
 static constexpr bool always_false_v = always_false<Ts...>::value;
 
+struct true_type {
+    static constexpr bool value = true;
+};
+
+struct false_type {
+    static constexpr bool value = false;
+};
+
+template<typename T>
+struct remove_reference {
+    using type = T;
+};
+
+template<typename T>
+struct remove_reference<T &> {
+    using type = T;
+};
+
+template<typename T>
+struct remove_reference<T &&> {
+    using type = T;
+};
+
+template<typename T>
+struct remove_cv {
+    using type = T;
+};
+
+template<typename T>
+struct remove_cv<const T> {
+    using type = T;
+};
+
+template<typename T>
+struct remove_cv<volatile T> {
+    using type = T;
+};
+
+template<typename T>
+struct remove_cv<const volatile T> {
+    using type = T;
+};
+
+template<typename T>
+struct remove_cvref {
+    using type = typename remove_cv<typename remove_reference<T>::type>::type;
+};
+
+template<typename T>
+using remove_cvref_t = typename remove_cvref<T>::type;
+
 template<size_t... Ints>
 struct index_sequence {};
 
@@ -55,57 +106,18 @@ public:
     [[nodiscard]] __device__ T operator[](size_t i) const noexcept { return _data[i]; }
 };
 
-struct true_type {
-    static constexpr bool value = true;
+template<bool B, typename T, typename F>
+struct conditional {
+    using type = F;
 };
 
-struct false_type {
-    static constexpr bool value = false;
-};
-
-template<typename T>
-struct remove_reference {
+template<typename T, typename F>
+struct conditional<true, T, F> {
     using type = T;
 };
 
-template<typename T>
-struct remove_reference<T&> {
-    using type = T;
-};
-
-template<typename T>
-struct remove_reference<T&&> {
-    using type = T;
-};
-
-template<typename T>
-struct remove_cv {
-    using type = T;
-};
-
-template<typename T>
-struct remove_cv<const T> {
-    using type = T;
-};
-
-template<typename T>
-struct remove_cv<volatile T> {
-    using type = T;
-};
-
-template<typename T>
-struct remove_cv<const volatile T> {
-    using type = T;
-};
-
-template<typename T>
-struct remove_cvref {
-    using type = typename remove_cv<typename remove_reference<T>::type>::type;
-};
-
-template<typename T>
-using remove_cvref_t = typename remove_cvref<T>::type;
-
+template<bool B, typename T, typename F>
+using conditional_t = typename conditional<B, T, F>::type;
 
 }// namespace ocarina
 
