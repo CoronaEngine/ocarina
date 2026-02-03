@@ -24,8 +24,8 @@ int main() {
 
     Kernel kernel = [&](Float f) {
         $info("{} ", f);
-        Half3x3 h3 = make_half3x3(f);
-        h3 = h3 * h3;
+        Half3x3 h3 = (make_half3x3(f));
+        rcp(h3[0][0]);
     };
     auto shader = device.compile(kernel);
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();

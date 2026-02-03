@@ -800,84 +800,16 @@ def define_make_matrix():
             content += f"[[nodiscard]] __device__ inline auto oc_make_float{i}x{i}(oc_float{t}x{t} m) noexcept {{ return oc_float{i}x{i}{{{', '.join(f'oc_make_float{i}(m[{j}])' for j in range(i))}}}; }}"
             content += "\n"
 
-def convert_cuda_device_resource():
-    curr_dir = dirname(realpath(__file__))
-    cuda_device_resource = "cuda_device_resource"
-
-    print(os.path.join(curr_dir, cuda_device_resource + ".h"))
-    
-    with open(os.path.join(curr_dir, cuda_device_resource + ".h"), "r") as file:
-        string = file.read()
-        file.close()
-        save_to_inl(cuda_device_resource, string, os.path.join(curr_dir, cuda_device_resource + "_embed.h"))
-
-def convert_cuda_device_type():
-    curr_dir = dirname(realpath(__file__))
-    cuda_device_type = "cuda_device_type"
-
-    print(os.path.join(curr_dir, cuda_device_type + ".h"))
-    
-    with open(os.path.join(curr_dir, cuda_device_type + ".h"), "r") as file:
-        string = file.read()
-        file.close()
-        save_to_inl(cuda_device_type, string, os.path.join(curr_dir, cuda_device_type + "_embed.h"))
-
-def convert_optix_device_header():
-    curr_dir = dirname(realpath(__file__))
-    optix_device_header = "optix_device_header"
-
-    print(os.path.join(curr_dir, optix_device_header + ".h"))
-    
-    with open(os.path.join(curr_dir, optix_device_header + ".h"), "r") as file:
-        string = file.read()
-        file.close()
-        save_to_inl(optix_device_header, string, os.path.join(curr_dir, optix_device_header + "_embed.h"))
-
-def save_to_inl(var_name, content, fn):
-    string = f"static const char {var_name}[] = " + "{\n    "
-    # line_len = 20
-    # for i,s in enumerate(content):
-    #     split = ", " if i != len(content) - 1 else ""
-    #     string += f"{format(ord(s), '#04x')}" + split
-
-    #     if i % line_len == line_len - 1:
-    #         string += "\n    "
-    # string += ", 0x00};"
-    # with open(fn, "w") as file:
-    #     file.write(file_head() + string)
-    #     file.close()
-
-def convert_cuda_math():
-    curr_dir = dirname(realpath(__file__))
-    cuda_math = "cuda_device_math"
-
-    print(os.path.join(curr_dir, cuda_math + ".h"))
-    
-    with open(os.path.join(curr_dir, cuda_math + ".h"), "r") as file:
-        string = file.read()
-        file.close()
-        save_to_inl(cuda_math, string, os.path.join(curr_dir, cuda_math + "_embed.h"))
-
 def main():
     global content
     curr_dir = dirname(realpath(__file__))
-    # using_scalar()
-    # define_vector()
-    # define_array()
     define_operator()
-    # define_matrix()
-    # matrix_operator()
     define_select()
     define_unary_funcs()
     define_binary_funcs()
     define_triple_funcs()
-    convert_cuda_math()
-    convert_cuda_device_resource()
-    convert_cuda_device_type()
-    convert_optix_device_header()
     define_vec_func()
     define_make_vecs()
-    # define_make_matrix()
 
     content += "\n "
     content += "\n "
@@ -886,8 +818,6 @@ def main():
     with open(os.path.join(curr_dir, cuda_builtin + ".h"), "w") as file:
         file.write(content)
         file.close()
-    
-    save_to_inl(cuda_builtin, content, os.path.join(curr_dir, cuda_builtin + "_embed.h"))
 
 if __name__ == "__main__":
     main()
