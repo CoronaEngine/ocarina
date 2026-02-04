@@ -236,16 +236,20 @@ OC_MAKE_DSL_BINARY_FUNC(distance_squared, DISTANCE_SQUARED)
 
 #undef OC_MAKE_DSL_BINARY_FUNC
 
-#define OC_MAKE_DSL_TRIPLE_FUNC(func, tag)                                      \
-    template<typename A, typename B, typename C>                                \
-    requires match_dsl_basic_func_v<A, B, C>                                    \
-    [[nodiscard]] auto func(const A &a, const B &b, const C &c) noexcept {      \
-        static constexpr auto dimension = type_dimension_v<remove_device_t<A>>; \
-        using scalar_type = type_element_t<remove_device_t<A>>;                 \
-        using var_type = Var<general_vector_t<scalar_type, dimension>>;         \
-        return MemberAccessor::func<var_type>(decay_swizzle(a),                 \
-                                              decay_swizzle(b),                 \
-                                              decay_swizzle(c));                \
+#define OC_MAKE_DSL_TRIPLE_FUNC(func, tag)                                                  \
+    template<typename A, typename B, typename C>                                            \
+    requires any_device_type_v<A, B, C> && requires {                                       \
+        func(remove_device_t<A>{}, remove_device_t<B>{}, remove_device_t<B>{});             \
+    }                                                                                       \
+    [[nodiscard]] auto func(const A &a, const B &b, const C &c) noexcept {                  \
+        static constexpr auto dimension = std::max({type_dimension_v<remove_device_t<A>>,   \
+                                                    type_dimension_v<remove_device_t<B>>,   \
+                                                    type_dimension_v<remove_device_t<C>>}); \
+        using scalar_type = type_element_t<remove_device_t<A>>;                             \
+        using var_type = Var<general_vector_t<scalar_type, dimension>>;                     \
+        return MemberAccessor::func<var_type>(to_general_vector<dimension>(a),              \
+                                              to_general_vector<dimension>(b),              \
+                                              to_general_vector<dimension>(c));             \
     }
 
 OC_MAKE_DSL_TRIPLE_FUNC(clamp, CLAMP)

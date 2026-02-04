@@ -214,6 +214,27 @@ private:
     }
 };
 
+template<size_t N, typename T>
+[[nodiscard]] auto to_general_vector(const T& val) noexcept {
+    if constexpr (N > 1) {
+        if constexpr (is_swizzle_v<T>) {
+            return decay_swizzle(val);
+        } else if constexpr (is_scalar_v<T>) {
+            return Vector<T, N>(val);
+        } else if constexpr (is_scalar_v<expr_value_t<T>> && is_dsl_v<T>) {
+            Var<Vector<expr_value_t<T>, N>> ret;
+            for (int i = 0; i < N; ++i) {
+                ret[i] = val;
+            }
+            return ret;
+        } else {
+            return val;
+        }
+    } else {
+        return val;
+    }
+}
+
 template<typename T>
 using BufferVar = Var<Buffer<T>>;
 
