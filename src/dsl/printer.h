@@ -152,6 +152,8 @@ void Printer::_log_to_buffer(Uint offset, uint index, const Current &cur, const 
             buffer_.write(offset + index, cast<uint>(cur), false);
         } else if constexpr (is_float_v<type>) {
             buffer_.write(offset + index, as<uint>(cur), false);
+        } else if constexpr (is_half_v<type>) {
+            buffer_.write(offset + index, as<uint>(cast<float>(cur)), false);
         } else {
             static_assert(always_false_v<type>, "unsupported type for printing in kernel.");
         }
@@ -228,6 +230,8 @@ void Printer::_log(spdlog::level::level_enum level, const string &fmt, const Arg
                     return recombined;
                 } else if constexpr (is_integral_v<type> || is_boolean_v<type>) {
                     return static_cast<type>(data[std::get<i>(tuple_args)]);
+                } else if constexpr (is_half_v<type>) {
+                    return bit_cast<float>(data[std::get<i>(tuple_args)]);
                 } else {
                     return bit_cast<type>(data[std::get<i>(tuple_args)]);
                 }

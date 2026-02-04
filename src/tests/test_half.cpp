@@ -55,7 +55,7 @@ int main() {
         auto xx = to_general_vector<3>(f3);
 int i = 0;
         auto ret = lerp(f3.y,f3 -1.f ,f3);
-        $info("---  {} {} {}", ret.x, ret.y, ret.z);
+        $info("---  {} {} {} , {}", ret.x, ret.y, ret.z, h3[0][0]);
     };
     auto shader = device.compile(kernel);
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();
