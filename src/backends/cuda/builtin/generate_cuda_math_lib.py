@@ -938,11 +938,13 @@ def define_binary_funcs():
 def define_triple_func(tab):
     global content, name_lst
     func_name = tab["name"]
-    body = tab["body"]
+    org_body = tab["body"]
     types = tab.get("types", scalar_types)
-    for scalar in types:
+    for elm in types:
+        scalar = elm.get("arg_type")
         arg_type = f"{prefix}_{scalar}"
         ret_type = f"{prefix}_{scalar}"
+        body = org_body
         scalar_func = f"__device__ {ret_type} {prefix}_{func_name}({arg_type} v0, {arg_type} v1, {arg_type} v2) {{ {body} }}\n"
         content += scalar_func
         for dim in range(2, 5):
@@ -972,17 +974,25 @@ oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, 
 
 def define_triple_funcs():
     lst = [
-        {"name": "lerp", "body": "return v1 + v0 * (v2 - v1);", "types": ["float"]},
+        {   
+            "name": "lerp", 
+            "body": "return v1 + v0 * (v2 - v1);", 
+            "types": [{"arg_type" :"float"}]
+        },
         {
             "name": "clamp",
             "body": "return oc_min(v2, oc_max(v1, v0));",
-            "types": ["float", "uint", "int"],
+            "types": [{"arg_type" :"float"}, {"arg_type":"uint"}, {"arg_type":"int"}],
         },
-        {"name": "fma", "body": "return fmaf(v0, v1, v2);", "types": ["float"]},
+        {
+            "name": "fma", 
+            "body": "return fmaf(v0, v1, v2);", 
+            "types": [{"arg_type":"float"}]
+        },
         {
             "name": "inverse_lerp",
             "body": "return (v0 - v1) / (v2 - v1);",
-            "types": ["float"],
+            "types": [{"arg_type":"float"}],
         },
     ]
     for v in lst:
