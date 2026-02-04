@@ -1600,6 +1600,19 @@ oc_array<oc_float, N> oc_lerp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1
     return ret;
 }
 
+__device__ oc_half oc_lerp(oc_half v0, oc_half v1, oc_half v2) { return v1 + v0 * (v2 - v1); }
+__device__ oc_half2 oc_lerp(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y)); }
+__device__ oc_half3 oc_lerp(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y), oc_lerp(v0.z, v1.z, v2.z)); }
+__device__ oc_half4 oc_lerp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y), oc_lerp(v0.z, v1.z, v2.z), oc_lerp(v0.w, v1.w, v2.w)); }
+template<oc_uint N>
+oc_array<oc_half, N> oc_lerp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
+    oc_array<oc_half, N> ret;
+    for(oc_uint i = 0; i < N; ++i) {
+        ret[i] = oc_lerp(v0[i], v1[i], v2[i]);
+    }
+    return ret;
+}
+
 
 __device__ oc_float oc_clamp(oc_float v0, oc_float v1, oc_float v2) { return oc_min(v2, oc_max(v1, v0)); }
 __device__ oc_float2 oc_clamp(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
@@ -1640,6 +1653,19 @@ oc_array<oc_int, N> oc_clamp(oc_array<oc_int, N> v0, oc_array<oc_int, N> v1, oc_
     return ret;
 }
 
+__device__ oc_half oc_clamp(oc_half v0, oc_half v1, oc_half v2) { return oc_min(v2, oc_max(v1, v0)); }
+__device__ oc_half2 oc_clamp(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
+__device__ oc_half3 oc_clamp(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
+__device__ oc_half4 oc_clamp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
+template<oc_uint N>
+oc_array<oc_half, N> oc_clamp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
+    oc_array<oc_half, N> ret;
+    for(oc_uint i = 0; i < N; ++i) {
+        ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
+    }
+    return ret;
+}
+
 
 __device__ oc_float oc_fma(oc_float v0, oc_float v1, oc_float v2) { return fmaf(v0, v1, v2); }
 __device__ oc_float2 oc_fma(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y)); }
@@ -1654,6 +1680,19 @@ oc_array<oc_float, N> oc_fma(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1,
     return ret;
 }
 
+__device__ oc_half oc_fma(oc_half v0, oc_half v1, oc_half v2) { return __hfma(v0, v1, v2); }
+__device__ oc_half2 oc_fma(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y)); }
+__device__ oc_half3 oc_fma(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y), oc_fma(v0.z, v1.z, v2.z)); }
+__device__ oc_half4 oc_fma(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y), oc_fma(v0.z, v1.z, v2.z), oc_fma(v0.w, v1.w, v2.w)); }
+template<oc_uint N>
+oc_array<oc_half, N> oc_fma(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
+    oc_array<oc_half, N> ret;
+    for(oc_uint i = 0; i < N; ++i) {
+        ret[i] = oc_fma(v0[i], v1[i], v2[i]);
+    }
+    return ret;
+}
+
 
 __device__ oc_float oc_inverse_lerp(oc_float v0, oc_float v1, oc_float v2) { return (v0 - v1) / (v2 - v1); }
 __device__ oc_float2 oc_inverse_lerp(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y)); }
@@ -1662,6 +1701,19 @@ __device__ oc_float4 oc_inverse_lerp(oc_float4 v0, oc_float4 v1, oc_float4 v2) {
 template<oc_uint N>
 oc_array<oc_float, N> oc_inverse_lerp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
+    for(oc_uint i = 0; i < N; ++i) {
+        ret[i] = oc_inverse_lerp(v0[i], v1[i], v2[i]);
+    }
+    return ret;
+}
+
+__device__ oc_half oc_inverse_lerp(oc_half v0, oc_half v1, oc_half v2) { return (v0 - v1) / (v2 - v1); }
+__device__ oc_half2 oc_inverse_lerp(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y)); }
+__device__ oc_half3 oc_inverse_lerp(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y), oc_inverse_lerp(v0.z, v1.z, v2.z)); }
+__device__ oc_half4 oc_inverse_lerp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y), oc_inverse_lerp(v0.z, v1.z, v2.z), oc_inverse_lerp(v0.w, v1.w, v2.w)); }
+template<oc_uint N>
+oc_array<oc_half, N> oc_inverse_lerp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
+    oc_array<oc_half, N> ret;
     for(oc_uint i = 0; i < N; ++i) {
         ret[i] = oc_inverse_lerp(v0[i], v1[i], v2[i]);
     }

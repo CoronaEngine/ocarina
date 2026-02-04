@@ -944,7 +944,7 @@ def define_triple_func(tab):
         scalar = elm.get("arg_type")
         arg_type = f"{prefix}_{scalar}"
         ret_type = f"{prefix}_{scalar}"
-        body = org_body
+        body = elm.get("body", org_body)
         scalar_func = f"__device__ {ret_type} {prefix}_{func_name}({arg_type} v0, {arg_type} v1, {arg_type} v2) {{ {body} }}\n"
         content += scalar_func
         for dim in range(2, 5):
@@ -977,22 +977,28 @@ def define_triple_funcs():
         {   
             "name": "lerp", 
             "body": "return v1 + v0 * (v2 - v1);", 
-            "types": [{"arg_type" :"float"}]
+            "types": [{"arg_type" :"float"}, {"arg_type" :"half"}]
         },
         {
             "name": "clamp",
             "body": "return oc_min(v2, oc_max(v1, v0));",
-            "types": [{"arg_type" :"float"}, {"arg_type":"uint"}, {"arg_type":"int"}],
+            "types": [{"arg_type" :"float"}, {"arg_type":"uint"}, {"arg_type":"int"},{"arg_type" :"half"},],
         },
         {
             "name": "fma", 
             "body": "return fmaf(v0, v1, v2);", 
-            "types": [{"arg_type":"float"}]
+            "types": [
+                {"arg_type":"float"}, 
+                {
+                    "arg_type" : "half", 
+                    "body" : "return __hfma(v0, v1, v2);" 
+                }
+            ]
         },
         {
             "name": "inverse_lerp",
             "body": "return (v0 - v1) / (v2 - v1);",
-            "types": [{"arg_type":"float"}],
+            "types": [{"arg_type":"float"},{"arg_type":"half"}],
         },
     ]
     for v in lst:
