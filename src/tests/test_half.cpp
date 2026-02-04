@@ -50,6 +50,11 @@ int main() {
     Kernel kernel = [&](Float f) {
 //        $info("{} ", f);
         Half3x3 h3 = (make_half3x3(f));
+        sqrt(Half{});
+        uint3 a;
+        int3 b;
+//        b = a;
+
         rcp(h3[0][0]);
         Float3 f3 = make_float3(0.8f,0.5f, 1.f);
         auto xx = to_general_vector<3>(f3);

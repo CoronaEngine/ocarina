@@ -37,7 +37,6 @@ using std::round;
 using std::roundf;
 using std::sin;
 using std::sinh;
-using std::sqrt;
 using std::tan;
 using std::tanh;
 
@@ -105,6 +104,17 @@ requires is_scalar_v<T>
 [[nodiscard]] constexpr auto
 rcp(const T &v) {
     return T(1.f) / v;
+}
+
+template<typename T>
+requires is_scalar_v<T>
+[[nodiscard]] constexpr auto
+sqrt(const T &v) {
+    if constexpr (is_half_v<T>) {
+        return std::sqrt(static_cast<float>(v));
+    } else {
+        return std::sqrt(v);
+    }
 }
 
 template<typename T>
