@@ -150,7 +150,7 @@ void Printer::_log_to_buffer(Uint offset, uint index, const Current &cur, const 
             buffer_.write(offset + index, low_bits, false);
         } else if constexpr (is_integral_v<type> || is_boolean_v<type>) {
             buffer_.write(offset + index, cast<uint>(cur), false);
-        } else if constexpr (is_floating_point_v<type>) {
+        } else if constexpr (is_float_v<type>) {
             buffer_.write(offset + index, as<uint>(cur), false);
         } else {
             static_assert(always_false_v<type>, "unsupported type for printing in kernel.");
