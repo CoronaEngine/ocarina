@@ -52,6 +52,7 @@ struct Swizzle {
 
     using vec_type = typename vec<T>::type;
     using scalar_type = T;
+    using this_type = Swizzle<T, N, Indices...>;
 
 private:
     template<size_t... index>
@@ -126,31 +127,31 @@ public:
 
 #undef OC_MAKE_SWIZZLE_UNARY_OP
 
-#define OC_MAKE_SWIZZLE_MEMBER_BINARY_OP(op)                                  \
-                                                                              \
-    template<typename U, size_t M, size_t... OtherIndices>                    \
-    vec_type operator op(Swizzle<U, M, OtherIndices...> rhs) const noexcept { \
-        return decay() op rhs.decay();                                        \
-    }                                                                         \
-                                                                              \
-    template<typename U>                                                      \
-    requires is_scalar_v<remove_device_t<U>>                                  \
-    vec_type operator op(U rhs) const noexcept {                              \
-        return decay() op rhs;                                                \
-    }                                                                         \
-                                                                              \
-    template<typename U>                                                      \
-    requires is_scalar_v<U> && is_host_swizzle_v<T>                           \
-    friend vec_type operator op(U lhs, Swizzle<T, N, Indices...> rhs) {       \
-        return lhs op rhs.decay();                                            \
-    }                                                                         \
-                                                                              \
-    template<typename Arg>                                                    \
-    requires(is_vector_v<vec_type, 0>)                                        \
-    Swizzle &operator op## = (Arg && arg) noexcept {                          \
-        auto tmp = *this;                                                     \
-        *this = tmp op OC_FORWARD(arg);                                       \
-        return *this;                                                         \
+#define OC_MAKE_SWIZZLE_MEMBER_BINARY_OP(op)                                                 \
+    template<typename U, size_t M, size_t... OtherIndices>                                   \
+    requires requires { vec_type{} op typename Swizzle<U, M, OtherIndices...>::vec_type{}; } \
+    auto operator op(Swizzle<U, M, OtherIndices...> rhs) const noexcept {                    \
+        return decay() op rhs.decay();                                                       \
+    }                                                                                        \
+                                                                                             \
+    template<typename U>                                                                     \
+    requires is_scalar_v<remove_device_t<U>> && requires { vec_type{} op U{}; }              \
+    auto operator op(U rhs) const noexcept {                                                 \
+        return decay() op rhs;                                                               \
+    }                                                                                        \
+                                                                                             \
+    template<typename U>                                                                     \
+    requires is_scalar_v<U> && requires { U{} op vec_type{}; }                               \
+    friend auto operator op(U lhs, Swizzle<T, N, Indices...> rhs) {                          \
+        return lhs op rhs.decay();                                                           \
+    }                                                                                        \
+                                                                                             \
+    template<typename Arg>                                                                   \
+    requires(is_vector_v<vec_type, 0>)                                                       \
+    Swizzle &operator op## = (Arg && arg) noexcept {                                         \
+        auto tmp = *this;                                                                    \
+        *this = tmp op OC_FORWARD(arg);                                                      \
+        return *this;                                                                        \
     }
 
     OC_MAKE_SWIZZLE_MEMBER_BINARY_OP(+)
@@ -328,8 +329,8 @@ struct Vector : public detail::VectorStorage<T, N> {
     }                                                                                                  \
     template<typename U>                                                                               \
     requires __VA_ARGS__                                                                               \
-    [[nodiscard]] friend constexpr auto operator op(T lhs, Vector<U, N> rhs) noexcept {                \
-        return this_type{lhs} op rhs;                                                                  \
+    [[nodiscard]] friend constexpr auto operator op(U lhs, Vector<T, N> rhs) noexcept {                \
+        return Vector<U, N>{lhs} op rhs;                                                               \
     }                                                                                                  \
     template<typename U>                                                                               \
     requires __VA_ARGS__                                                                               \
@@ -839,7 +840,6 @@ OC_MAKE_TYPE_N(short)
 OC_MAKE_TYPE_N(ushort)
 OC_MAKE_TYPE_N(ulong)
 OC_MAKE_TYPE_N(char)
-
 
 #undef OC_MAKE_TYPE_N
 

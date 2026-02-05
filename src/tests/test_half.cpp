@@ -49,7 +49,7 @@ int main() {
 
     float3 h3;
     half3x3 h33;
-    auto re = float{} * half3{};
+    auto re = float{} + half3{1,2,3}.xyz();
 
     auto res = h33 * h3;
 
