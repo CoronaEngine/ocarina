@@ -379,8 +379,8 @@ OC_MAKE_ATOMIC_SOA_VIEW(template<typename T OC_COMMA ocarina::uint N OC_COMMA ty
         }                                                                               \
     };
 
-OC_MAKE_ARRAY_SOA_VAR(template<ocarina::uint N OC_COMMA ocarina::uint M OC_COMMA typename TBuffer>,
-                      ocarina::Matrix<N OC_COMMA M>, Vector<float OC_COMMA M>)
+OC_MAKE_ARRAY_SOA_VAR(template<typename T OC_COMMA ocarina::uint N OC_COMMA ocarina::uint M OC_COMMA typename TBuffer>,
+                      ocarina::Matrix<T OC_COMMA N OC_COMMA M>, Vector<float OC_COMMA M>)
 OC_MAKE_ARRAY_SOA_VAR(template<ocarina::uint N OC_COMMA typename T OC_COMMA typename TBuffer>,
                       ocarina::array<T OC_COMMA N>, T)
 
@@ -440,8 +440,8 @@ requires ocarina::is_byte_buffer_view_v<TBuffer>
         }                                                                    \
     };
 
-OC_MAKE_ARRAY_SOA_VIEW(template<ocarina::uint N OC_COMMA ocarina::uint M OC_COMMA typename TBuffer>,
-                       ocarina::Matrix<N OC_COMMA M>, Vector<float OC_COMMA M>)
+OC_MAKE_ARRAY_SOA_VIEW(template<typename T OC_COMMA ocarina::uint N OC_COMMA ocarina::uint M OC_COMMA typename TBuffer>,
+                       ocarina::Matrix<T OC_COMMA N OC_COMMA M>, Vector<float OC_COMMA M>)
 OC_MAKE_ARRAY_SOA_VIEW(template<ocarina::uint N OC_COMMA typename T OC_COMMA typename TBuffer>,
                        ocarina::array<T OC_COMMA N>, T)
 

@@ -183,10 +183,17 @@ template<typename T>
 }
 
 template<typename T>
-requires(ocarina::is_general_vector3_v<ocarina::remove_device_t<T>>)
+requires(ocarina::is_general_vector3_v<ocarina::remove_device_t<T>> && !ocarina::is_half_v<type_element_t<ocarina::remove_device_t<T>>>)
 [[nodiscard]] auto luminance(const T &v) {
     return dot(make_float3(0.212671f, 0.715160f, 0.072169f), v);
 }
+
+template<typename T>
+requires(ocarina::is_general_vector3_v<ocarina::remove_device_t<T>> && ocarina::is_half_v<type_element_t<ocarina::remove_device_t<T>>>)
+[[nodiscard]] auto luminance(const T &v) {
+    return dot(make_half3(0.212671f, 0.715160f, 0.072169f), v);
+}
+
 
 template<typename T>
 OC_NODISCARD auto is_zero(const T &v) noexcept {
@@ -208,6 +215,26 @@ template<typename T>
 requires is_vector_expr_v<T>
 OC_NODISCARD auto has_inf(const T &v) noexcept {
     return any(isinf(v));
+}
+
+template<typename T>
+requires is_scalar_v<T>
+[[nodiscard]] constexpr bool isnan(T val) noexcept {
+    if constexpr (is_half_v<T>) {
+        return val.is_nan();
+    } else {
+        return std::isnan(val);
+    }
+}
+
+template<typename T>
+requires is_scalar_v<T>
+[[nodiscard]] constexpr bool isinf(T val) noexcept {
+    if constexpr (is_half_v<T>) {
+        return val.is_inf();
+    } else {
+        return std::isinf(val);
+    }
 }
 
 template<typename T>

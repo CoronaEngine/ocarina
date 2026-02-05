@@ -1,11 +1,11 @@
-#define OC_MATRIX_UNARY_FUNC(func)                                                                                     \
-    template<size_t N, size_t M, size_t... i>                                                                          \
-    [[nodiscard]] ocarina::Matrix<N, M> func##_impl(ocarina::Matrix<N, M> m, ocarina::index_sequence<i...>) noexcept { \
-        return ocarina::Matrix<N, M>(oc_##func(m[i])...);                                                              \
-    }                                                                                                                  \
-    template<size_t N, size_t M>                                                                                       \
-    [[nodiscard]] ocarina::Matrix<N, M> oc_##func(ocarina::Matrix<N, M> m) noexcept {                                  \
-        return func##_impl(m, ocarina::make_index_sequence<N>());                                                      \
+#define OC_MATRIX_UNARY_FUNC(func)                                                                                        \
+    template<typename T, size_t N, size_t M, size_t... i>                                                                 \
+    [[nodiscard]] ocarina::Matrix<T, N, M> func##_impl(ocarina::Matrix<T, N, M> m, ocarina::index_sequence<i...>) noexcept { \
+        return ocarina::Matrix<T, N, M>(oc_##func(m[i])...);                                                              \
+    }                                                                                                                     \
+    template<typename T, size_t N, size_t M>                                                                              \
+    [[nodiscard]] ocarina::Matrix<T, N, M> oc_##func(ocarina::Matrix<T, N, M> m) noexcept {                               \
+        return func##_impl(m, ocarina::make_index_sequence<N>());                                                         \
     }
 
 OC_MATRIX_UNARY_FUNC(rcp)
@@ -42,17 +42,17 @@ OC_MATRIX_UNARY_FUNC(copysign)
 
 #undef OC_MATRIX_UNARY_FUNC
 
-#define OC_MATRIX_BINARY_FUNC(func)                                                           \
-    template<size_t N, size_t M, size_t... i>                                                 \
-    [[nodiscard]] ocarina::Matrix<N, M> func##_impl(ocarina::Matrix<N, M> lhs,                \
-                                                    ocarina::Matrix<N, M> rhs,                \
-                                                    ocarina::index_sequence<i...>) noexcept { \
-        return ocarina::Matrix<N, M>(oc_##func(lhs[i], rhs[i])...);                           \
-    }                                                                                         \
-    template<size_t N, size_t M>                                                              \
-    [[nodiscard]] ocarina::Matrix<N, M> oc_##func(ocarina::Matrix<N, M> lhs,                  \
-                                                  ocarina::Matrix<N, M> rhs) noexcept {       \
-        return func##_impl(lhs, rhs, ocarina::make_index_sequence<N>());                      \
+#define OC_MATRIX_BINARY_FUNC(func)                                                              \
+    template<typename T, size_t N, size_t M, size_t... i>                                        \
+    [[nodiscard]] ocarina::Matrix<T, N, M> func##_impl(ocarina::Matrix<T, N, M> lhs,             \
+                                                       ocarina::Matrix<T, N, M> rhs,             \
+                                                       ocarina::index_sequence<i...>) noexcept { \
+        return ocarina::Matrix<T, N, M>(oc_##func(lhs[i], rhs[i])...);                           \
+    }                                                                                            \
+    template<typename T, size_t N, size_t M>                                                     \
+    [[nodiscard]] ocarina::Matrix<T, N, M> oc_##func(ocarina::Matrix<T, N, M> lhs,               \
+                                                     ocarina::Matrix<T, N, M> rhs) noexcept {    \
+        return func##_impl(lhs, rhs, ocarina::make_index_sequence<N>());                         \
     }
 
 OC_MATRIX_BINARY_FUNC(max)

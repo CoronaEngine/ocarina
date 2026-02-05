@@ -125,12 +125,12 @@ public:
 #include "math/swizzle_inl/swizzle4.inl.h"
 };
 
-template<size_t N, size_t M>
-struct Ref<Matrix<N, M>>
-    : detail::EnableGetMemberByIndex<Ref<Matrix<N, M>>>,
-      detail::EnableSubscriptAccess<Ref<Matrix<N, M>>> {
-    OC_REF_COMMON(Ref<Matrix<N, M>>)
-    using this_type = Matrix<N, M>;
+template<typename T, size_t N, size_t M>
+struct Ref<Matrix<T, N, M>>
+    : detail::EnableGetMemberByIndex<Ref<Matrix<T, N, M>>>,
+      detail::EnableSubscriptAccess<Ref<Matrix<T, N, M>>> {
+    OC_REF_COMMON(Ref<Matrix<T, N, M>>)
+    using this_type = Matrix<T, N, M>;
     OC_MAKE_ASSIGNMENT_FUNC
 };
 
@@ -477,7 +477,7 @@ public:
     template<typename Index>
     requires concepts::integral<expr_value_t<Index>>
     [[nodiscard]] BindlessArrayTexture<3> tex3d_var(Index index, const string &desc = "",
-                                                   uint tex_num = 0) const noexcept {
+                                                    uint tex_num = 0) const noexcept {
         if (tex_num != 0) {
             if constexpr (is_integral_v<Index>) {
                 OC_ASSERT(index < tex_num);
@@ -491,7 +491,7 @@ public:
     template<typename Index>
     requires concepts::integral<expr_value_t<Index>>
     [[nodiscard]] BindlessArrayTexture<2> tex2d_var(Index index, const string &desc = "",
-                                                   uint tex_num = 0) const noexcept {
+                                                    uint tex_num = 0) const noexcept {
         if (tex_num != 0) {
             if constexpr (is_integral_v<Index>) {
                 OC_ASSERT(index < tex_num);

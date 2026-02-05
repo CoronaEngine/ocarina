@@ -160,10 +160,11 @@ const Type *TypeRegistry::parse_type(ocarina::string_view desc) noexcept {
     OC_PARSE_BASIC_TYPE(uint, UINT)
     OC_PARSE_BASIC_TYPE(bool, BOOL)
     OC_PARSE_BASIC_TYPE(float, FLOAT)
+    OC_PARSE_BASIC_TYPE(half, HALF)
     OC_PARSE_BASIC_TYPE(uchar, UCHAR)
     OC_PARSE_BASIC_TYPE(char, CHAR)
     OC_PARSE_BASIC_TYPE(ushort, USHORT)
-    OC_PARSE_BASIC_TYPE(ulong, UINT64T)
+    OC_PARSE_BASIC_TYPE(ulong, ULONG)
     OC_PARSE_BASIC_TYPE(short, SHORT)
 
 #undef OC_PARSE_BASIC_TYPE
@@ -221,28 +222,35 @@ void TypeRegistry::parse_matrix(Type *type, ocarina::string_view desc) noexcept 
     auto [start, end] = detail::bracket_matching_far(desc, '<', '>');
     auto dimension_str = desc.substr(start + 1, end - start - 1);
     auto dims = string_split(dimension_str, ',');
-    int N = std::stoi(string(dims[0]));
-    int M = std::stoi(string(dims[1]));
+    auto type_str = dims[0];
+    int N = std::stoi(string(dims[1]));
+    int M = std::stoi(string(dims[2]));
     type->dimension_ = N;
-    auto tmp_desc = ocarina::format("vector<float,{}>", M);
+    auto tmp_desc = ocarina::format("vector<{},{}>", type_str, M);
     type->members_.push_back(parse_type((tmp_desc)));
 
-#define OC_SIZE_ALIGN(NN, MM)                       \
-    if (N == (NN) && M == (MM)) {                   \
-        type->size_ = sizeof(Matrix<NN, MM>);       \
-        type->alignment_ = alignof(Matrix<NN, MM>); \
+#define OC_SIZE_ALIGN(Type, NN, MM)                       \
+    if (#Type == type_str && N == (NN) && M == (MM)) {    \
+        type->size_ = sizeof(Matrix<Type, NN, MM>);       \
+        type->alignment_ = alignof(Matrix<Type, NN, MM>); \
     } else
-    OC_SIZE_ALIGN(2, 2)
-    OC_SIZE_ALIGN(2, 3)
-    OC_SIZE_ALIGN(2, 4)
-    OC_SIZE_ALIGN(3, 2)
-    OC_SIZE_ALIGN(3, 3)
-    OC_SIZE_ALIGN(3, 4)
-    OC_SIZE_ALIGN(4, 2)
-    OC_SIZE_ALIGN(4, 3)
-    OC_SIZE_ALIGN(4, 4) {
+
+#define OC_SIZE_ALIGN_FOR_TYPE(type) \
+    OC_SIZE_ALIGN(type, 2, 2)        \
+    OC_SIZE_ALIGN(type, 2, 3)        \
+    OC_SIZE_ALIGN(type, 2, 4)        \
+    OC_SIZE_ALIGN(type, 3, 2)        \
+    OC_SIZE_ALIGN(type, 3, 3)        \
+    OC_SIZE_ALIGN(type, 3, 4)        \
+    OC_SIZE_ALIGN(type, 4, 2)        \
+    OC_SIZE_ALIGN(type, 4, 3)        \
+    OC_SIZE_ALIGN(type, 4, 4)
+
+    OC_SIZE_ALIGN_FOR_TYPE(float)
+    OC_SIZE_ALIGN_FOR_TYPE(half) {
         OC_ERROR("invalid matrix dimension <{}, {}>!", N, M);
     }
+#undef OC_SIZE_ALIGN_FOR_TYPE
 #undef OC_SIZE_ALIGN
 }
 
@@ -298,7 +306,6 @@ void TypeRegistry::parse_texture2d(Type *type, ocarina::string_view desc) noexce
     type->alignment_ = alignof(TextureDesc);
     type->size_ = sizeof(TextureDesc);
 }
-
 
 void TypeRegistry::parse_accel(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::ACCEL;

@@ -579,19 +579,19 @@ void test_parameter_struct(Device &device, Stream &stream) {
     stream << synchronize() << commit();
 }
 
-template<size_t N, size_t M>
-[[nodiscard]] constexpr auto mul(ocarina::Matrix<N, M> m, ocarina::Vector<float, M> v) noexcept {
-    return [&]<size_t... i>(std::index_sequence<i...>) {
-        return ((v[i] * m[i]) + ...);
-    }(std::make_index_sequence<M>());
-}
-
-template<size_t N, size_t M, size_t Dim>
-[[nodiscard]] constexpr auto mul(ocarina::Matrix<N, Dim> lhs, ocarina::Matrix<Dim, M> rhs) noexcept {
-    return [&]<size_t... i>(std::index_sequence<i...>) {
-        return ocarina::Matrix<N, M>(mul(lhs , rhs[i])...);
-    }(std::make_index_sequence<M>());
-}
+//template<size_t N, size_t M>
+//[[nodiscard]] constexpr auto mul(ocarina::Matrix<N, M> m, ocarina::Vector<float, M> v) noexcept {
+//    return [&]<size_t... i>(std::index_sequence<i...>) {
+//        return ((v[i] * m[i]) + ...);
+//    }(std::make_index_sequence<M>());
+//}
+//
+//template<size_t N, size_t M, size_t Dim>
+//[[nodiscard]] constexpr auto mul(ocarina::Matrix<N, Dim> lhs, ocarina::Matrix<Dim, M> rhs) noexcept {
+//    return [&]<size_t... i>(std::index_sequence<i...>) {
+//        return ocarina::Matrix<N, M>(mul(lhs , rhs[i])...);
+//    }(std::make_index_sequence<M>());
+//}
 
 int main(int argc, char *argv[]) {
 

@@ -16,7 +16,7 @@ requires std::is_enum_v<T>
 to_underlying(T e) noexcept {
     return static_cast<std::underlying_type_t<T>>(e);
 }
-
+class half;
 using uint = uint32_t;
 using ulong = uint64_t;
 using uchar = unsigned char;
@@ -38,7 +38,15 @@ template<typename T>
 constexpr auto is_boolean_v = is_boolean<T>::value;
 
 template<typename T>
-using is_floating_point = std::is_same<std::remove_cvref_t<T>, float>;
+using is_half = std::is_same<std::remove_cvref_t<T>, half>;
+OC_DEFINE_TEMPLATE_VALUE(is_half)
+
+template<typename T>
+using is_float = std::is_same<std::remove_cvref_t<T>, float>;
+OC_DEFINE_TEMPLATE_VALUE(is_float)
+
+template<typename T>
+using is_floating_point = std::disjunction<is_half<T>, is_float<T>>;
 
 template<typename T>
 constexpr auto is_floating_point_v = is_floating_point<T>::value;
@@ -352,7 +360,7 @@ using vector_dimension = detail::vector_dimension_impl<std::remove_cvref_t<T>>;
 template<typename T>
 constexpr auto vector_dimension_v = vector_dimension<T>::value;
 
-template<size_t N, size_t M>
+template<typename T, size_t N, size_t M>
 struct Matrix;
 
 namespace detail {
@@ -361,8 +369,8 @@ struct matrix_dimension_impl {
     static constexpr auto value = static_cast<size_t>(1u);
 };
 
-template<size_t N, size_t M>
-struct matrix_dimension_impl<Matrix<N, M>> {
+template<typename T, size_t N, size_t M>
+struct matrix_dimension_impl<Matrix<T, N, M>> {
     static constexpr auto value = N;
 };
 }// namespace detail
@@ -591,11 +599,11 @@ namespace detail {
 template<typename T, size_t N = 0u>
 struct is_matrix_impl : std::false_type {};
 
-template<size_t N, size_t M>
-struct is_matrix_impl<Matrix<N, M>, M> : std::true_type {};
+template<typename T, size_t N, size_t M>
+struct is_matrix_impl<Matrix<T, N, M>, M> : std::true_type {};
 
-template<size_t N, size_t M>
-struct is_matrix_impl<Matrix<N, M>, 0u> : std::true_type {};
+template<typename T, size_t N, size_t M>
+struct is_matrix_impl<Matrix<T, N, M>, 0u> : std::true_type {};
 }// namespace detail
 
 template<typename T, size_t N = 0u>

@@ -191,6 +191,20 @@ OC_MAKE_DSL_UNARY_FUNC(inverse, INVERSE)
 
 #undef OC_MAKE_DSL_UNARY_FUNC
 
+[[nodiscard]] inline Half float2half(const Float &arg) {
+    const CallExpr *expr = Function::current()->call_builtin(Type::of<half>(),
+                                                             CallOp::FLOAT2HALF,
+                                                             {OC_EXPR(arg)});
+    return eval<half>(expr);
+}
+
+[[nodiscard]] inline Float half2float(const Float &arg) {
+    const CallExpr *expr = Function::current()->call_builtin(Type::of<half>(),
+                                                             CallOp::HALF2FLOAT,
+                                                             {OC_EXPR(arg)});
+    return eval<float>(expr);
+}
+
 template<typename... Ts>
 using match_dsl_basic_func = std::conjunction<any_device_type<Ts...>,
                                               match_basic_func<remove_device_t<Ts>...>>;
@@ -222,16 +236,20 @@ OC_MAKE_DSL_BINARY_FUNC(distance_squared, DISTANCE_SQUARED)
 
 #undef OC_MAKE_DSL_BINARY_FUNC
 
-#define OC_MAKE_DSL_TRIPLE_FUNC(func, tag)                                      \
-    template<typename A, typename B, typename C>                                \
-    requires match_dsl_basic_func_v<A, B, C>                                    \
-    [[nodiscard]] auto func(const A &a, const B &b, const C &c) noexcept {      \
-        static constexpr auto dimension = type_dimension_v<remove_device_t<A>>; \
-        using scalar_type = type_element_t<remove_device_t<A>>;                 \
-        using var_type = Var<general_vector_t<scalar_type, dimension>>;         \
-        return MemberAccessor::func<var_type>(decay_swizzle(a),                 \
-                                              decay_swizzle(b),                 \
-                                              decay_swizzle(c));                \
+#define OC_MAKE_DSL_TRIPLE_FUNC(func, tag)                                                  \
+    template<typename A, typename B, typename C>                                            \
+    requires any_device_type_v<A, B, C> && requires {                                       \
+        func(remove_device_t<A>{}, remove_device_t<B>{}, remove_device_t<B>{});             \
+    }                                                                                       \
+    [[nodiscard]] auto func(const A &a, const B &b, const C &c) noexcept {                  \
+        static constexpr auto dimension = std::max({type_dimension_v<remove_device_t<A>>,   \
+                                                    type_dimension_v<remove_device_t<B>>,   \
+                                                    type_dimension_v<remove_device_t<C>>}); \
+        using scalar_type = type_element_t<remove_device_t<A>>;                             \
+        using var_type = Var<general_vector_t<scalar_type, dimension>>;                     \
+        return MemberAccessor::func<var_type>(to_general_vector<dimension>(a),              \
+                                              to_general_vector<dimension>(b),              \
+                                              to_general_vector<dimension>(c));             \
     }
 
 OC_MAKE_DSL_TRIPLE_FUNC(clamp, CLAMP)
@@ -340,35 +358,39 @@ void make_normal_tangent(const N &n, const T &t, Var<float3> &a, Var<float3> &b)
 OC_MAKE_VEC_MAKER(int, INT)
 OC_MAKE_VEC_MAKER(uint, UINT)
 OC_MAKE_VEC_MAKER(float, FLOAT)
+OC_MAKE_VEC_MAKER(half, HALF)
 OC_MAKE_VEC_MAKER(bool, BOOL)
 OC_MAKE_VEC_MAKER(uchar, UCHAR)
 
 #undef OC_MAKE_VEC_MAKER_DIM
 #undef OC_MAKE_VEC_MAKER
 
-#define OC_MAKE_MATRIX(N, M)                                                                            \
-    template<typename... Args>                                                                          \
-    requires(any_dsl_v<Args...> && requires {                                                           \
-        make_float##N##x##M(expr_value_t<Args>{}...);                                                   \
-    })                                                                                                  \
-    OC_NODISCARD auto make_float##N##x##M(const Args &...args) {                                        \
-        auto expr = Function::current()->call_builtin(Type::of<float##N##x##M>(),                       \
-                                                      CallOp::MAKE_FLOAT##N##X##M, {OC_EXPR(args)...}); \
-        return eval<float##N##x##M>(expr);                                                              \
+#define OC_MAKE_MATRIX(type, TYPE, N, M)                                                                 \
+    template<typename... Args>                                                                           \
+    requires(any_dsl_v<Args...> && requires {                                                            \
+        make_##type##N##x##M(expr_value_t<Args>{}...);                                                   \
+    })                                                                                                   \
+    OC_NODISCARD auto make_##type##N##x##M(const Args &...args) {                                        \
+        auto expr = Function::current()->call_builtin(Type::of<type##N##x##M>(),                         \
+                                                      CallOp::MAKE_##TYPE##N##X##M, {OC_EXPR(args)...}); \
+        return eval<type##N##x##M>(expr);                                                                \
     }
 
-OC_MAKE_MATRIX(2, 2)
-OC_MAKE_MATRIX(2, 3)
-OC_MAKE_MATRIX(2, 4)
+#define OC_MAKE_MATRIX_FOR_TYPE(type, TYPE) \
+    OC_MAKE_MATRIX(type, TYPE, 2, 2)        \
+    OC_MAKE_MATRIX(type, TYPE, 2, 3)        \
+    OC_MAKE_MATRIX(type, TYPE, 2, 4)        \
+    OC_MAKE_MATRIX(type, TYPE, 3, 2)        \
+    OC_MAKE_MATRIX(type, TYPE, 3, 3)        \
+    OC_MAKE_MATRIX(type, TYPE, 3, 4)        \
+    OC_MAKE_MATRIX(type, TYPE, 4, 2)        \
+    OC_MAKE_MATRIX(type, TYPE, 4, 3)        \
+    OC_MAKE_MATRIX(type, TYPE, 4, 4)
 
-OC_MAKE_MATRIX(3, 2)
-OC_MAKE_MATRIX(3, 3)
-OC_MAKE_MATRIX(3, 4)
+OC_MAKE_MATRIX_FOR_TYPE(float, FLOAT)
+OC_MAKE_MATRIX_FOR_TYPE(half, HALF)
 
-OC_MAKE_MATRIX(4, 2)
-OC_MAKE_MATRIX(4, 3)
-OC_MAKE_MATRIX(4, 4)
-
+#undef OC_MAKE_MATRIX_FOR_TYPE
 #undef OC_MAKE_MATRIX
 
 template<typename Ret = void, typename... Args>

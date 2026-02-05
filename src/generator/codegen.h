@@ -34,6 +34,7 @@ protected:
         Scratch &operator<<(int v) noexcept;
         Scratch &operator<<(float v) noexcept;
         Scratch &operator<<(bool v) noexcept;
+        Scratch &operator<<(half v) noexcept;
         Scratch &operator<<(uint v) noexcept;
         Scratch &operator<<(size_t v) noexcept;
         Scratch &operator<<(const Scratch &scratch) noexcept;

@@ -12,19 +12,37 @@
 
 namespace ocarina {
 
+std::string get_cuda_path() {
+    char cudaPath[1024];
+    DWORD size = GetEnvironmentVariableA("CUDA_PATH", cudaPath, sizeof(cudaPath));
+    if (size > 0 && size < sizeof(cudaPath)) {
+        return std::string(cudaPath);
+    }
+
+    std::string defaultPath = "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA";
+    if (access(defaultPath.c_str(), 0) == 0) {
+        return defaultPath;
+    }
+    return "";
+}
+
 CUDACompiler::CUDACompiler(CUDADevice *device)
     : device_(device) {}
 
 ocarina::string CUDACompiler::compile(const Function &function, int sm) const noexcept {
 
+    fs::path cuda_path = get_cuda_path();
+    cuda_path = cuda_path / "include";
+
+    string header_path = "-I" + cuda_path.string();
     int ver_major = 0;
     int ver_minor = 0;
     OC_NVRTC_CHECK(nvrtcVersion(&ver_major, &ver_minor));
     int nvrtc_version = ver_major * 10000 + ver_minor * 100;
     auto nvrtc_option = fmt::format("-DLC_NVRTC_VERSION={}", nvrtc_version);
-    std::vector header_names{"cuda_device_type.h", "cuda_device_builtin.h", "cuda_device_math.h",
-                             "cuda_matrix_func.h",
-                             "cuda_device_resource.h"};
+    std::vector header_names{"cuda_device_std.h","cuda_device_scalar.h", "cuda_device_vector.h" ,
+                             "cuda_device_matrix.h","cuda_device_builtin.h", "cuda_device_math.h",
+                             "cuda_matrix_func.h", "cuda_device_resource.h"};
     std::vector<string> header_sources;
     std::vector<const char *> header_sources_ptr;
 
@@ -57,13 +75,14 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
         "-default-device",
         "--use_fast_math",
         "-restrict",
+        header_path.c_str(),
         //#ifndef NDEBUG
         "-lineinfo",
         //#endif
         "-extra-device-vectorization",
         "-dw",
         "-w"};
-    ocarina::vector<string> includes;
+    ocarina::list<string> includes;
     if (function.is_raytracing()) {
         static string inc_path = (fs::current_path() / "cuda" / "optix").string();
         includes.push_back(ocarina::format("-I {}", inc_path));

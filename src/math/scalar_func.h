@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "basic_traits.h"
+#include "half.h"
 #include "math/constants.h"
 #include "core/concepts.h"
 #include <numeric>
@@ -37,20 +37,27 @@ using std::round;
 using std::roundf;
 using std::sin;
 using std::sinh;
-using std::sqrt;
 using std::tan;
 using std::tanh;
 
 template<typename T>
 requires ocarina::is_scalar_v<T>
-[[nodiscard]] constexpr auto max(T a, T b) noexcept {
+[[nodiscard]] constexpr T max(T a, T b) noexcept {
     return std::max(a, b);
+}
+
+[[nodiscard]] constexpr half max(half a, half b) noexcept {
+    return half2float(a) > half2float(b) ? a : b;
 }
 
 template<typename T>
 requires ocarina::is_scalar_v<T>
 [[nodiscard]] constexpr auto min(T a, T b) noexcept {
     return std::min(a, b);
+}
+
+[[nodiscard]] constexpr half min(half a, half b) noexcept {
+    return half2float(a) < half2float(b) ? a : b;
 }
 
 template<typename T, typename F>
@@ -96,14 +103,25 @@ template<typename T>
 requires is_scalar_v<T>
 [[nodiscard]] constexpr auto
 rcp(const T &v) {
-    return 1.f / v;
+    return T(1.f) / v;
+}
+
+template<typename T>
+requires is_scalar_v<T>
+[[nodiscard]] constexpr auto
+sqrt(const T &v) {
+    if constexpr (is_half_v<T>) {
+        return std::sqrt(static_cast<float>(v));
+    } else {
+        return std::sqrt(v);
+    }
 }
 
 template<typename T>
 requires is_scalar_v<T>
 [[nodiscard]] constexpr auto
 rsqrt(const T &v) {
-    return 1.f / sqrt(v);
+    return rcp(sqrt(v));
 }
 
 template<typename T>
@@ -113,8 +131,16 @@ fract(const T &v) {
     return v - floorf(v);
 }
 
+[[nodiscard]] constexpr auto fract(half v) {
+    return float2half(fract(half2float(v)));
+}
+
 [[nodiscard]] inline float mod(float x, float y) {
     return x - y * floor(x / y);
+}
+
+[[nodiscard]] inline half mod(half x, half y) {
+    return float2half(x - y * floor(half2float(x / y)));
 }
 
 template<typename T>
@@ -133,10 +159,18 @@ OC_NODISCARD constexpr auto sqr(const T &v) {
     return (u & 0x7f800000u) == 0x7f800000u && (u & 0x007fffffu) != 0u;
 }
 
+[[nodiscard]] inline bool isnan(half x) noexcept {
+    return x.is_nan();
+}
+
 [[nodiscard]] inline bool isinf(float x) noexcept {
     auto u = 0u;
     ::memcpy(&u, &x, sizeof(float));
     return (u & 0x7f800000u) == 0x7f800000u && (u & 0x007fffffu) == 0u;
+}
+
+[[nodiscard]] inline bool isinf(half x) noexcept {
+    return x.is_inf();
 }
 
 template<typename X, typename A, typename B>

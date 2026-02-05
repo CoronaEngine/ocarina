@@ -95,6 +95,12 @@ public:
         unbind();
     }
 
+    void download(float4 *pixels) const noexcept {
+        bind();
+        CHECK_GL(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixels));
+        unbind();
+    }
+
     void upload(const float4 *pixels) noexcept {
         bind();
         CHECK_GL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size_.x, size_.y, GL_RGBA, GL_FLOAT, pixels));

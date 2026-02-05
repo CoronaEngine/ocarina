@@ -218,7 +218,6 @@ public:
     [[nodiscard]] BufferToTextureCommand *copy_from_buffer_impl(handle_ty buffer_handle,
                                                          size_t buffer_offset_in_byte,
                                                          bool async) const noexcept override;
-
     /// for dsl
     [[nodiscard]] const Expression *expression() const noexcept override;
 };
@@ -242,7 +241,6 @@ public:
     [[nodiscard]] BufferToTextureCommand *copy_from_buffer_impl(handle_ty buffer_handle,
                                                          size_t buffer_offset_in_byte,
                                                          bool async) const noexcept override;
-
     /// for dsl
     [[nodiscard]] const Expression *expression() const noexcept override;
 };

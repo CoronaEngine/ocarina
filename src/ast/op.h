@@ -149,18 +149,30 @@ enum struct CallOp : uint32_t {
     MAKE_BOOL2,
     MAKE_BOOL3,
     MAKE_BOOL4,
+
     MAKE_INT2,
     MAKE_INT3,
     MAKE_INT4,
+
     MAKE_UINT2,
     MAKE_UINT3,
     MAKE_UINT4,
+
     MAKE_UCHAR2,
     MAKE_UCHAR3,
     MAKE_UCHAR4,
+
     MAKE_FLOAT2,
     MAKE_FLOAT3,
     MAKE_FLOAT4,
+
+    MAKE_HALF2,
+    MAKE_HALF3,
+    MAKE_HALF4,
+
+    MAKE_ULONG2,
+    MAKE_ULONG3,
+    MAKE_ULONG4,
 
     MAKE_FLOAT2X2,
     MAKE_FLOAT2X3,
@@ -174,12 +186,27 @@ enum struct CallOp : uint32_t {
     MAKE_FLOAT4X3,
     MAKE_FLOAT4X4,
 
+    MAKE_HALF2X2,
+    MAKE_HALF2X3,
+    MAKE_HALF2X4,
+
+    MAKE_HALF3X2,
+    MAKE_HALF3X3,
+    MAKE_HALF3X4,
+
+    MAKE_HALF4X2,
+    MAKE_HALF4X3,
+    MAKE_HALF4X4,
+
     UNREACHABLE,
 
     ATOMIC_EXCH,
     ATOMIC_ADD,
     ATOMIC_SUB,
     ATOMIC_CAS,
+
+    HALF2FLOAT,
+    FLOAT2HALF,
 
     // ray tracing
     MAKE_RAY,

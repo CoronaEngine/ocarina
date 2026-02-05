@@ -18,9 +18,9 @@ struct LiteralPrinter {
     void operator()(T v) {
         if constexpr (ocarina::is_scalar_v<T>) {
             if constexpr (ocarina::is_floating_point_v<T>) {
-                if (std::isnan(v)) [[unlikely]] {
+                if (ocarina::isnan(v)) [[unlikely]] {
                     OC_ERROR("nan error!");
-                } else if (std::isinf(v)) {
+                } else if (ocarina::isinf(v)) {
                     scratch << (v < 0.f ? "(1.f/-0.f)" : "1.f/+0.f");
                 } else {
                     scratch << v;
@@ -39,10 +39,10 @@ struct LiteralPrinter {
             }
         }
     }
-    template<size_t N, size_t M>
-    void operator()(Matrix<N, M> m) {
+    template<typename T, size_t N, size_t M>
+    void operator()(Matrix<T, N, M> m) {
         auto printer = *this;
-        scratch << TYPE_PREFIX << Type::of<Matrix<N, M>>()->name() << "(";
+        scratch << TYPE_PREFIX << Type::of<Matrix<T, N, M>>()->name() << "(";
         for (int i = 0; i < M; ++i) {
             const char *token = i == M - 1 ? ")" : ",";
             printer(m[i]);
@@ -401,7 +401,8 @@ void CppCodegen::_emit_type_name(const Type *type) noexcept {
             case Type::Tag::UINT: current_scratch() << "uint"; break;
             case Type::Tag::UCHAR: current_scratch() << "uchar"; break;
             case Type::Tag::CHAR: current_scratch() << "char"; break;
-            case Type::Tag::UINT64T: current_scratch() << "ulong"; break;
+            case Type::Tag::HALF: current_scratch() << "half"; break;
+            case Type::Tag::ULONG: current_scratch() << "ulong"; break;
             case Type::Tag::VECTOR:
                 _emit_type_name(type->element());
                 current_scratch() << type->dimension();

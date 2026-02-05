@@ -140,9 +140,9 @@ struct struct_member_tuple<Vector<T, N>> {
     using type = typename struct_member_tuple<ocarina::array<T, N>>::type;
 };
 
-template<size_t N, size_t M>
-struct struct_member_tuple<Matrix<N, M>> {
-    using type = typename struct_member_tuple<ocarina::array<Vector<float, M>, N>>::type;
+template<typename T, size_t N, size_t M>
+struct struct_member_tuple<Matrix<T, N, M>> {
+    using type = typename struct_member_tuple<ocarina::array<Vector<T, M>, N>>::type;
 };
 
 /// make struct reflection
@@ -249,8 +249,8 @@ struct dimension_impl<Vector<T, N>> {
     static constexpr auto value = N;
 };
 
-template<size_t N, size_t M>
-struct dimension_impl<Matrix<N, M>> {
+template<typename T, size_t N, size_t M>
+struct dimension_impl<Matrix<T, N, M>> {
     static constexpr auto value = N;
 };
 
@@ -374,13 +374,14 @@ public:
     enum struct Tag : uint32_t {
         BOOL,
         FLOAT,
+        HALF,
         INT,
         UINT,
         UCHAR,
         CHAR,
         SHORT,
         USHORT,
-        UINT64T,
+        ULONG,
 
         VECTOR,
         MATRIX,
@@ -462,7 +463,7 @@ public:
     [[nodiscard]] constexpr bool is_scalar() const noexcept {
         return tag_ == Tag::BOOL || tag_ == Tag::FLOAT || tag_ == Tag::INT ||
                tag_ == Tag::UINT || tag_ == Tag::UCHAR || tag_ == Tag::CHAR ||
-               tag_ == Tag::USHORT || tag_ == Tag::SHORT;
+               tag_ == Tag::USHORT || tag_ == Tag::SHORT || tag_ == Tag::HALF || tag_ == Tag::ULONG;
     }
     [[nodiscard]] size_t max_member_size() const noexcept;
     [[nodiscard]] constexpr bool is_builtin_struct() const noexcept { return builtin_struct_; }

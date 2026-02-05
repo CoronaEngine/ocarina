@@ -57,6 +57,7 @@ struct TypeDesc {
 
 OC_MAKE_SCALAR_AND_VECTOR_TYPE_DESC_SPECIALIZATION(bool)
 OC_MAKE_SCALAR_AND_VECTOR_TYPE_DESC_SPECIALIZATION(float)
+OC_MAKE_SCALAR_AND_VECTOR_TYPE_DESC_SPECIALIZATION(half)
 OC_MAKE_SCALAR_AND_VECTOR_TYPE_DESC_SPECIALIZATION(int)
 OC_MAKE_SCALAR_AND_VECTOR_TYPE_DESC_SPECIALIZATION(uint)
 OC_MAKE_SCALAR_AND_VECTOR_TYPE_DESC_SPECIALIZATION(uchar)
@@ -80,17 +81,17 @@ struct TypeDesc<void> {
 };
 
 /// matrices
-template<size_t N, size_t M>
-struct TypeDesc<ocarina::Matrix<N, M>> {
+template<typename T, size_t N, size_t M>
+struct TypeDesc<ocarina::Matrix<T,N, M>> {
     static ocarina::string &description() noexcept {
         static thread_local auto s = ocarina::format(
-            "matrix<{},{}>",
+            "matrix<{},{},{}>",TypeDesc<T>::description(),
             N, M);
         return s;
     }
     static ocarina::string &name() noexcept {
         static thread_local auto s = ocarina::format(
-            "float{}x{}",
+            "{}{}x{}",TypeDesc<T>::name(),
             N, M);
         return s;
     }

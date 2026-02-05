@@ -102,18 +102,41 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
         case CallOp::MAKE_BOOL2: OC_GEN_FUNC_NAME(make_bool2); break;
         case CallOp::MAKE_BOOL3: OC_GEN_FUNC_NAME(make_bool3); break;
         case CallOp::MAKE_BOOL4: OC_GEN_FUNC_NAME(make_bool4); break;
+
         case CallOp::MAKE_INT2: OC_GEN_FUNC_NAME(make_int2); break;
         case CallOp::MAKE_INT3: OC_GEN_FUNC_NAME(make_int3); break;
         case CallOp::MAKE_INT4: OC_GEN_FUNC_NAME(make_int4); break;
+
         case CallOp::MAKE_UINT2: OC_GEN_FUNC_NAME(make_uint2); break;
         case CallOp::MAKE_UINT3: OC_GEN_FUNC_NAME(make_uint3); break;
         case CallOp::MAKE_UINT4: OC_GEN_FUNC_NAME(make_uint4); break;
+
         case CallOp::MAKE_UCHAR2: OC_GEN_FUNC_NAME(make_uchar2); break;
         case CallOp::MAKE_UCHAR3: OC_GEN_FUNC_NAME(make_uchar3); break;
         case CallOp::MAKE_UCHAR4: OC_GEN_FUNC_NAME(make_uchar4); break;
+
         case CallOp::MAKE_FLOAT2: OC_GEN_FUNC_NAME(make_float2); break;
         case CallOp::MAKE_FLOAT3: OC_GEN_FUNC_NAME(make_float3); break;
         case CallOp::MAKE_FLOAT4: OC_GEN_FUNC_NAME(make_float4); break;
+
+        case CallOp::MAKE_HALF2: OC_GEN_FUNC_NAME(make_half2); break;
+        case CallOp::MAKE_HALF3: OC_GEN_FUNC_NAME(make_half3); break;
+        case CallOp::MAKE_HALF4: OC_GEN_FUNC_NAME(make_half4); break;
+
+        case CallOp::FLOAT2HALF: OC_GEN_FUNC_NAME(float2half); break;
+        case CallOp::HALF2FLOAT: OC_GEN_FUNC_NAME(half2float); break;
+
+        case CallOp::MAKE_HALF2X2: OC_GEN_FUNC_NAME(make_half2x2); break;
+        case CallOp::MAKE_HALF2X3: OC_GEN_FUNC_NAME(make_half2x3); break;
+        case CallOp::MAKE_HALF2X4: OC_GEN_FUNC_NAME(make_half2x4); break;
+
+        case CallOp::MAKE_HALF3X2: OC_GEN_FUNC_NAME(make_half3x2); break;
+        case CallOp::MAKE_HALF3X3: OC_GEN_FUNC_NAME(make_half3x3); break;
+        case CallOp::MAKE_HALF3X4: OC_GEN_FUNC_NAME(make_half3x4); break;
+
+        case CallOp::MAKE_HALF4X2: OC_GEN_FUNC_NAME(make_half4x2); break;
+        case CallOp::MAKE_HALF4X3: OC_GEN_FUNC_NAME(make_half4x3); break;
+        case CallOp::MAKE_HALF4X4: OC_GEN_FUNC_NAME(make_half4x4); break;
 
         case CallOp::MAKE_FLOAT2X2: OC_GEN_FUNC_NAME(make_float2x2); break;
         case CallOp::MAKE_FLOAT2X3: OC_GEN_FUNC_NAME(make_float2x3); break;
@@ -402,7 +425,8 @@ void CUDACodegen::_emit_type_name(const Type *type) noexcept {
             case Type::Tag::SHORT:
             case Type::Tag::VECTOR:
             case Type::Tag::MATRIX:
-            case Type::Tag::UINT64T:
+            case Type::Tag::ULONG:
+            case Type::Tag::HALF:
                 current_scratch() << TYPE_PREFIX << type->name();
                 break;
             case Type::Tag::ARRAY:
