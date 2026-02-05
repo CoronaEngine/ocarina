@@ -47,6 +47,13 @@ int main() {
 
     auto ts = TypeDesc<half3x3>::name();
 
+    float3 h3;
+    half3x3 h33;
+    auto re = float{} * half3{};
+
+    auto res = h33 * h3;
+
+
     Kernel kernel = [&](Float f) {
 //        $info("{} ", f);
         Half3x3 h3 = (make_half3x3(f));
