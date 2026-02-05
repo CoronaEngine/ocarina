@@ -282,6 +282,11 @@ struct Vector : public detail::VectorStorage<T, N> {
         }(std::make_index_sequence<N>());
         return *this;
     }
+    template<typename U, size_t NN, size_t... Indices>
+    requires requires { this_type{} = typename Swizzle<U, NN, Indices...>::vec_type {}; }
+    constexpr this_type &operator=(Swizzle<U, NN, Indices...> other) noexcept {
+        return *this = other.decay();
+    }
     [[nodiscard]] constexpr T &operator[](size_t index) noexcept { return (&(this->x))[index]; }
     [[nodiscard]] constexpr const T &operator[](size_t index) const noexcept { return (&(this->x))[index]; }
     [[nodiscard]] constexpr T &at(size_t index) noexcept { return (&(this->x))[index]; }

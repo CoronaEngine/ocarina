@@ -66,12 +66,12 @@ int main() {
 //        Int3 b ;
 //        b = a;
 
-        float3 f3 = make_float3(0.8f,0.5f, 1.f);
-        half3 h3 = make_half3(1.f, 2.f, 3.f);
+        Float3 f3 = make_float3(0.8f,0.5f, 1.f);
+        Half3 h3 = make_half3(1.f, 2.f, 3.f);
 
         auto re = f3.x * h3.xyz() ;
 
-        re = h3;
+//        re = h3.xxx();
 
         $info("---  {} {} {} ", re);
     };
