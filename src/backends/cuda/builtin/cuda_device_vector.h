@@ -49,6 +49,12 @@ private:
         return Vector<T, N>(oc_static_cast<T>(v[i])...);
     }
 
+    template<typename U, size_t ...i>
+    void assign_helper(const Vector<U, N> &other, ocarina::index_sequence<i...>) noexcept {
+        ((this->operator[](i) = static_cast<T>(other[i])), ...);
+    }
+
+
 public:
     template<typename U>
     explicit constexpr Vector(U s) noexcept : Vector(oc_static_cast<T>(s)) {}
@@ -56,6 +62,12 @@ public:
     template<typename U, size_t NN, ocarina::enable_if_t<NN >= N, int> = 0>
     explicit constexpr Vector(Vector<U, NN> v)
         : Vector{construct_helper(v, ocarina::make_index_sequence<N>())} {}
+
+    template<typename U>
+    constexpr Vector &operator=(Vector<U, N> other) noexcept {
+        assign_helper<U>(other, ocarina::make_index_sequence<N>());
+        return *this;
+    }
 
     __device__ constexpr T &operator[](size_t index) noexcept { return (&(this->x))[index]; }
     __device__ constexpr const T &operator[](size_t index) const noexcept { return (&(this->x))[index]; }

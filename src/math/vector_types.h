@@ -274,7 +274,13 @@ struct Vector : public detail::VectorStorage<T, N> {
         : Vector([&]<size_t... i>(std::index_sequence<i...>) {
               return Vector<T, N>(static_cast<T>(v[i])...);
           }(std::make_index_sequence<N>())) {}
-
+    template<typename U>
+    constexpr this_type &operator=(Vector<U, N> other) noexcept {
+        [&]<size_t... i>(std::index_sequence<i...>) {
+            ((this->operator[](i) = static_cast<T>(other[i])), ...);
+        }(std::make_index_sequence<N>());
+        return *this;
+    }
     [[nodiscard]] constexpr T &operator[](size_t index) noexcept { return (&(this->x))[index]; }
     [[nodiscard]] constexpr const T &operator[](size_t index) const noexcept { return (&(this->x))[index]; }
     [[nodiscard]] constexpr T &at(size_t index) noexcept { return (&(this->x))[index]; }
