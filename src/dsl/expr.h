@@ -29,7 +29,7 @@ template<typename T>
 template<typename T>
 struct Expr : public detail::Ref<T> {
 public:
-    using this_type = T;
+    using org_type = T;
     explicit Expr(const Expression *expression) noexcept
         : detail::Ref<T>(expression) {}
     Expr() = default;

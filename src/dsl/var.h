@@ -24,15 +24,15 @@ using detail::Ref;
 template<typename T>
 struct Var : public Ref<T> {
 public:
-    using this_type = T;
+    using org_type = T;
     using Super = Ref<T>;
     using Ref<T>::Ref;
     using dsl_type = Var<T>;
     friend class MemberAccessor;
     explicit Var(const ocarina::Expression *expression) noexcept
-        : ocarina::detail::Ref<this_type>(expression) {}
+        : ocarina::detail::Ref<org_type>(expression) {}
     Var(OC_APPEND_SRC_LOCATION) noexcept
-        : Var(ocarina::Function::current()->local(ocarina::Type::of<this_type>(), OC_SRC_LOCATION)) {
+        : Var(ocarina::Function::current()->local(ocarina::Type::of<org_type>(), OC_SRC_LOCATION)) {
         static_assert(!is_param_struct_v<T>);
         if constexpr (is_struct_v<T>) {
             Ref<T>::set(T{});
@@ -51,17 +51,17 @@ public:
         : Var() { ocarina::detail::assign(*this, another); }
     template<typename Arg>
     requires ocarina::concepts::non_pointer<std::remove_cvref_t<Arg>> &&
-             concepts::different<std::remove_cvref_t<Arg>, Var<this_type>> &&
-             requires(ocarina::expr_value_t<this_type> a, ocarina::expr_value_t<Arg> b) { a = b; }
+             concepts::different<std::remove_cvref_t<Arg>, Var<org_type>> &&
+             requires(ocarina::expr_value_t<org_type> a, ocarina::expr_value_t<Arg> b) { a = b; }
     Var(Arg &&arg, OC_APPEND_SRC_LOCATION)
         : Var(OC_SRC_LOCATION) { ocarina::detail::assign(*this, std::forward<Arg>(arg)); }
     explicit Var(ocarina::detail::ArgumentCreation,
                  OC_APPEND_SRC_LOCATION) noexcept
-        : Var(ocarina::Function::current()->argument(ocarina::Type::of<this_type>())) {}
+        : Var(ocarina::Function::current()->argument(ocarina::Type::of<org_type>())) {}
     explicit Var(ocarina::detail::ReferenceArgumentCreation, OC_APPEND_SRC_LOCATION) noexcept
-        : Var(ocarina::Function::current()->reference_argument(ocarina::Type::of<this_type>())) {}
+        : Var(ocarina::Function::current()->reference_argument(ocarina::Type::of<org_type>())) {}
     template<typename Arg>
-    requires requires(ocarina::expr_value_t<this_type> a, ocarina::expr_value_t<Arg> b) { a = b; }
+    requires requires(ocarina::expr_value_t<org_type> a, ocarina::expr_value_t<Arg> b) { a = b; }
     void operator=(Arg &&arg) {
         if constexpr (is_struct_v<Arg>) {
             Super::set(OC_FORWARD(arg));
@@ -215,7 +215,7 @@ private:
 };
 
 template<size_t N, typename T>
-[[nodiscard]] auto to_general_vector(const T& val) noexcept {
+[[nodiscard]] auto to_general_vector(const T &val) noexcept {
     if constexpr (N > 1) {
         if constexpr (is_swizzle_v<T>) {
             return decay_swizzle(val);
