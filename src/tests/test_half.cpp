@@ -51,16 +51,15 @@ int main() {
 //        $info("{} ", f);
         Half3x3 h3 = (make_half3x3(f));
         sqrt(Half{});
-        uint3 a;
-        int3 b;
-//        b = a;
+        Uint3 a = make_uint3(3);
+        Int3 b ;
+        b = a;
 
         rcp(h3[0][0]);
         Float3 f3 = make_float3(0.8f,0.5f, 1.f);
         auto xx = to_general_vector<3>(f3);
-int i = 0;
         auto ret = lerp(f3.y,f3 -1.f ,f3);
-        $info("---  {} {} {} , {}", ret.x, ret.y, ret.z, h3[0][0]);
+        $info("---  {} {} {} , {}", b, h3[0][0]);
     };
     auto shader = device.compile(kernel);
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();

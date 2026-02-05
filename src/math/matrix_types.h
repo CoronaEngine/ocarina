@@ -15,6 +15,7 @@ public:
     static constexpr auto col_num = M;
     static constexpr auto element_num = M * N;
     using scalar_type = T;
+    using this_type = Matrix<T, N, M>;
     using vector_type = Vector<scalar_type, N>;
     using array_t = array<vector_type, M>;
 
@@ -33,7 +34,8 @@ public:
         : cols_([&]<size_t... i>(std::index_sequence<i...>,
                                  const array<scalar_type, element_num> &arr) {
               return array_t{vector_type{addressof(arr.data()[i * N])}...};
-          }(std::make_index_sequence<M>(), array<scalar_type, element_num>{static_cast<scalar_type>(OC_FORWARD(args))...})) {
+          }(std::make_index_sequence<M>(),
+                array<scalar_type, element_num>{static_cast<scalar_type>(OC_FORWARD(args))...})) {
     }
 
     template<typename TT, size_t NN, size_t MM>
@@ -55,6 +57,8 @@ public:
 
     [[nodiscard]] constexpr vector_type &operator[](size_t i) noexcept { return cols_[i]; }
     [[nodiscard]] constexpr const vector_type &operator[](size_t i) const noexcept { return cols_[i]; }
+    [[nodiscard]] constexpr vector_type &at(size_t i) noexcept { return cols_[i]; }
+    [[nodiscard]] constexpr const vector_type &at(size_t i) const noexcept { return cols_[i]; }
 };
 
 #define OC_MATRIX_UNARY_FUNC(func)                                   \
@@ -161,14 +165,16 @@ requires ocarina::is_scalar_v<S>
 }
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] constexpr auto operator*(ocarina::Matrix<T, N, M> m, ocarina::Vector<S, M> v) noexcept {
+[[nodiscard]] constexpr auto operator*(ocarina::Matrix<T, N, M> m,
+                                       ocarina::Vector<S, M> v) noexcept {
     return [&]<size_t... i>(std::index_sequence<i...>) {
         return ((v[i] * m[i]) + ...);
     }(std::make_index_sequence<M>());
 }
 
 template<typename T, typename S, size_t N, size_t M, size_t Dim>
-[[nodiscard]] constexpr auto operator*(ocarina::Matrix<T, N, Dim> lhs, ocarina::Matrix<S, Dim, M> rhs) noexcept {
+[[nodiscard]] constexpr auto operator*(ocarina::Matrix<T, N, Dim> lhs,
+                                       ocarina::Matrix<S, Dim, M> rhs) noexcept {
     using scalar_type = decltype(T{} * S{});
     return [&]<size_t... i>(std::index_sequence<i...>) {
         return ocarina::Matrix<scalar_type, N, M>((lhs * rhs[i])...);
@@ -185,7 +191,8 @@ template<typename T, typename S, size_t N, size_t M>
 }
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] constexpr auto operator-(ocarina::Matrix<T, N, M> lhs, ocarina::Matrix<S, N, M> rhs) noexcept {
+[[nodiscard]] constexpr auto operator-(ocarina::Matrix<T, N, M> lhs,
+                                       ocarina::Matrix<S, N, M> rhs) noexcept {
     return lhs + (-rhs);
 }
 
