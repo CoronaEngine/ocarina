@@ -49,24 +49,31 @@ int main() {
 
     float3 h3;
     half3x3 h33;
-    auto re = float{} + half3{1,2,3}.xyz();
 
-    auto res = h33 * h3;
+    auto rrr = int{-1} + uint{0};
+
+    auto re = uint3{}.x + int3{1,2,3}.xyz();
+
+    auto lll = lerp(float{} ,float3 {}, float3{});
+
+    auto res = h33 * float{};
 
 
     Kernel kernel = [&](Float f) {
 //        $info("{} ", f);
-        Half3x3 h3 = (make_half3x3(f));
-        sqrt(Half{});
-        Uint3 a = make_uint3(3);
-        Int3 b ;
-        b = a;
+//        sqrt(Half{});
+//        Uint3 a = make_uint3(3);
+//        Int3 b ;
+//        b = a;
 
-        rcp(h3[0][0]);
-        Float3 f3 = make_float3(0.8f,0.5f, 1.f);
-        auto xx = to_general_vector<3>(f3);
-        auto ret = lerp(f3.y,f3 -1.f ,f3);
-        $info("---  {} {} {} , {}", b, h3[0][0]);
+        float3 f3 = make_float3(0.8f,0.5f, 1.f);
+        half3 h3 = make_half3(1.f, 2.f, 3.f);
+
+        auto re = f3.x * h3.xyz() ;
+
+        re = h3;
+
+        $info("---  {} {} {} ", re);
     };
     auto shader = device.compile(kernel);
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();
