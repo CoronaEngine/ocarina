@@ -78,6 +78,8 @@ int main() {
 
         h3 = f3.xyz();
 
+        auto bbb = ocarina::select(false , half{} , float{});
+
 //        auto a3 = ocarina::select(make_bool3(1,0,1).xyz(), uint3{5,6,7}, float3{1,2,3}.xyz());
 
 //        auto re = f3.x * h3.xyz() ;

@@ -87,17 +87,25 @@ using is_number = std::disjunction<is_integral<T>,
 template<typename T>
 constexpr auto is_number_v = is_number<T>::value;
 
-#define MAKE_ALL_TYPE_TRAITS(type)                           \
-    template<typename... T>                                  \
-    using is_all_##type = std::conjunction<is_##type<T>...>; \
-    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_all_##type)
+#define MAKE_TYPE_TRAITS(type)                                  \
+    template<typename... Ts>                                    \
+    using is_all_##type = std::conjunction<is_##type<Ts>...>;   \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_all_##type)               \
+    template<typename... Ts>                                    \
+    using is_any_##type = std::disjunction<is_##type<Ts>...>;   \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_any_##type)               \
+    template<typename... Ts>                                    \
+    using is_none_##type = std::negation<is_any_##type<Ts...>>; \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_none_##type)
 
-MAKE_ALL_TYPE_TRAITS(scalar)
-MAKE_ALL_TYPE_TRAITS(number)
-MAKE_ALL_TYPE_TRAITS(integral)
-MAKE_ALL_TYPE_TRAITS(floating_point)
-MAKE_ALL_TYPE_TRAITS(boolean)
-MAKE_ALL_TYPE_TRAITS(unsigned)
+MAKE_TYPE_TRAITS(scalar)
+MAKE_TYPE_TRAITS(number)
+MAKE_TYPE_TRAITS(integral)
+MAKE_TYPE_TRAITS(half)
+MAKE_TYPE_TRAITS(float)
+MAKE_TYPE_TRAITS(floating_point)
+MAKE_TYPE_TRAITS(boolean)
+MAKE_TYPE_TRAITS(unsigned)
 
 #undef MAKE_ALL_TYPE_TRAITS
 
