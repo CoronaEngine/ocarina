@@ -270,11 +270,18 @@ struct Vector : public detail::VectorStorage<T, N> {
     explicit constexpr Vector(U s) noexcept : Vector(static_cast<T>(s)) {}
 
     template<typename U, size_t NN>
-    requires(NN >= N)
+    requires(NN > N)
     explicit constexpr Vector(Vector<U, NN> v)
         : Vector([&]<size_t... i>(std::index_sequence<i...>) {
               return Vector<T, N>(static_cast<T>(v[i])...);
           }(std::make_index_sequence<N>())) {}
+
+    template<typename U>
+    constexpr Vector(Vector<U, N> v)
+        : Vector([&]<size_t... i>(std::index_sequence<i...>) {
+              return Vector<T, N>(static_cast<T>(v[i])...);
+          }(std::make_index_sequence<N>())) {}
+
     template<typename U>
     constexpr this_type &operator=(Vector<U, N> other) noexcept {
         [&]<size_t... i>(std::index_sequence<i...>) {
@@ -283,7 +290,7 @@ struct Vector : public detail::VectorStorage<T, N> {
         return *this;
     }
     template<typename U, size_t NN, size_t... Indices>
-    requires requires { this_type{} = typename Swizzle<U, NN, Indices...>::vec_type {}; }
+    requires requires { this_type{} = typename Swizzle<U, NN, Indices...>::vec_type{}; }
     constexpr this_type &operator=(Swizzle<U, NN, Indices...> other) noexcept {
         return *this = other.decay();
     }
