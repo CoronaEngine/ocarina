@@ -74,7 +74,7 @@ int main() {
         float4 f4 = make_float4(h3,half( 1.f));
         h3 = f3;
 
-        auto a3 = ocarina::select(true, uint3{}, f3);
+        auto a3 = ocarina::select(make_bool3(1,0,1).xyz(), uint3{5,6,7}, float3{1,2,3}.xyz());
 
         auto re = f3.x * h3.xyz() ;
 

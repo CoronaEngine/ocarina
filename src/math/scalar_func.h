@@ -61,7 +61,7 @@ requires ocarina::is_scalar_v<T>
 }
 
 template<typename T, typename F>
-requires (type_dimension_v<T> == type_dimension_v<F> && is_all_basic_v<T, F>)
+requires is_all_scalar_v<T, F> && requires { bool{} ? std::declval<T>() : std::declval<F>(); }
 [[nodiscard]] constexpr auto select(bool pred, T &&t, F &&f) noexcept {
     return pred ? t : f;
 }
