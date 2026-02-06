@@ -61,11 +61,15 @@ public:
     explicit Var(ocarina::detail::ReferenceArgumentCreation, OC_APPEND_SRC_LOCATION) noexcept
         : Var(ocarina::Function::current()->reference_argument(ocarina::Type::of<org_type>())) {}
     template<typename Arg>
-    requires requires(ocarina::expr_value_t<org_type> a, ocarina::expr_value_t<Arg> b) { a = b; }
+    requires requires(ocarina::expr_value_t<org_type> a, ocarina::remove_device_t<Arg> b) { a = b; }
     void operator=(Arg &&arg) {
         if constexpr (is_struct_v<Arg>) {
             Super::set(OC_FORWARD(arg));
-        } else {
+        }
+        else if constexpr (is_swizzle_v<Arg>) {
+            *this = decay_swizzle(OC_FORWARD(arg));
+        }
+        else {
             ocarina::detail::assign(*this, std::forward<Arg>(arg));
         }
     }
