@@ -700,7 +700,7 @@ OC_MAKE_VECTOR_BINARY_FUNC(distance_squared)
 template<typename Pred, typename T, typename F>
 requires is_all_general_vector_v<T, F>
 [[nodiscard]] decltype(auto) select(const Pred &pred, const T &t, const F &f) noexcept {
-    using scalar_type = decltype(bool{} ? type_element_t<T>{} : type_element_t<F>{});
+    using scalar_type = decltype(select(bool{}, type_element_t<T>{}, type_element_t<F>{}));
     return MemberAccessor::select<Vector<scalar_type, type_dimension_v<T>>>(pred, t, f);
 }
 
