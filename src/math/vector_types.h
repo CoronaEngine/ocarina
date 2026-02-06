@@ -780,8 +780,6 @@ OC_MAKE_SWIZZLE_LOGIC_FUNC(none)
             static_cast<type>(v[0]),                                                                                         \
             static_cast<type>(v[1]));                                                                                        \
     }                                                                                                                        \
-    template<typename T, size_t N>                                                                                           \
-    [[nodiscard]] constexpr auto make_##type##2(Vector<T, N> v) noexcept { return type##2(v); }                              \
                                                                                                                              \
     [[nodiscard]] constexpr auto make_##type##3(type s = {}) noexcept { return type##3(s); }                                 \
     [[nodiscard]] constexpr auto make_##type##3(type x, type y, type z) noexcept { return type##3(x, y, z); }                \

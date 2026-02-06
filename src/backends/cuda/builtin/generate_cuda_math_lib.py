@@ -1098,7 +1098,7 @@ def main():
     define_binary_funcs()
     define_triple_funcs()
     define_vec_func()
-    define_make_vecs()
+    # define_make_vecs()
 
     content += "\n "
     content += "\n "

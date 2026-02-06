@@ -68,10 +68,10 @@ int main() {
 //        Int3 b ;
 //        b = a;
 
-        float3 f3 = make_float3(0.8f,0.5f, 1.f);
-        half3 h3 = make_float3(1.f, 2.f, 3.f);
+        Float3 f3 = make_float3(0.8f,0.5f, 1.f);
+        Half3 h3 = make_float3(1.f, 2.f, 3.f);
         buffer.write(0, f3);
-        float4 f4 = make_float4(h3,half( 1.f));
+        Float4 f4 = make_float4(h3,half( 1.f));
         h3 = f3;
         auto re = f3.x * h3.xyz() ;
 
