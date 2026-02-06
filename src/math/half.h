@@ -73,9 +73,6 @@ static constexpr uint16_t float_to_half(float f) {
     if (exp >= 31) {
         return (sign << 15) | 0x7C00;
     } else if (exp <= 0) {
-        if (exp < -10) {
-            return sign << 15;
-        }
         uint32_t shifted = (mantissa | 0x800000) >> (1 - exp);
         return (sign << 15) | (shifted >> 13);
     }
