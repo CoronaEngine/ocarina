@@ -60,7 +60,7 @@ int main() {
 
     Buffer<float3> buffer = device.create_buffer<float3>(1);
 
-
+    bool b = static_cast<bool>(half{});
 
 
     Kernel kernel = [&](Float f) {

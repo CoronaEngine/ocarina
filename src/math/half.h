@@ -137,7 +137,9 @@ public:
     OC_HALF_CAST_OP(float)
     OC_HALF_CAST_OP(int)
     OC_HALF_CAST_OP(uint)
+    OC_HALF_CAST_OP(size_t)
     OC_HALF_CAST_OP(double)
+    OC_HALF_CAST_OP(bool)
 #undef OC_HALF_CAST_OP
 
     constexpr half &operator=(const half &other) {
