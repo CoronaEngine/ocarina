@@ -226,8 +226,14 @@ template<typename T, typename F>
 struct is_addable<T, F, void_t<decltype(T{} + T{}), decltype(static_cast<decltype(T{} + T{})>(T{})), decltype(static_cast<decltype(T{} + T{})>(F{}))>> : true_type {};
 
 template<typename T, typename F>
-struct selectable : conjunction<is_scalar<T>, is_scalar<F>, is_addable<T, F>> {};
-OC_DEFINE_TEMPLATE_VALUE_MULTI(selectable)
+struct is_selectable : conjunction<is_all_scalar<T, F>, is_addable<T, F>> {};
+OC_DEFINE_TEMPLATE_VALUE_MULTI(is_selectable)
+
+template<typename T, typename F, enable_if_t<is_selectable<T, F>::value, int> = 0>
+constexpr auto select(bool condition, T true_value, F false_value) noexcept {
+    return condition ? static_cast<decltype(true_value + false_value)>(true_value) :
+                       static_cast<decltype(true_value + false_value)>(false_value);
+}
 
 template<typename T, unsigned int N>
 class array {
