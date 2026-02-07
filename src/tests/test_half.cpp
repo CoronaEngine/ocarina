@@ -70,13 +70,19 @@ int main() {
 //        Int3 b ;
 //        b = a;
 
-        Float3 f3 = make_float3(1.f,5.f, 9.f);
-        Half3 h3 = make_float3(1.f, 2.f, 3.f);
+        float3 f3 = make_float3(1.6f,5.f, 9.f);
+        Half3 h3 = make_float3(1.9f, 2.f, 3.f);
+        Half3 t3 = make_float3(0.5f, 0.5f, 0.5f);
+
+        auto aaa = lerp(1.f,h3, h3 - h3);
+
 //        buffer.write(0, h3);
 //        Float4 f4 = make_float4(h3,half( 1.f));
 //        h3 = f3;
 
         h3 = f3.xyz();
+
+
 
         auto bbb = ocarina::select(bool3{} , half3{} , float3{});
 
@@ -88,7 +94,7 @@ int main() {
 
 //      $info("------  {} {} {} ", Uint3{});
       $info("---  {} {} {} ", sqrt(h3) );
-      $info("------==  {} {} {} ", Uint3{});
+      $info("------==  {} {} {} ", aaa);
     };
     auto shader = device.compile(kernel);
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();

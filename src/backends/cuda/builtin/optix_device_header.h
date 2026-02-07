@@ -5,7 +5,7 @@
 #include "optix.h"
 
 template<typename... Args>
-__device__ inline void trace(OptixTraversableHandle handle,
+OC_DEVICE_FLAG inline void trace(OptixTraversableHandle handle,
                              Ray ray,
                              oc_uint flags,
                              oc_uint SBToffset,
@@ -31,7 +31,7 @@ __device__ inline void trace(OptixTraversableHandle handle,
 }
 
 template<typename... Args>
-__device__ inline void traverse(OptixTraversableHandle handle,
+OC_DEVICE_FLAG inline void traverse(OptixTraversableHandle handle,
                                 Ray ray,
                                 oc_uint flags,
                                 oc_uint SBToffset,
@@ -56,40 +56,40 @@ __device__ inline void traverse(OptixTraversableHandle handle,
         std::forward<Args>(payload)...);
 }
 
-__device__ oc_uint3 getLaunchIndex() {
+OC_DEVICE_FLAG oc_uint3 getLaunchIndex() {
     auto idx = optixGetLaunchIndex();
     return oc_make_uint3(idx.x, idx.y, idx.z);
 }
 
-__device__ oc_uint3 getLaunchDim() {
+OC_DEVICE_FLAG oc_uint3 getLaunchDim() {
     auto idx = optixGetLaunchDimensions();
     return oc_make_uint3(idx.x, idx.y, idx.z);
 }
 
-__device__ inline void *unpack_pointer(unsigned int i0, unsigned int i1) {
+OC_DEVICE_FLAG inline void *unpack_pointer(unsigned int i0, unsigned int i1) {
     const unsigned long long uptr = static_cast<unsigned long long>(i0) << 32 | i1;
     void *ptr = reinterpret_cast<void *>(uptr);
     return ptr;
 }
 
-__device__ inline void pack_pointer(void *ptr, unsigned int &i0, unsigned int &i1) {
+OC_DEVICE_FLAG inline void pack_pointer(void *ptr, unsigned int &i0, unsigned int &i1) {
     const auto uptr = reinterpret_cast<unsigned long long>(ptr);
     i0 = uptr >> 32;
     i1 = uptr & 0x00000000ffffffff;
 }
 
-__device__ inline void setPayloadOcclusion(bool occluded) {
+OC_DEVICE_FLAG inline void setPayloadOcclusion(bool occluded) {
     optixSetPayload_0(static_cast<unsigned int>(occluded));
 }
 
-__device__ inline oc_float2 getTriangleBarycentric() {
+OC_DEVICE_FLAG inline oc_float2 getTriangleBarycentric() {
     auto barycentric = optixGetTriangleBarycentrics();
     return oc_make_float2(1 - barycentric.y - barycentric.x, barycentric.x);
 }
 
 #define TRAVERSE_ONLY 1
 
-__device__ inline TriangleHit trace_closest_impl(OptixTraversableHandle handle,
+OC_DEVICE_FLAG inline TriangleHit trace_closest_impl(OptixTraversableHandle handle,
                                              Ray ray) {
     TriangleHit hit;
     trace(handle, ray, OPTIX_RAY_FLAG_DISABLE_ANYHIT,
@@ -102,7 +102,7 @@ __device__ inline TriangleHit trace_closest_impl(OptixTraversableHandle handle,
     return hit;
 }
 
-// __device__ inline TriangleHit trace_closest_impl(OptixTraversableHandle handle,
+// OC_DEVICE_FLAG inline TriangleHit trace_closest_impl(OptixTraversableHandle handle,
 //                                              Ray ray) {
 //     TriangleHit hit;
 //     oc_uint u0, u1;
@@ -127,7 +127,7 @@ TriangleHit getHitObjectInfo() {
     return hit;
 }
 
-__device__ inline TriangleHit traverse_closest_impl(OptixTraversableHandle handle,
+OC_DEVICE_FLAG inline TriangleHit traverse_closest_impl(OptixTraversableHandle handle,
                                                 Ray ray) {
     traverse(handle, ray, OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT,
              0,// SBT offset
@@ -137,7 +137,7 @@ __device__ inline TriangleHit traverse_closest_impl(OptixTraversableHandle handl
     return getHitObjectInfo();
 }
 
-__device__ inline TriangleHit oc_trace_closest(OptixTraversableHandle handle,
+OC_DEVICE_FLAG inline TriangleHit oc_trace_closest(OptixTraversableHandle handle,
                                                Ray ray) {
 #if TRAVERSE_ONLY
     return traverse_closest_impl(handle, ray);
@@ -146,7 +146,7 @@ __device__ inline TriangleHit oc_trace_closest(OptixTraversableHandle handle,
 #endif
 }
 
-__device__ inline bool traverse_occlusion_impl(OptixTraversableHandle handle, Ray ray) {
+OC_DEVICE_FLAG inline bool traverse_occlusion_impl(OptixTraversableHandle handle, Ray ray) {
     traverse(handle, ray, OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
              1,// SBT offset
              0,// SBT stride
@@ -155,7 +155,7 @@ __device__ inline bool traverse_occlusion_impl(OptixTraversableHandle handle, Ra
     return optixHitObjectIsHit();
 }
 
-__device__ inline bool trace_occlusion_impl(OptixTraversableHandle handle, Ray ray) {
+OC_DEVICE_FLAG inline bool trace_occlusion_impl(OptixTraversableHandle handle, Ray ray) {
     unsigned int occlude = 0u;
     trace(handle, ray, OPTIX_RAY_FLAG_DISABLE_ANYHIT | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
           1,// SBT offset
@@ -165,7 +165,7 @@ __device__ inline bool trace_occlusion_impl(OptixTraversableHandle handle, Ray r
     return bool(occlude);
 }
 
-__device__ inline bool oc_trace_occlusion(OptixTraversableHandle handle, Ray ray) {
+OC_DEVICE_FLAG inline bool oc_trace_occlusion(OptixTraversableHandle handle, Ray ray) {
 #if TRAVERSE_ONLY
     return traverse_occlusion_impl(handle, ray);
 #else
@@ -173,7 +173,7 @@ __device__ inline bool oc_trace_occlusion(OptixTraversableHandle handle, Ray ray
 #endif
 }
 
-__device__ inline TriangleHit getClosestHit() {
+OC_DEVICE_FLAG inline TriangleHit getClosestHit() {
     TriangleHit ret;
     ret.inst_id = optixGetInstanceId();
     ret.prim_id = optixGetPrimitiveIndex();
@@ -182,14 +182,14 @@ __device__ inline TriangleHit getClosestHit() {
 }
 
 template<typename T = TriangleHit>
-__device__ inline T *getPayloadPtr() {
+OC_DEVICE_FLAG inline T *getPayloadPtr() {
     const unsigned int u0 = optixGetPayload_0();
     const unsigned int u1 = optixGetPayload_1();
     return reinterpret_cast<T *>(unpack_pointer(u0, u1));
 }
 
 template<typename T = TriangleHit>
-__device__ inline T &getPayload() {
+OC_DEVICE_FLAG inline T &getPayload() {
     return *getPayloadPtr();
 }
 

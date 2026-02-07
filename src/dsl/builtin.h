@@ -260,11 +260,23 @@ OC_MAKE_DSL_TRIPLE_FUNC(fma, FMA)
 #undef OC_MAKE_TRIPLE_FUNC
 
 template<typename U, typename T, typename F>
-requires(match_basic_func_v<remove_device_t<T>, remove_device_t<F>> &&
-         any_device_type_v<U, T, F>)
+requires any_device_type_v<U, T, F> &&
+         (type_dimension_v<remove_device_t<T>> == type_dimension_v<remove_device_t<F>>) &&
+         (type_dimension_v<remove_device_t<U>> == 1 ||
+          type_dimension_v<remove_device_t<U>> == type_dimension_v<remove_device_t<T>>) &&
+         is_all_basic_v<swizzle_decay_t<remove_device_t<U>>,
+                        swizzle_decay_t<remove_device_t<T>>,
+                        swizzle_decay_t<remove_device_t<F>>> &&
+         requires {
+             select(swizzle_decay_t<remove_device_t<U>>{},
+                    swizzle_decay_t<remove_device_t<T>>{},
+                    swizzle_decay_t<remove_device_t<F>>{});
+         }
 [[nodiscard]] auto select(const U &u, const T &t, const F &f) noexcept {
     static constexpr auto dimension = type_dimension_v<remove_device_t<T>>;
-    using scalar_type = type_element_t<remove_device_t<T>>;
+    using scalar_type = decltype(select(type_element_t<remove_device_t<U>>{},
+                                        type_element_t<remove_device_t<T>>{},
+                                        type_element_t<remove_device_t<F>>{}));
     using var_type = Var<general_vector_t<scalar_type, dimension>>;
     return MemberAccessor::select<var_type>(decay_swizzle(u),
                                             decay_swizzle(t),

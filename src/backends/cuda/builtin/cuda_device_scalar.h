@@ -1,14 +1,8 @@
 
 #pragma once
 
-using oc_int = int;
-using oc_uint = unsigned int;
-using oc_half = half;
-using oc_float = float;
-using oc_bool = bool;
-using oc_uchar = unsigned char;
-using oc_ushort = unsigned short;
-using oc_ulong = unsigned long long;
+#include "cuda_device_std.h"
+
 
 oc_half oc_float2half(oc_float f) {
     return __float2half(f);
@@ -55,6 +49,12 @@ struct binary_op_half_target {
 
 template<typename T>
 using binary_op_half_target_t = typename detail::binary_op_half_target<ocarina::remove_cvref_t<T>>::type;
+
+template<typename P, typename T, typename F, enable_if_t<is_selectable<T, F>::value, int> = 0>
+constexpr auto select(P condition, T t, F f) noexcept {
+    using ret_type = decltype(t + f);
+    return static_cast<bool>(condition) ? static_cast<ret_type>(t) : static_cast<ret_type>(f);
+}
 
 }// namespace ocarina
 

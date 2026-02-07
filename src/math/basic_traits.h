@@ -87,62 +87,6 @@ using is_number = std::disjunction<is_integral<T>,
 template<typename T>
 constexpr auto is_number_v = is_number<T>::value;
 
-#define MAKE_TYPE_TRAITS(type)                                  \
-    template<typename... Ts>                                    \
-    using is_all_##type = std::conjunction<is_##type<Ts>...>;   \
-    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_all_##type)               \
-    template<typename... Ts>                                    \
-    using is_any_##type = std::disjunction<is_##type<Ts>...>;   \
-    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_any_##type)               \
-    template<typename... Ts>                                    \
-    using is_none_##type = std::negation<is_any_##type<Ts...>>; \
-    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_none_##type)
-
-MAKE_TYPE_TRAITS(scalar)
-MAKE_TYPE_TRAITS(number)
-MAKE_TYPE_TRAITS(integral)
-MAKE_TYPE_TRAITS(half)
-MAKE_TYPE_TRAITS(float)
-MAKE_TYPE_TRAITS(floating_point)
-MAKE_TYPE_TRAITS(boolean)
-MAKE_TYPE_TRAITS(unsigned)
-
-#undef MAKE_ALL_TYPE_TRAITS
-
-namespace {
-template<typename... T>
-struct all_same_impl : std::true_type {};
-
-template<typename First, typename... Other>
-struct all_same_impl<First, Other...> : std::conjunction<std::is_same<First, Other>...> {};
-}// namespace
-
-template<typename... T>
-using is_same = all_same_impl<T...>;
-
-template<typename... T>
-constexpr auto is_same_v = is_same<T...>::value;
-
-namespace {
-
-template<typename T, typename... Ts>
-struct all_is_impl;
-
-template<typename T, typename First>
-struct all_is_impl<T, First> : std::is_same<T, First> {};
-
-template<typename T, typename First, typename... Rest>
-struct all_is_impl<T, First, Rest...> : std::conjunction<all_is_impl<T, First>,
-                                                         all_is_impl<T, Rest>...> {};
-
-}// namespace
-
-template<typename Target, typename... Ts>
-using all_is = all_is_impl<std::remove_cvref_t<Target>, std::remove_cvref_t<Ts>...>;
-
-template<typename Target, typename... Ts>
-constexpr auto all_is_v = all_is<Target, Ts...>::value;
-
 template<typename T, size_t N, size_t... Indices>
 struct Swizzle;
 
@@ -214,6 +158,63 @@ template<typename T, size_t N = 0u>
 using is_host_swizzle = detail::is_host_swizzle_dim_impl<std::remove_cvref_t<T>, N>;
 template<typename T, size_t N = 0u>
 constexpr auto is_host_swizzle_v = is_host_swizzle<T, N>::value;
+
+#define MAKE_TYPE_TRAITS(type)                                  \
+    template<typename... Ts>                                    \
+    using is_all_##type = std::conjunction<is_##type<Ts>...>;   \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_all_##type)               \
+    template<typename... Ts>                                    \
+    using is_any_##type = std::disjunction<is_##type<Ts>...>;   \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_any_##type)               \
+    template<typename... Ts>                                    \
+    using is_none_##type = std::negation<is_any_##type<Ts...>>; \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_none_##type)
+
+MAKE_TYPE_TRAITS(scalar)
+MAKE_TYPE_TRAITS(number)
+MAKE_TYPE_TRAITS(integral)
+MAKE_TYPE_TRAITS(half)
+MAKE_TYPE_TRAITS(float)
+MAKE_TYPE_TRAITS(swizzle)
+MAKE_TYPE_TRAITS(floating_point)
+MAKE_TYPE_TRAITS(boolean)
+MAKE_TYPE_TRAITS(unsigned)
+
+#undef MAKE_ALL_TYPE_TRAITS
+
+namespace {
+template<typename... T>
+struct all_same_impl : std::true_type {};
+
+template<typename First, typename... Other>
+struct all_same_impl<First, Other...> : std::conjunction<std::is_same<First, Other>...> {};
+}// namespace
+
+template<typename... T>
+using is_same = all_same_impl<T...>;
+
+template<typename... T>
+constexpr auto is_same_v = is_same<T...>::value;
+
+namespace {
+
+template<typename T, typename... Ts>
+struct all_is_impl;
+
+template<typename T, typename First>
+struct all_is_impl<T, First> : std::is_same<T, First> {};
+
+template<typename T, typename First, typename... Rest>
+struct all_is_impl<T, First, Rest...> : std::conjunction<all_is_impl<T, First>,
+                                                         all_is_impl<T, Rest>...> {};
+
+}// namespace
+
+template<typename Target, typename... Ts>
+using all_is = all_is_impl<std::remove_cvref_t<Target>, std::remove_cvref_t<Ts>...>;
+
+template<typename Target, typename... Ts>
+constexpr auto all_is_v = all_is<Target, Ts...>::value;
 
 namespace detail {
 template<typename T>

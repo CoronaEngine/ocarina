@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "cuda_device_vector.h"
+
 namespace ocarina {
 
 template<typename T, size_t N, size_t M>
@@ -149,55 +151,55 @@ template<typename T, size_t N, size_t M>
 
 namespace ocarina {
 template<typename T, size_t N, size_t M, size_t... i>
-__device__ constexpr auto negate_matrix_impl(const ocarina::Matrix<T, N, M> &m, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto negate_matrix_impl(const ocarina::Matrix<T, N, M> &m, ocarina::index_sequence<i...>) {
     return ocarina::Matrix<T, N, M>{(-m[i])...};
 }
 }// namespace ocarina
 
 template<typename T, size_t N, size_t M>
-[[nodiscard]] __device__ constexpr auto operator-(ocarina::Matrix<T, N, M> m) {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator-(ocarina::Matrix<T, N, M> m) {
     return ocarina::negate_matrix_impl(m, ocarina::make_index_sequence<N>());
 }
 
 namespace ocarina {
 template<typename T, typename S, size_t N, size_t M, size_t... i>
-__device__ constexpr auto multiply_impl(const ocarina::Matrix<T, N, M> &m, S s, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto multiply_impl(const ocarina::Matrix<T, N, M> &m, S s, ocarina::index_sequence<i...>) {
     using scalar_type = decltype(T{} * S{});
     return ocarina::Matrix<scalar_type, N, M>((m[i] * s)...);
 }
 }// namespace ocarina
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] __device__ constexpr auto operator*(ocarina::Matrix<T, N, M> m, S s) {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator*(ocarina::Matrix<T, N, M> m, S s) {
     return ocarina::multiply_impl(m, s, ocarina::make_index_sequence<N>());
 }
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] __device__ constexpr auto operator*(S s, ocarina::Matrix<T, N, M> m) {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator*(S s, ocarina::Matrix<T, N, M> m) {
     return m * s;
 }
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] __device__ constexpr auto operator/(ocarina::Matrix<T, N, M> m, S s) {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator/(ocarina::Matrix<T, N, M> m, S s) {
     return m * S(1.0f / s);
 }
 
 namespace ocarina {
 template<typename T, typename S, size_t N, size_t M, size_t... i>
-__device__ constexpr auto multiply_impl(const ocarina::Matrix<T, N, M> &m, const ocarina::Vector<S, M> &v,
+OC_DEVICE_FLAG constexpr auto multiply_impl(const ocarina::Matrix<T, N, M> &m, const ocarina::Vector<S, M> &v,
                                         ocarina::index_sequence<i...>) noexcept {
     return ((v[i] * m[i]) + ...);
 }
 }// namespace ocarina
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] __device__ constexpr auto operator*(ocarina::Matrix<T, N, M> m, ocarina::Vector<S, M> v) noexcept {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator*(ocarina::Matrix<T, N, M> m, ocarina::Vector<S, M> v) noexcept {
     return ocarina::multiply_impl(m, v, ocarina::make_index_sequence<M>());
 }
 
 namespace ocarina {
 template<typename T, typename S, size_t N, size_t M, size_t Dim, size_t... i>
-__device__ constexpr auto multiply_matrices_impl(const ocarina::Matrix<T, N, Dim> &lhs, const ocarina::Matrix<S, Dim, M> &rhs,
+OC_DEVICE_FLAG constexpr auto multiply_matrices_impl(const ocarina::Matrix<T, N, Dim> &lhs, const ocarina::Matrix<S, Dim, M> &rhs,
                                                  ocarina::index_sequence<i...>) noexcept {
     using scalar_type = decltype(T{} * S{});
     return ocarina::Matrix<scalar_type, N, M>{(lhs * rhs[i])...};
@@ -205,13 +207,13 @@ __device__ constexpr auto multiply_matrices_impl(const ocarina::Matrix<T, N, Dim
 }// namespace ocarina
 
 template<typename T, typename S, size_t N, size_t M, size_t Dim>
-[[nodiscard]] __device__ constexpr auto operator*(ocarina::Matrix<T, N, Dim> lhs, ocarina::Matrix<S, Dim, M> rhs) noexcept {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator*(ocarina::Matrix<T, N, Dim> lhs, ocarina::Matrix<S, Dim, M> rhs) noexcept {
     return ocarina::multiply_matrices_impl(lhs, rhs, ocarina::make_index_sequence<M>());
 }
 
 namespace ocarina {
 template<typename T, typename S, size_t N, size_t M, size_t... i>
-__device__ constexpr auto add_matrices_impl(const ocarina::Matrix<T, N, M> &lhs, const ocarina::Matrix<S, N, M> &rhs,
+OC_DEVICE_FLAG constexpr auto add_matrices_impl(const ocarina::Matrix<T, N, M> &lhs, const ocarina::Matrix<S, N, M> &rhs,
                                             ocarina::index_sequence<i...>) noexcept {
     using scalar_type = decltype(T{} + S{});
     return ocarina::Matrix<scalar_type, N, M>{(lhs[i] + rhs[i])...};
@@ -219,19 +221,19 @@ __device__ constexpr auto add_matrices_impl(const ocarina::Matrix<T, N, M> &lhs,
 }// namespace ocarina
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] __device__ constexpr auto operator+(ocarina::Matrix<T, N, M> lhs, ocarina::Matrix<S, N, M> rhs) noexcept {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator+(ocarina::Matrix<T, N, M> lhs, ocarina::Matrix<S, N, M> rhs) noexcept {
     return ocarina::add_matrices_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T, typename S, size_t N, size_t M>
-[[nodiscard]] __device__ constexpr auto operator-(ocarina::Matrix<T, N, M> lhs, ocarina::Matrix<S, N, M> rhs) noexcept {
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator-(ocarina::Matrix<T, N, M> lhs, ocarina::Matrix<S, N, M> rhs) noexcept {
     return lhs + (-rhs);
 }
 
 #define OC_MAKE_MATRIX(type, N, M)                                                    \
     using oc_##type##N##x##M = ocarina::Matrix<type, N, M>;                           \
     template<typename... Args>                                                        \
-    [[nodiscard]] __device__ constexpr auto oc_make_##type##N##x##M(Args &&...args) { \
+    [[nodiscard]] OC_DEVICE_FLAG constexpr auto oc_make_##type##N##x##M(Args &&...args) { \
         return ocarina::make_##type##N##x##M(args...);                                \
     }
 #define OC_MAKE_MATRICES_FOR_TYPE(type) \

@@ -1,7 +1,7 @@
 
 
 template<class To, class From>
-[[nodiscard]] __device__ To bit_cast(const From &src) noexcept {
+[[nodiscard]] OC_DEVICE_FLAG To bit_cast(const From &src) noexcept {
     static_assert(sizeof(To) == sizeof(From));
     return *reinterpret_cast<const To *>(&src);
 }
@@ -42,7 +42,7 @@ oc_ulong oc_buffer_size(OCBuffer<T> buffer) {
 
 constexpr float ray_t_max = 1e16f;
 
-__device__ oc_float3 oc_offset_ray_origin(const oc_float3 &p_in, const oc_float3 &n_in) noexcept {
+OC_DEVICE_FLAG oc_float3 oc_offset_ray_origin(const oc_float3 &p_in, const oc_float3 &n_in) noexcept {
     constexpr auto origin = 1.0f / 32.0f;
     constexpr auto float_scale = 1.0f / 65536.0f;
     constexpr auto int_scale = 256.0f;
@@ -61,7 +61,7 @@ __device__ oc_float3 oc_offset_ray_origin(const oc_float3 &p_in, const oc_float3
     return oc_select(oc_abs(p) < origin, p + float_scale * n, p_i);
 }
 
-__device__ inline Ray oc_make_ray(oc_float3 org, oc_float3 dir, oc_float t_max = ray_t_max) noexcept {
+OC_DEVICE_FLAG inline Ray oc_make_ray(oc_float3 org, oc_float3 dir, oc_float t_max = ray_t_max) noexcept {
     Ray ret;
 
     ret.org_min = oc_make_float4(org, 0.f);
@@ -300,30 +300,30 @@ using oc_type_element_t = typename oc_type<T>::element_type;
 
 
 template<typename T>
-__device__ T &oc_bindless_array_buffer_read(OCBindlessArrayDesc bindless_array, oc_uint buffer_index, oc_ulong index) noexcept {
+OC_DEVICE_FLAG T &oc_bindless_array_buffer_read(OCBindlessArrayDesc bindless_array, oc_uint buffer_index, oc_ulong index) noexcept {
     T *buffer = reinterpret_cast<T *>(bindless_array.buffer_slot[buffer_index].head());
     return buffer[index];
 }
 
-__device__ oc_uint oc_bindless_array_buffer_size(OCBindlessArrayDesc bindless_array, oc_uint buffer_index) noexcept {
+OC_DEVICE_FLAG oc_uint oc_bindless_array_buffer_size(OCBindlessArrayDesc bindless_array, oc_uint buffer_index) noexcept {
     return bindless_array.buffer_slot[buffer_index].size_in_byte;
 }
 
 template<typename T>
-__device__ T &oc_bindless_array_byte_buffer_read(OCBindlessArrayDesc bindless_array, oc_uint buffer_index, oc_ulong offset) noexcept {
+OC_DEVICE_FLAG T &oc_bindless_array_byte_buffer_read(OCBindlessArrayDesc bindless_array, oc_uint buffer_index, oc_ulong offset) noexcept {
     char *buffer = reinterpret_cast<char *>(bindless_array.buffer_slot[buffer_index].head());
     return *reinterpret_cast<T *>(&buffer[offset]);
 }
 
 template<typename T>
-__device__ void oc_bindless_array_buffer_write(OCBindlessArrayDesc bindless_array, oc_uint buffer_index,
+OC_DEVICE_FLAG void oc_bindless_array_buffer_write(OCBindlessArrayDesc bindless_array, oc_uint buffer_index,
                                                oc_ulong index, const T &val) noexcept {
     T *buffer = reinterpret_cast<T *>(bindless_array.buffer_slot[buffer_index].head());
     buffer[index] = val;
 }
 
 template<typename T>
-__device__ void oc_bindless_array_byte_buffer_write(OCBindlessArrayDesc bindless_array, oc_uint buffer_index,
+OC_DEVICE_FLAG void oc_bindless_array_byte_buffer_write(OCBindlessArrayDesc bindless_array, oc_uint buffer_index,
                                                     oc_ulong offset, const T &val) noexcept {
     char *buffer = reinterpret_cast<char *>(bindless_array.buffer_slot[buffer_index].head());
     T *ref = (reinterpret_cast<T *>(&(buffer[offset])));
@@ -331,13 +331,13 @@ __device__ void oc_bindless_array_byte_buffer_write(OCBindlessArrayDesc bindless
 }
 
 template<typename T>
-__device__ T &oc_byte_buffer_read(OCBuffer<oc_uchar> buffer, oc_ulong offset) noexcept {
+OC_DEVICE_FLAG T &oc_byte_buffer_read(OCBuffer<oc_uchar> buffer, oc_ulong offset) noexcept {
     T *ref = (reinterpret_cast<T *>(&(buffer.ptr[offset])));
     return ref[0];
 }
 
 template<int N>
-__device__ auto oc_byte_buffer_read(OCBuffer<oc_uchar> buffer, oc_ulong offset) noexcept {
+OC_DEVICE_FLAG auto oc_byte_buffer_read(OCBuffer<oc_uchar> buffer, oc_ulong offset) noexcept {
     if constexpr (N == 1) {
         oc_uint *ref = (reinterpret_cast<oc_uint *>(&(buffer.ptr[offset])));
         return ref[0];
@@ -354,13 +354,13 @@ __device__ auto oc_byte_buffer_read(OCBuffer<oc_uchar> buffer, oc_ulong offset) 
 }
 
 template<typename T>
-__device__ void oc_byte_buffer_write(OCBuffer<oc_uchar> buffer, oc_ulong offset, const T &val) noexcept {
+OC_DEVICE_FLAG void oc_byte_buffer_write(OCBuffer<oc_uchar> buffer, oc_ulong offset, const T &val) noexcept {
     T *ref = (reinterpret_cast<T *>(&(buffer.ptr[offset])));
     ref[0] = val;
 }
 
-template<oc_uint N>
-__device__ oc_array<float, N> oc_tex3d_sample_float_impl(cudaTextureObject_t texture, oc_float u, oc_float v, oc_float w = 0.f) noexcept {
+template<size_t N>
+OC_DEVICE_FLAG oc_array<float, N> oc_tex3d_sample_float_impl(cudaTextureObject_t texture, oc_float u, oc_float v, oc_float w = 0.f) noexcept {
     if constexpr (N == 1) {
         auto ret = tex3D<float>(texture, u, v, w);
         return {ret};
@@ -377,20 +377,20 @@ __device__ oc_array<float, N> oc_tex3d_sample_float_impl(cudaTextureObject_t tex
     return {};
 }
 
-template<oc_uint N>
-__device__ oc_array<float, N> oc_tex3d_sample_float(OCTextureDesc obj, oc_float u, oc_float v, oc_float w = 0.f) noexcept {
+template<size_t N>
+OC_DEVICE_FLAG oc_array<float, N> oc_tex3d_sample_float(OCTextureDesc obj, oc_float u, oc_float v, oc_float w = 0.f) noexcept {
     return oc_tex3d_sample_float_impl<N>(obj.texture, u, v, w);
 }
 
-template<oc_uint N>
-__device__ oc_array<float, N> oc_bindless_array_tex3d_sample(OCBindlessArrayDesc bindless_array, oc_uint tex_index,
+template<size_t N>
+OC_DEVICE_FLAG oc_array<float, N> oc_bindless_array_tex3d_sample(OCBindlessArrayDesc bindless_array, oc_uint tex_index,
                                                            oc_float u, oc_float v, oc_float w = 0.f) noexcept {
     cudaTextureObject_t texture = bindless_array.tex3d_slot[tex_index];
     return oc_tex3d_sample_float_impl<N>(texture, u, v, w);
 }
 
-template<oc_uint N>
-__device__ oc_array<float, N> oc_tex2d_sample_float_impl(cudaTextureObject_t texture, oc_float u, oc_float v) noexcept {
+template<size_t N>
+OC_DEVICE_FLAG oc_array<float, N> oc_tex2d_sample_float_impl(cudaTextureObject_t texture, oc_float u, oc_float v) noexcept {
     if constexpr (N == 1) {
         auto ret = tex2D<float>(texture, u, v);
         return {ret};
@@ -407,20 +407,20 @@ __device__ oc_array<float, N> oc_tex2d_sample_float_impl(cudaTextureObject_t tex
     return {};
 }
 
-template<oc_uint N>
-__device__ oc_array<float, N> oc_tex2d_sample_float(OCTextureDesc obj, oc_float u, oc_float v) noexcept {
+template<size_t N>
+OC_DEVICE_FLAG oc_array<float, N> oc_tex2d_sample_float(OCTextureDesc obj, oc_float u, oc_float v) noexcept {
     return oc_tex2d_sample_float_impl<N>(obj.texture, u, v);
 }
 
-template<oc_uint N>
-__device__ oc_array<float, N> oc_bindless_array_tex2d_sample(OCBindlessArrayDesc bindless_array, oc_uint tex_index,
+template<size_t N>
+OC_DEVICE_FLAG oc_array<float, N> oc_bindless_array_tex2d_sample(OCBindlessArrayDesc bindless_array, oc_uint tex_index,
                                                            oc_float u, oc_float v) noexcept {
     cudaTextureObject_t texture = bindless_array.tex2d_slot[tex_index];
     return oc_tex2d_sample_float_impl<N>(texture, u, v);
 }
 
 template<typename Dst, typename Src>
-__device__ auto oc_convert_scalar(const Src &src) noexcept {
+OC_DEVICE_FLAG auto oc_convert_scalar(const Src &src) noexcept {
     static_assert(oc_type_dim<Src> == 1 && oc_type_dim<Dst> == 1);
     if constexpr (oc_is_same_v<Dst, Src>) {
         return src;
@@ -435,7 +435,7 @@ __device__ auto oc_convert_scalar(const Src &src) noexcept {
 }
 
 template<typename Dst, typename Src>
-__device__ auto oc_convert_vector(const Src &val) noexcept {
+OC_DEVICE_FLAG auto oc_convert_vector(const Src &val) noexcept {
     static_assert(oc_type_dim<Dst> == oc_type_dim<Src>);
     using element_type = oc_type_element_t<Dst>;
     if constexpr (oc_type_dim<Dst> == 1) {
@@ -452,7 +452,7 @@ __device__ auto oc_convert_vector(const Src &val) noexcept {
 }
 
 template<int Dim, typename Src>
-__device__ auto oc_fit(const Src &src) noexcept {
+OC_DEVICE_FLAG auto oc_fit(const Src &src) noexcept {
     using element_type = oc_type_element_t<Src>;
     static constexpr auto dim = oc_type_dim<Src>;
     using ret_type = typename oc_vec_t<element_type, Dim>;
@@ -461,7 +461,7 @@ __device__ auto oc_fit(const Src &src) noexcept {
 }
 
 template<typename T>
-__device__ T oc_tex3d_read(OCTextureDesc obj, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
+OC_DEVICE_FLAG T oc_tex3d_read(OCTextureDesc obj, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
     if constexpr (oc_is_same_v<T, uchar> || oc_is_same_v<T, float>) {
         switch (obj.pixel_storage) {
             case OCPixelStorage::BYTE1: {
@@ -510,7 +510,7 @@ __device__ T oc_tex3d_read(OCTextureDesc obj, oc_uint x, oc_uint y, oc_uint z = 
 }
 
 template<typename T>
-__device__ T oc_tex2d_read(OCTextureDesc obj, oc_uint x, oc_uint y) noexcept {
+OC_DEVICE_FLAG T oc_tex2d_read(OCTextureDesc obj, oc_uint x, oc_uint y) noexcept {
     if constexpr (oc_is_same_v<T, uchar> || oc_is_same_v<T, float>) {
         switch (obj.pixel_storage) {
             case OCPixelStorage::BYTE1: {
@@ -559,7 +559,7 @@ __device__ T oc_tex2d_read(OCTextureDesc obj, oc_uint x, oc_uint y) noexcept {
 }
 
 template<typename T>
-__device__ void oc_tex3d_write(OCTextureDesc obj, T val, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
+OC_DEVICE_FLAG void oc_tex3d_write(OCTextureDesc obj, T val, oc_uint x, oc_uint y, oc_uint z = 0) noexcept {
     if constexpr (oc_is_same_v<T, uchar> || oc_is_same_v<T, float>) {
         switch (obj.pixel_storage) {
             case OCPixelStorage::BYTE1: {
@@ -615,7 +615,7 @@ __device__ void oc_tex3d_write(OCTextureDesc obj, T val, oc_uint x, oc_uint y, o
 
 
 template<typename T>
-__device__ void oc_tex2d_write(OCTextureDesc obj, T val, oc_uint x, oc_uint y) noexcept {
+OC_DEVICE_FLAG void oc_tex2d_write(OCTextureDesc obj, T val, oc_uint x, oc_uint y) noexcept {
     if constexpr (oc_is_same_v<T, uchar> || oc_is_same_v<T, float>) {
         switch (obj.pixel_storage) {
             case OCPixelStorage::BYTE1: {
