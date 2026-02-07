@@ -3,14 +3,6 @@
 
 #include "cuda_device_std.h"
 
-using oc_int = int;
-using oc_uint = unsigned int;
-using oc_half = half;
-using oc_float = float;
-using oc_bool = bool;
-using oc_uchar = unsigned char;
-using oc_ushort = unsigned short;
-using oc_ulong = unsigned long long;
 
 oc_half oc_float2half(oc_float f) {
     return __float2half(f);

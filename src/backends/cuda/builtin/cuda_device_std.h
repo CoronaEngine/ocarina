@@ -3,6 +3,15 @@
 
 #include <cuda_fp16.h>
 
+using oc_int = int;
+using oc_uint = unsigned int;
+using oc_half = half;
+using oc_float = float;
+using oc_bool = bool;
+using oc_uchar = unsigned char;
+using oc_ushort = unsigned short;
+using oc_ulong = unsigned long long;
+
 #define OC_DEFINE_TEMPLATE_VALUE(template_name) \
     template<typename T>                        \
     static constexpr auto template_name##_v = template_name<T>::value;
@@ -20,6 +29,12 @@
     using template_name##_t = typename template_name<Ts...>::type;
 
 namespace ocarina {
+
+using ulong = unsigned long long;
+using ushort = unsigned short;
+using uchar = unsigned char;
+using uint = unsigned int;
+
 template<typename... Ts>
 struct always_false {
     static constexpr bool value = false;
@@ -136,6 +151,26 @@ template<typename T>
 using is_integral = detail::is_integral_impl<remove_cvref_t<T>>;
 OC_DEFINE_TEMPLATE_VALUE(is_integral)
 
+#define OC_MAKE_IS_TYPE(type)                                      \
+    namespace detail {                                             \
+    template<typename T>                                           \
+    struct is_##type##_impl : public false_type {};                \
+                                                                   \
+    template<>                                                     \
+    struct is_##type##_impl<type> : public true_type {};           \
+    }                                                              \
+    template<typename T>                                           \
+    using is_##type = detail::is_##type##_impl<remove_cvref_t<T>>; \
+    OC_DEFINE_TEMPLATE_VALUE(is_##type)
+
+OC_MAKE_IS_TYPE(int)
+OC_MAKE_IS_TYPE(float)
+OC_MAKE_IS_TYPE(half)
+OC_MAKE_IS_TYPE(bool)
+OC_MAKE_IS_TYPE(uint)
+
+#undef OC_MAKE_IS_TYPE
+
 namespace detail {
 template<typename T>
 struct is_floating_point_impl : public false_type {};
@@ -229,7 +264,7 @@ template<typename T, typename F>
 struct is_selectable : conjunction<is_all_scalar<T, F>, is_addable<T, F>> {};
 OC_DEFINE_TEMPLATE_VALUE_MULTI(is_selectable)
 
-#define OC_DEVICE_FLAG 
+#define OC_DEVICE_FLAG
 
 template<typename T, size_t N>
 class array {

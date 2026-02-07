@@ -901,14 +901,14 @@ def define_triple_funcs():
         #         {"arg_type": "half"},
         #     ],
         # },
-        {
-            "name": "fma",
-            "body": "return fmaf(v0, v1, v2);",
-            "types": [
-                {"arg_type": "float"},
-                {"arg_type": "half", "body": "return __hfma(v0, v1, v2);"},
-            ],
-        },
+        # {
+        #     "name": "fma",
+        #     "body": "return fmaf(v0, v1, v2);",
+        #     "types": [
+        #         {"arg_type": "float"},
+        #         {"arg_type": "half", "body": "return __hfma(v0, v1, v2);"},
+        #     ],
+        # },
         {
             "name": "inverse_lerp",
             "body": "return (v0 - v1) / (v2 - v1);",
