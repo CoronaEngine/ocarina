@@ -111,47 +111,27 @@ operator+(const Container<T, N> v) noexcept {
     return v;
 }
 
-namespace detail {
+#define OC_MAKE_UNARY_OPERATOR(op, name)                                                       \
+    namespace detail {                                                                         \
+    template<template<typename, size_t> typename Container, typename T, size_t N, size_t... i> \
+    static constexpr auto construct_##name##_helper(Container<T, N> v,                         \
+                                                    ocarina::index_sequence<i...>) {           \
+        using scalar_type = decltype(op v[0]);                                                 \
+        return Container<scalar_type, N>{(op v[i])...};                                        \
+    }                                                                                          \
+    }                                                                                          \
+                                                                                               \
+    template<template<typename, size_t> typename Container, typename T, size_t N>              \
+    [[nodiscard]] constexpr auto                                                               \
+    operator op(Container<T, N> v) noexcept {                                                  \
+        return detail::construct_##name##_helper(v, ocarina::make_index_sequence<N>());        \
+    }
 
-template<template<typename, size_t> typename Container, typename T, size_t N, size_t... i>
-static constexpr auto construct_negative_helper(Container<T, N> v,
-                                                ocarina::index_sequence<i...>) {
-    return Container<T, N>{(-v[i])...};
-}
-}// namespace detail
+OC_MAKE_UNARY_OPERATOR(-, negative)
+OC_MAKE_UNARY_OPERATOR(!, logical_not)
+OC_MAKE_UNARY_OPERATOR(~, bitwise_not)
 
-template<template<typename, size_t> typename Container, typename T, size_t N>
-[[nodiscard]] constexpr auto
-operator-(Container<T, N> v) noexcept {
-    return detail::construct_negative_helper<Container, T, N>(v, ocarina::make_index_sequence<N>());
-}
-
-namespace detail {
-
-template<template<typename, size_t> typename Container, typename T, size_t N, size_t... i>
-static constexpr auto construct_logical_not_helper(Container<T, N> v, ocarina::index_sequence<i...>) {
-    return Container<bool, N>{!v[i]...};
-}
-}// namespace detail
-
-template<template<typename, size_t> typename Container, typename T, size_t N>
-[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator!(const Container<T, N> v) noexcept {
-    return detail::construct_logical_not_helper<Container, T, N>(v, ocarina::make_index_sequence<N>());
-}
-
-namespace detail {
-
-template<template<typename, size_t> typename Container, typename T, size_t N, size_t... i>
-static constexpr auto construct_bitwise_not_helper(Container<T, N> v, ocarina::index_sequence<i...>) {
-    return Container<T, N>{~v[i]...};
-}
-}// namespace detail
-
-template<template<typename, size_t> typename Container, typename T, size_t N>
-[[nodiscard]] OC_DEVICE_FLAG constexpr auto
-operator~(const Container<T, N> v) noexcept {
-    return detail::construct_bitwise_not_helper<Container, T, N>(v, ocarina::make_index_sequence<N>());
-}
+#undef OC_MAKE_UNARY_OPERATOR
 
 #define OC_MAKE_VECTOR(type)  \
     OC_MAKE_VECTOR_N(type, 2) \
