@@ -1489,10 +1489,6 @@ oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_
     return ret;
 }
 
-[[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_int3 u, oc_int3 v) noexcept { return oc_int3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }
-[[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_uint3 u, oc_uint3 v) noexcept { return oc_uint3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }
-[[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_float3 u, oc_float3 v) noexcept { return oc_float3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }
-
 
  
  

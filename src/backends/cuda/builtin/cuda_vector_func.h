@@ -176,6 +176,14 @@ static constexpr auto normalize(Container<T, N> v) {
     return v * oc_rsqrt(dot(v, v));
 }
 
+template<template<typename, size_t> typename Container, typename T, typename U>
+static constexpr auto cross(Container<T, 3> a, Container<U, 3> b) {
+    using scalar_type = decltype(a.x * b.x);
+    return Container<scalar_type, 3>{a.y * b.z - a.z * b.y,
+                                     a.z * b.x - a.x * b.z,
+                                     a.x * b.y - a.y * b.x};
+}
+
 }// namespace ocarina
 
 OC_MAKE_FUNCTION_GLOBAL(dot)
@@ -184,3 +192,4 @@ OC_MAKE_FUNCTION_GLOBAL(length)
 OC_MAKE_FUNCTION_GLOBAL(distance)
 OC_MAKE_FUNCTION_GLOBAL(distance_squared)
 OC_MAKE_FUNCTION_GLOBAL(normalize)
+OC_MAKE_FUNCTION_GLOBAL(cross)

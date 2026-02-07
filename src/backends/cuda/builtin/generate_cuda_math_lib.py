@@ -774,8 +774,8 @@ def define_vec_func():
     #     content += f"OC_DEVICE_FLAG inline auto oc_normalize(oc_float{dim} v) noexcept {{ return v * oc_rsqrt(oc_dot(v, v)); }}\n"
     #     content += "\n"
 
-    for scalar in scalar_types[:3]:
-        content += f"[[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_{scalar}3 u, oc_{scalar}3 v) noexcept {{ return oc_{scalar}3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }}\n"
+    # for scalar in scalar_types[:3]:
+    #     content += f"[[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_{scalar}3 a, oc_{scalar}3 b) noexcept {{ return oc_{scalar}3(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y);  }}\n"
 
     content += "\n"
 
@@ -787,7 +787,7 @@ def main():
     define_unary_funcs()
     define_binary_funcs()
     define_triple_funcs()
-    define_vec_func()
+    # define_vec_func()
 
     content += "\n "
     content += "\n "
