@@ -3,46 +3,46 @@
 #pragma once
 
 
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> operator+(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = +arg[i];
     }
     return ret;
 }
 
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> operator-(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = -arg[i];
     }
     return ret;
 }
 
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> operator!(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = !arg[i];
     }
     return ret;
 }
 
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> operator~(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = ~arg[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator+(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} + U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] + rhs[i];
     }
     return ret;
@@ -55,38 +55,38 @@ __device__ auto operator+(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator+(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} + U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] + rhs;
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator+(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs + rhs[0];
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator+(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} + U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs + rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator+(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] + rhs;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator-(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} - U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] - rhs[i];
     }
     return ret;
@@ -99,38 +99,38 @@ __device__ auto operator-(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator-(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} - U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] - rhs;
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator-(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs - rhs[0];
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator-(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} - U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs - rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator-(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] - rhs;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator*(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} * U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] * rhs[i];
     }
     return ret;
@@ -143,38 +143,38 @@ __device__ auto operator*(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator*(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} * U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] * rhs;
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator*(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs * rhs[0];
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator*(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} * U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs * rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator*(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] * rhs;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator/(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} / U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] / rhs[i];
     }
     return ret;
@@ -187,38 +187,38 @@ __device__ auto operator/(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator/(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} / U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] / rhs;
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator/(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs / rhs[0];
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator/(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} / U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs / rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator/(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] / rhs;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator%(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} % U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] % rhs[i];
     }
     return ret;
@@ -231,74 +231,74 @@ __device__ auto operator%(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator%(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} % U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] % rhs;
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator%(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs % rhs[0];
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator%(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} % U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs % rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ auto operator%(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] % rhs;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] == rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] == rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] == rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator==(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs == rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator==(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] == rhs[i];
     }
     return ret;
@@ -306,46 +306,46 @@ __device__ oc_array<oc_bool, N> operator==(oc_array<T, 1> lhs, oc_array<U, N> rh
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] != rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] != rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] != rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator!=(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs != rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator!=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] != rhs[i];
     }
     return ret;
@@ -353,46 +353,46 @@ __device__ oc_array<oc_bool, N> operator!=(oc_array<T, 1> lhs, oc_array<U, N> rh
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] > rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] > rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] > rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs > rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] > rhs[i];
     }
     return ret;
@@ -400,46 +400,46 @@ __device__ oc_array<oc_bool, N> operator>(oc_array<T, 1> lhs, oc_array<U, N> rhs
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] < rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] < rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] < rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs < rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] < rhs[i];
     }
     return ret;
@@ -447,46 +447,46 @@ __device__ oc_array<oc_bool, N> operator<(oc_array<T, 1> lhs, oc_array<U, N> rhs
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >= rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >= rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >= rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>=(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs >= rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator>=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] >= rhs[i];
     }
     return ret;
@@ -494,46 +494,46 @@ __device__ oc_array<oc_bool, N> operator>=(oc_array<T, 1> lhs, oc_array<U, N> rh
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] <= rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] <= rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] <= rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<=(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs <= rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator<=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] <= rhs[i];
     }
     return ret;
@@ -541,46 +541,46 @@ __device__ oc_array<oc_bool, N> operator<=(oc_array<T, 1> lhs, oc_array<U, N> rh
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] && rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] && rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] && rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator&&(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs && rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator&&(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] && rhs[i];
     }
     return ret;
@@ -588,46 +588,46 @@ __device__ oc_array<oc_bool, N> operator&&(oc_array<T, 1> lhs, oc_array<U, N> rh
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] || rhs[i];
     }
     return ret;
 }
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] || rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] || rhs[0];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator||(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs || rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ oc_array<oc_bool, N> operator||(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] || rhs[i];
     }
     return ret;
@@ -635,187 +635,187 @@ __device__ oc_array<oc_bool, N> operator||(oc_array<T, 1> lhs, oc_array<U, N> rh
 
 
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator&(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} & U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] & rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator&(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} & U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] & rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator&(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs & rhs[0];
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator&(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} & U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs & rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator&(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] & rhs;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator|(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} | U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] | rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator|(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} | U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] | rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator|(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs | rhs[0];
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator|(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} | U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs | rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator|(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] | rhs;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator^(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} ^ U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] ^ rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator^(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} ^ U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] ^ rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator^(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs ^ rhs[0];
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator^(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} ^ U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs ^ rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator^(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] ^ rhs;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator<<(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} << U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] << rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator<<(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} << U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] << rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator<<(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs << rhs[0];
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator<<(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} << U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs << rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator<<(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] << rhs;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator>>(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} >> U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >> rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator>>(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} >> U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >> rhs;
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator>>(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs >> rhs[0];
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator>>(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} >> U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs >> rhs[i];
     }
     return ret;
 }
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 __device__ auto operator>>(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] >> rhs;
 }
@@ -829,127 +829,29 @@ __device__ oc_bool oc_none(oc_bool2 vec) { return !oc_any(vec); }
 __device__ oc_bool oc_none(oc_bool3 vec) { return !oc_any(vec); }
 __device__ oc_bool oc_none(oc_bool4 vec) { return !oc_any(vec); }
 
-template<oc_uint N>
+template<size_t N>
 [[nodiscard]] oc_bool oc_any(oc_array<oc_bool, N> arg) {
     oc_bool ret = arg[0];
-    for(oc_uint i = 1u; i < N; ++i) {
+    for(size_t i = 1u; i < N; ++i) {
         ret = ret || arg[i];
     }
     return ret;
 }
 
-template<oc_uint N>
+template<size_t N>
 [[nodiscard]] oc_bool oc_all(oc_array<oc_bool, N> arg) {
     oc_bool ret = arg[0];
-    for(oc_uint i = 1u; i < N; ++i) {
+    for(size_t i = 1u; i < N; ++i) {
         ret = ret && arg[i];
     }
     return ret;
 }
 
-template<oc_uint N>
+template<size_t N>
 [[nodiscard]] oc_bool oc_none(oc_array<oc_bool, N> arg) {
     return !oc_any(arg);
 }
 
-
-__device__ oc_int oc_select(oc_bool pred, oc_int t, oc_int f) { return pred ? t : f; }
-__device__ oc_int2 oc_select(oc_bool2 pred, oc_int2 t, oc_int2 f) {
-	return oc_int2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_int3 oc_select(oc_bool3 pred, oc_int3 t, oc_int3 f) {
-	return oc_int3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_int4 oc_select(oc_bool4 pred, oc_int4 t, oc_int4 f) {
-	return oc_int4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-__device__ oc_uint oc_select(oc_bool pred, oc_uint t, oc_uint f) { return pred ? t : f; }
-__device__ oc_uint2 oc_select(oc_bool2 pred, oc_uint2 t, oc_uint2 f) {
-	return oc_uint2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_uint3 oc_select(oc_bool3 pred, oc_uint3 t, oc_uint3 f) {
-	return oc_uint3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_uint4 oc_select(oc_bool4 pred, oc_uint4 t, oc_uint4 f) {
-	return oc_uint4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-__device__ oc_float oc_select(oc_bool pred, oc_float t, oc_float f) { return pred ? t : f; }
-__device__ oc_float2 oc_select(oc_bool2 pred, oc_float2 t, oc_float2 f) {
-	return oc_float2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_float3 oc_select(oc_bool3 pred, oc_float3 t, oc_float3 f) {
-	return oc_float3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_float4 oc_select(oc_bool4 pred, oc_float4 t, oc_float4 f) {
-	return oc_float4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-__device__ oc_half oc_select(oc_bool pred, oc_half t, oc_half f) { return pred ? t : f; }
-__device__ oc_half2 oc_select(oc_bool2 pred, oc_half2 t, oc_half2 f) {
-	return oc_half2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_half3 oc_select(oc_bool3 pred, oc_half3 t, oc_half3 f) {
-	return oc_half3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_half4 oc_select(oc_bool4 pred, oc_half4 t, oc_half4 f) {
-	return oc_half4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-__device__ oc_bool oc_select(oc_bool pred, oc_bool t, oc_bool f) { return pred ? t : f; }
-__device__ oc_bool2 oc_select(oc_bool2 pred, oc_bool2 t, oc_bool2 f) {
-	return oc_bool2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_bool3 oc_select(oc_bool3 pred, oc_bool3 t, oc_bool3 f) {
-	return oc_bool3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_bool4 oc_select(oc_bool4 pred, oc_bool4 t, oc_bool4 f) {
-	return oc_bool4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-__device__ oc_uchar oc_select(oc_bool pred, oc_uchar t, oc_uchar f) { return pred ? t : f; }
-__device__ oc_uchar2 oc_select(oc_bool2 pred, oc_uchar2 t, oc_uchar2 f) {
-	return oc_uchar2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_uchar3 oc_select(oc_bool3 pred, oc_uchar3 t, oc_uchar3 f) {
-	return oc_uchar3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_uchar4 oc_select(oc_bool4 pred, oc_uchar4 t, oc_uchar4 f) {
-	return oc_uchar4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-__device__ oc_ushort oc_select(oc_bool pred, oc_ushort t, oc_ushort f) { return pred ? t : f; }
-__device__ oc_ushort2 oc_select(oc_bool2 pred, oc_ushort2 t, oc_ushort2 f) {
-	return oc_ushort2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_ushort3 oc_select(oc_bool3 pred, oc_ushort3 t, oc_ushort3 f) {
-	return oc_ushort3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_ushort4 oc_select(oc_bool4 pred, oc_ushort4 t, oc_ushort4 f) {
-	return oc_ushort4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-__device__ oc_ulong oc_select(oc_bool pred, oc_ulong t, oc_ulong f) { return pred ? t : f; }
-__device__ oc_ulong2 oc_select(oc_bool2 pred, oc_ulong2 t, oc_ulong2 f) {
-	return oc_ulong2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
-}
-__device__ oc_ulong3 oc_select(oc_bool3 pred, oc_ulong3 t, oc_ulong3 f) {
-	return oc_ulong3(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z));
-}
-__device__ oc_ulong4 oc_select(oc_bool4 pred, oc_ulong4 t, oc_ulong4 f) {
-	return oc_ulong4(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y), oc_select(pred.z, t.z, f.z), oc_select(pred.w, t.w, f.w));
-}
-
-
-template<typename P, typename T, oc_uint N>
-[[nodiscard]] __device__ oc_array<T, N> oc_select(const oc_array<P, N> &pred, const oc_array<T, N> &t, const oc_array<T, N> &f) noexcept {
-    oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) {
-        ret[i] = oc_select(static_cast<oc_bool>(pred[i]), t[i], f[i]);
-    }
-    return ret;
-}
 
 __device__ oc_int oc_rcp(oc_int v) { return 1.f / v; }
 __device__ oc_int2 oc_rcp(oc_int2 v) { return oc_int2(oc_rcp(v.x), oc_rcp(v.y)); }
@@ -967,10 +869,10 @@ __device__ oc_half oc_rcp(oc_half v) { return half(1) / v; }
 __device__ oc_half2 oc_rcp(oc_half2 v) { return oc_half2(oc_rcp(v.x), oc_rcp(v.y)); }
 __device__ oc_half3 oc_rcp(oc_half3 v) { return oc_half3(oc_rcp(v.x), oc_rcp(v.y), oc_rcp(v.z)); }
 __device__ oc_half4 oc_rcp(oc_half4 v) { return oc_half4(oc_rcp(v.x), oc_rcp(v.y), oc_rcp(v.z), oc_rcp(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_rcp(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_rcp(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_rcp(x[i]);
     return ret;
 }
 
@@ -982,10 +884,10 @@ __device__ oc_float oc_sign(oc_float v) { return v >= 0 ? 1: -1; }
 __device__ oc_float2 oc_sign(oc_float2 v) { return oc_float2(oc_sign(v.x), oc_sign(v.y)); }
 __device__ oc_float3 oc_sign(oc_float3 v) { return oc_float3(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z)); }
 __device__ oc_float4 oc_sign(oc_float4 v) { return oc_float4(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z), oc_sign(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_sign(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sign(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sign(x[i]);
     return ret;
 }
 
@@ -1015,10 +917,10 @@ __device__ oc_int oc_abs(oc_int v) { return abs(v); }
 __device__ oc_int2 oc_abs(oc_int2 v) { return oc_int2(oc_abs(v.x), oc_abs(v.y)); }
 __device__ oc_int3 oc_abs(oc_int3 v) { return oc_int3(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z)); }
 __device__ oc_int4 oc_abs(oc_int4 v) { return oc_int4(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z), oc_abs(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_abs(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_abs(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_abs(x[i]);
     return ret;
 }
 
@@ -1030,10 +932,10 @@ __device__ oc_half oc_ceil(oc_half v) { return hceil(v); }
 __device__ oc_half2 oc_ceil(oc_half2 v) { return oc_half2(oc_ceil(v.x), oc_ceil(v.y)); }
 __device__ oc_half3 oc_ceil(oc_half3 v) { return oc_half3(oc_ceil(v.x), oc_ceil(v.y), oc_ceil(v.z)); }
 __device__ oc_half4 oc_ceil(oc_half4 v) { return oc_half4(oc_ceil(v.x), oc_ceil(v.y), oc_ceil(v.z), oc_ceil(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_ceil(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_ceil(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_ceil(x[i]);
     return ret;
 }
 
@@ -1045,10 +947,10 @@ __device__ oc_half oc_floor(oc_half v) { return hfloor(v); }
 __device__ oc_half2 oc_floor(oc_half2 v) { return oc_half2(oc_floor(v.x), oc_floor(v.y)); }
 __device__ oc_half3 oc_floor(oc_half3 v) { return oc_half3(oc_floor(v.x), oc_floor(v.y), oc_floor(v.z)); }
 __device__ oc_half4 oc_floor(oc_half4 v) { return oc_half4(oc_floor(v.x), oc_floor(v.y), oc_floor(v.z), oc_floor(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_floor(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_floor(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_floor(x[i]);
     return ret;
 }
 
@@ -1060,10 +962,10 @@ __device__ oc_half oc_fract(oc_half v) { return v - oc_floor(v); }
 __device__ oc_half2 oc_fract(oc_half2 v) { return oc_half2(oc_fract(v.x), oc_fract(v.y)); }
 __device__ oc_half3 oc_fract(oc_half3 v) { return oc_half3(oc_fract(v.x), oc_fract(v.y), oc_fract(v.z)); }
 __device__ oc_half4 oc_fract(oc_half4 v) { return oc_half4(oc_fract(v.x), oc_fract(v.y), oc_fract(v.z), oc_fract(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_fract(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_fract(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_fract(x[i]);
     return ret;
 }
 
@@ -1075,10 +977,10 @@ __device__ oc_half oc_round(oc_half v) { float f = __half2float(v); f = roundf(f
 __device__ oc_half2 oc_round(oc_half2 v) { return oc_half2(oc_round(v.x), oc_round(v.y)); }
 __device__ oc_half3 oc_round(oc_half3 v) { return oc_half3(oc_round(v.x), oc_round(v.y), oc_round(v.z)); }
 __device__ oc_half4 oc_round(oc_half4 v) { return oc_half4(oc_round(v.x), oc_round(v.y), oc_round(v.z), oc_round(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_round(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_round(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_round(x[i]);
     return ret;
 }
 
@@ -1090,10 +992,10 @@ __device__ oc_half oc_sin(oc_half v) { return hsin(v); }
 __device__ oc_half2 oc_sin(oc_half2 v) { return oc_half2(oc_sin(v.x), oc_sin(v.y)); }
 __device__ oc_half3 oc_sin(oc_half3 v) { return oc_half3(oc_sin(v.x), oc_sin(v.y), oc_sin(v.z)); }
 __device__ oc_half4 oc_sin(oc_half4 v) { return oc_half4(oc_sin(v.x), oc_sin(v.y), oc_sin(v.z), oc_sin(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_sin(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sin(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sin(x[i]);
     return ret;
 }
 
@@ -1101,10 +1003,10 @@ __device__ oc_float oc_cos(oc_float v) { return cosf(v); }
 __device__ oc_float2 oc_cos(oc_float2 v) { return oc_float2(oc_cos(v.x), oc_cos(v.y)); }
 __device__ oc_float3 oc_cos(oc_float3 v) { return oc_float3(oc_cos(v.x), oc_cos(v.y), oc_cos(v.z)); }
 __device__ oc_float4 oc_cos(oc_float4 v) { return oc_float4(oc_cos(v.x), oc_cos(v.y), oc_cos(v.z), oc_cos(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_cos(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_cos(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_cos(x[i]);
     return ret;
 }
 
@@ -1112,10 +1014,10 @@ __device__ oc_float oc_tan(oc_float v) { return tanf(v); }
 __device__ oc_float2 oc_tan(oc_float2 v) { return oc_float2(oc_tan(v.x), oc_tan(v.y)); }
 __device__ oc_float3 oc_tan(oc_float3 v) { return oc_float3(oc_tan(v.x), oc_tan(v.y), oc_tan(v.z)); }
 __device__ oc_float4 oc_tan(oc_float4 v) { return oc_float4(oc_tan(v.x), oc_tan(v.y), oc_tan(v.z), oc_tan(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_tan(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_tan(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_tan(x[i]);
     return ret;
 }
 
@@ -1123,10 +1025,10 @@ __device__ oc_float oc_sinh(oc_float v) { return sinhf(v); }
 __device__ oc_float2 oc_sinh(oc_float2 v) { return oc_float2(oc_sinh(v.x), oc_sinh(v.y)); }
 __device__ oc_float3 oc_sinh(oc_float3 v) { return oc_float3(oc_sinh(v.x), oc_sinh(v.y), oc_sinh(v.z)); }
 __device__ oc_float4 oc_sinh(oc_float4 v) { return oc_float4(oc_sinh(v.x), oc_sinh(v.y), oc_sinh(v.z), oc_sinh(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_sinh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sinh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sinh(x[i]);
     return ret;
 }
 
@@ -1134,10 +1036,10 @@ __device__ oc_float oc_cosh(oc_float v) { return coshf(v); }
 __device__ oc_float2 oc_cosh(oc_float2 v) { return oc_float2(oc_cosh(v.x), oc_cosh(v.y)); }
 __device__ oc_float3 oc_cosh(oc_float3 v) { return oc_float3(oc_cosh(v.x), oc_cosh(v.y), oc_cosh(v.z)); }
 __device__ oc_float4 oc_cosh(oc_float4 v) { return oc_float4(oc_cosh(v.x), oc_cosh(v.y), oc_cosh(v.z), oc_cosh(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_cosh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_cosh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_cosh(x[i]);
     return ret;
 }
 
@@ -1145,10 +1047,10 @@ __device__ oc_float oc_tanh(oc_float v) { return tanhf(v); }
 __device__ oc_float2 oc_tanh(oc_float2 v) { return oc_float2(oc_tanh(v.x), oc_tanh(v.y)); }
 __device__ oc_float3 oc_tanh(oc_float3 v) { return oc_float3(oc_tanh(v.x), oc_tanh(v.y), oc_tanh(v.z)); }
 __device__ oc_float4 oc_tanh(oc_float4 v) { return oc_float4(oc_tanh(v.x), oc_tanh(v.y), oc_tanh(v.z), oc_tanh(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_tanh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_tanh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_tanh(x[i]);
     return ret;
 }
 
@@ -1156,10 +1058,10 @@ __device__ oc_float oc_asin(oc_float v) { return asinf(v); }
 __device__ oc_float2 oc_asin(oc_float2 v) { return oc_float2(oc_asin(v.x), oc_asin(v.y)); }
 __device__ oc_float3 oc_asin(oc_float3 v) { return oc_float3(oc_asin(v.x), oc_asin(v.y), oc_asin(v.z)); }
 __device__ oc_float4 oc_asin(oc_float4 v) { return oc_float4(oc_asin(v.x), oc_asin(v.y), oc_asin(v.z), oc_asin(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_asin(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_asin(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_asin(x[i]);
     return ret;
 }
 
@@ -1167,10 +1069,10 @@ __device__ oc_float oc_acos(oc_float v) { return acosf(v); }
 __device__ oc_float2 oc_acos(oc_float2 v) { return oc_float2(oc_acos(v.x), oc_acos(v.y)); }
 __device__ oc_float3 oc_acos(oc_float3 v) { return oc_float3(oc_acos(v.x), oc_acos(v.y), oc_acos(v.z)); }
 __device__ oc_float4 oc_acos(oc_float4 v) { return oc_float4(oc_acos(v.x), oc_acos(v.y), oc_acos(v.z), oc_acos(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_acos(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_acos(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_acos(x[i]);
     return ret;
 }
 
@@ -1178,10 +1080,10 @@ __device__ oc_float oc_atan(oc_float v) { return atanf(v); }
 __device__ oc_float2 oc_atan(oc_float2 v) { return oc_float2(oc_atan(v.x), oc_atan(v.y)); }
 __device__ oc_float3 oc_atan(oc_float3 v) { return oc_float3(oc_atan(v.x), oc_atan(v.y), oc_atan(v.z)); }
 __device__ oc_float4 oc_atan(oc_float4 v) { return oc_float4(oc_atan(v.x), oc_atan(v.y), oc_atan(v.z), oc_atan(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_atan(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_atan(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_atan(x[i]);
     return ret;
 }
 
@@ -1189,10 +1091,10 @@ __device__ oc_float oc_asinh(oc_float v) { return asinhf(v); }
 __device__ oc_float2 oc_asinh(oc_float2 v) { return oc_float2(oc_asinh(v.x), oc_asinh(v.y)); }
 __device__ oc_float3 oc_asinh(oc_float3 v) { return oc_float3(oc_asinh(v.x), oc_asinh(v.y), oc_asinh(v.z)); }
 __device__ oc_float4 oc_asinh(oc_float4 v) { return oc_float4(oc_asinh(v.x), oc_asinh(v.y), oc_asinh(v.z), oc_asinh(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_asinh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_asinh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_asinh(x[i]);
     return ret;
 }
 
@@ -1200,10 +1102,10 @@ __device__ oc_float oc_acosh(oc_float v) { return acoshf(v); }
 __device__ oc_float2 oc_acosh(oc_float2 v) { return oc_float2(oc_acosh(v.x), oc_acosh(v.y)); }
 __device__ oc_float3 oc_acosh(oc_float3 v) { return oc_float3(oc_acosh(v.x), oc_acosh(v.y), oc_acosh(v.z)); }
 __device__ oc_float4 oc_acosh(oc_float4 v) { return oc_float4(oc_acosh(v.x), oc_acosh(v.y), oc_acosh(v.z), oc_acosh(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_acosh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_acosh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_acosh(x[i]);
     return ret;
 }
 
@@ -1211,10 +1113,10 @@ __device__ oc_float oc_atanh(oc_float v) { return atanhf(v); }
 __device__ oc_float2 oc_atanh(oc_float2 v) { return oc_float2(oc_atanh(v.x), oc_atanh(v.y)); }
 __device__ oc_float3 oc_atanh(oc_float3 v) { return oc_float3(oc_atanh(v.x), oc_atanh(v.y), oc_atanh(v.z)); }
 __device__ oc_float4 oc_atanh(oc_float4 v) { return oc_float4(oc_atanh(v.x), oc_atanh(v.y), oc_atanh(v.z), oc_atanh(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_atanh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_atanh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_atanh(x[i]);
     return ret;
 }
 
@@ -1234,10 +1136,10 @@ __device__ oc_bool oc_is_inf(oc_uint v) { return false; }
 __device__ oc_bool2 oc_is_inf(oc_uint2 v) { return oc_bool2(oc_is_inf(v.x), oc_is_inf(v.y)); }
 __device__ oc_bool3 oc_is_inf(oc_uint3 v) { return oc_bool3(oc_is_inf(v.x), oc_is_inf(v.y), oc_is_inf(v.z)); }
 __device__ oc_bool4 oc_is_inf(oc_uint4 v) { return oc_bool4(oc_is_inf(v.x), oc_is_inf(v.y), oc_is_inf(v.z), oc_is_inf(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_is_inf(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_is_inf(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_is_inf(x[i]);
     return ret;
 }
 
@@ -1257,10 +1159,10 @@ __device__ oc_bool oc_is_nan(oc_uint v) { return false; }
 __device__ oc_bool2 oc_is_nan(oc_uint2 v) { return oc_bool2(oc_is_nan(v.x), oc_is_nan(v.y)); }
 __device__ oc_bool3 oc_is_nan(oc_uint3 v) { return oc_bool3(oc_is_nan(v.x), oc_is_nan(v.y), oc_is_nan(v.z)); }
 __device__ oc_bool4 oc_is_nan(oc_uint4 v) { return oc_bool4(oc_is_nan(v.x), oc_is_nan(v.y), oc_is_nan(v.z), oc_is_nan(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_is_nan(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_is_nan(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_is_nan(x[i]);
     return ret;
 }
 
@@ -1272,10 +1174,10 @@ __device__ oc_half oc_exp(oc_half v) { return hexp(v); }
 __device__ oc_half2 oc_exp(oc_half2 v) { return oc_half2(oc_exp(v.x), oc_exp(v.y)); }
 __device__ oc_half3 oc_exp(oc_half3 v) { return oc_half3(oc_exp(v.x), oc_exp(v.y), oc_exp(v.z)); }
 __device__ oc_half4 oc_exp(oc_half4 v) { return oc_half4(oc_exp(v.x), oc_exp(v.y), oc_exp(v.z), oc_exp(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_exp(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_exp(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_exp(x[i]);
     return ret;
 }
 
@@ -1287,10 +1189,10 @@ __device__ oc_half oc_exp2(oc_half v) { return hexp2(v); }
 __device__ oc_half2 oc_exp2(oc_half2 v) { return oc_half2(oc_exp2(v.x), oc_exp2(v.y)); }
 __device__ oc_half3 oc_exp2(oc_half3 v) { return oc_half3(oc_exp2(v.x), oc_exp2(v.y), oc_exp2(v.z)); }
 __device__ oc_half4 oc_exp2(oc_half4 v) { return oc_half4(oc_exp2(v.x), oc_exp2(v.y), oc_exp2(v.z), oc_exp2(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_exp2(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_exp2(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_exp2(x[i]);
     return ret;
 }
 
@@ -1302,10 +1204,10 @@ __device__ oc_half oc_exp10(oc_half v) { return hexp10(v); }
 __device__ oc_half2 oc_exp10(oc_half2 v) { return oc_half2(oc_exp10(v.x), oc_exp10(v.y)); }
 __device__ oc_half3 oc_exp10(oc_half3 v) { return oc_half3(oc_exp10(v.x), oc_exp10(v.y), oc_exp10(v.z)); }
 __device__ oc_half4 oc_exp10(oc_half4 v) { return oc_half4(oc_exp10(v.x), oc_exp10(v.y), oc_exp10(v.z), oc_exp10(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_exp10(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_exp10(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_exp10(x[i]);
     return ret;
 }
 
@@ -1317,10 +1219,10 @@ __device__ oc_half oc_log(oc_half v) { return hlog(v); }
 __device__ oc_half2 oc_log(oc_half2 v) { return oc_half2(oc_log(v.x), oc_log(v.y)); }
 __device__ oc_half3 oc_log(oc_half3 v) { return oc_half3(oc_log(v.x), oc_log(v.y), oc_log(v.z)); }
 __device__ oc_half4 oc_log(oc_half4 v) { return oc_half4(oc_log(v.x), oc_log(v.y), oc_log(v.z), oc_log(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_log(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_log(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_log(x[i]);
     return ret;
 }
 
@@ -1332,10 +1234,10 @@ __device__ oc_half oc_log2(oc_half v) { return hlog2(v); }
 __device__ oc_half2 oc_log2(oc_half2 v) { return oc_half2(oc_log2(v.x), oc_log2(v.y)); }
 __device__ oc_half3 oc_log2(oc_half3 v) { return oc_half3(oc_log2(v.x), oc_log2(v.y), oc_log2(v.z)); }
 __device__ oc_half4 oc_log2(oc_half4 v) { return oc_half4(oc_log2(v.x), oc_log2(v.y), oc_log2(v.z), oc_log2(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_log2(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_log2(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_log2(x[i]);
     return ret;
 }
 
@@ -1347,10 +1249,10 @@ __device__ oc_half oc_log10(oc_half v) { return hlog10(v); }
 __device__ oc_half2 oc_log10(oc_half2 v) { return oc_half2(oc_log10(v.x), oc_log10(v.y)); }
 __device__ oc_half3 oc_log10(oc_half3 v) { return oc_half3(oc_log10(v.x), oc_log10(v.y), oc_log10(v.z)); }
 __device__ oc_half4 oc_log10(oc_half4 v) { return oc_half4(oc_log10(v.x), oc_log10(v.y), oc_log10(v.z), oc_log10(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_log10(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_log10(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_log10(x[i]);
     return ret;
 }
 
@@ -1370,10 +1272,10 @@ __device__ oc_half oc_sqr(oc_half v) { return v * v; }
 __device__ oc_half2 oc_sqr(oc_half2 v) { return oc_half2(oc_sqr(v.x), oc_sqr(v.y)); }
 __device__ oc_half3 oc_sqr(oc_half3 v) { return oc_half3(oc_sqr(v.x), oc_sqr(v.y), oc_sqr(v.z)); }
 __device__ oc_half4 oc_sqr(oc_half4 v) { return oc_half4(oc_sqr(v.x), oc_sqr(v.y), oc_sqr(v.z), oc_sqr(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_sqr(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sqr(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sqr(x[i]);
     return ret;
 }
 
@@ -1385,10 +1287,10 @@ __device__ oc_half oc_sqrt(oc_half v) { return hsqrt(v); }
 __device__ oc_half2 oc_sqrt(oc_half2 v) { return oc_half2(oc_sqrt(v.x), oc_sqrt(v.y)); }
 __device__ oc_half3 oc_sqrt(oc_half3 v) { return oc_half3(oc_sqrt(v.x), oc_sqrt(v.y), oc_sqrt(v.z)); }
 __device__ oc_half4 oc_sqrt(oc_half4 v) { return oc_half4(oc_sqrt(v.x), oc_sqrt(v.y), oc_sqrt(v.z), oc_sqrt(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_sqrt(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sqrt(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sqrt(x[i]);
     return ret;
 }
 
@@ -1400,10 +1302,10 @@ __device__ oc_half oc_rsqrt(oc_half v) { return hrsqrt(v); }
 __device__ oc_half2 oc_rsqrt(oc_half2 v) { return oc_half2(oc_rsqrt(v.x), oc_rsqrt(v.y)); }
 __device__ oc_half3 oc_rsqrt(oc_half3 v) { return oc_half3(oc_rsqrt(v.x), oc_rsqrt(v.y), oc_rsqrt(v.z)); }
 __device__ oc_half4 oc_rsqrt(oc_half4 v) { return oc_half4(oc_rsqrt(v.x), oc_rsqrt(v.y), oc_rsqrt(v.z), oc_rsqrt(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_rsqrt(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_rsqrt(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_rsqrt(x[i]);
     return ret;
 }
 
@@ -1415,10 +1317,10 @@ __device__ oc_half oc_degrees(oc_half v) { return v * oc_half(180.f / 3.14159265
 __device__ oc_half2 oc_degrees(oc_half2 v) { return oc_half2(oc_degrees(v.x), oc_degrees(v.y)); }
 __device__ oc_half3 oc_degrees(oc_half3 v) { return oc_half3(oc_degrees(v.x), oc_degrees(v.y), oc_degrees(v.z)); }
 __device__ oc_half4 oc_degrees(oc_half4 v) { return oc_half4(oc_degrees(v.x), oc_degrees(v.y), oc_degrees(v.z), oc_degrees(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_degrees(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_degrees(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_degrees(x[i]);
     return ret;
 }
 
@@ -1430,10 +1332,10 @@ __device__ oc_half oc_radians(oc_half v) { return v * half(3.1415926535f / 180.f
 __device__ oc_half2 oc_radians(oc_half2 v) { return oc_half2(oc_radians(v.x), oc_radians(v.y)); }
 __device__ oc_half3 oc_radians(oc_half3 v) { return oc_half3(oc_radians(v.x), oc_radians(v.y), oc_radians(v.z)); }
 __device__ oc_half4 oc_radians(oc_half4 v) { return oc_half4(oc_radians(v.x), oc_radians(v.y), oc_radians(v.z), oc_radians(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_radians(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_radians(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_radians(x[i]);
     return ret;
 }
 
@@ -1445,10 +1347,10 @@ __device__ oc_half oc_saturate(oc_half v) { return __hmin(half(1.f), __hmax(half
 __device__ oc_half2 oc_saturate(oc_half2 v) { return oc_half2(oc_saturate(v.x), oc_saturate(v.y)); }
 __device__ oc_half3 oc_saturate(oc_half3 v) { return oc_half3(oc_saturate(v.x), oc_saturate(v.y), oc_saturate(v.z)); }
 __device__ oc_half4 oc_saturate(oc_half4 v) { return oc_half4(oc_saturate(v.x), oc_saturate(v.y), oc_saturate(v.z), oc_saturate(v.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 __device__ oc_array<T, N> oc_saturate(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_saturate(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_saturate(x[i]);
     return ret;
 }
 
@@ -1460,10 +1362,10 @@ __device__ oc_half oc_pow(oc_half lhs, oc_half rhs) { return powf(lhs, rhs); }
 __device__ oc_half2 oc_pow(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y)); }
 __device__ oc_half3 oc_pow(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y), oc_pow(lhs.z, rhs.z)); }
 __device__ oc_half4 oc_pow(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y), oc_pow(lhs.z, rhs.z), oc_pow(lhs.w, rhs.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 oc_array<decltype(oc_pow(T{}, T{})), N> oc_pow(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_pow(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_pow(lhs[i], rhs[i]);
     }
     return ret;
@@ -1477,10 +1379,10 @@ __device__ oc_half oc_fmod(oc_half lhs, oc_half rhs) { return fmodf(lhs, rhs); }
 __device__ oc_half2 oc_fmod(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y)); }
 __device__ oc_half3 oc_fmod(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y), oc_fmod(lhs.z, rhs.z)); }
 __device__ oc_half4 oc_fmod(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y), oc_fmod(lhs.z, rhs.z), oc_fmod(lhs.w, rhs.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 oc_array<decltype(oc_fmod(T{}, T{})), N> oc_fmod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_fmod(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_fmod(lhs[i], rhs[i]);
     }
     return ret;
@@ -1494,10 +1396,10 @@ __device__ oc_half oc_mod(oc_half lhs, oc_half rhs) { return lhs - rhs * oc_floo
 __device__ oc_half2 oc_mod(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y)); }
 __device__ oc_half3 oc_mod(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z)); }
 __device__ oc_half4 oc_mod(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z), oc_mod(lhs.w, rhs.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 oc_array<decltype(oc_mod(T{}, T{})), N> oc_mod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_mod(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_mod(lhs[i], rhs[i]);
     }
     return ret;
@@ -1519,10 +1421,10 @@ __device__ oc_half oc_min(oc_half lhs, oc_half rhs) { return __hmin(lhs, rhs); }
 __device__ oc_half2 oc_min(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y)); }
 __device__ oc_half3 oc_min(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y), oc_min(lhs.z, rhs.z)); }
 __device__ oc_half4 oc_min(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y), oc_min(lhs.z, rhs.z), oc_min(lhs.w, rhs.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 oc_array<decltype(oc_min(T{}, T{})), N> oc_min(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_min(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_min(lhs[i], rhs[i]);
     }
     return ret;
@@ -1544,10 +1446,10 @@ __device__ oc_half oc_max(oc_half lhs, oc_half rhs) { return __hmax(lhs, rhs); }
 __device__ oc_half2 oc_max(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y)); }
 __device__ oc_half3 oc_max(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y), oc_max(lhs.z, rhs.z)); }
 __device__ oc_half4 oc_max(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y), oc_max(lhs.z, rhs.z), oc_max(lhs.w, rhs.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 oc_array<decltype(oc_max(T{}, T{})), N> oc_max(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_max(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_max(lhs[i], rhs[i]);
     }
     return ret;
@@ -1561,10 +1463,10 @@ __device__ oc_half oc_atan2(oc_half lhs, oc_half rhs) { return atan2f(lhs, rhs);
 __device__ oc_half2 oc_atan2(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y)); }
 __device__ oc_half3 oc_atan2(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y), oc_atan2(lhs.z, rhs.z)); }
 __device__ oc_half4 oc_atan2(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y), oc_atan2(lhs.z, rhs.z), oc_atan2(lhs.w, rhs.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 oc_array<decltype(oc_atan2(T{}, T{})), N> oc_atan2(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_atan2(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_atan2(lhs[i], rhs[i]);
     }
     return ret;
@@ -1578,10 +1480,10 @@ __device__ oc_half oc_copysign(oc_half lhs, oc_half rhs) { return ::copysignf(lh
 __device__ oc_half2 oc_copysign(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y)); }
 __device__ oc_half3 oc_copysign(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z)); }
 __device__ oc_half4 oc_copysign(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z), oc_copysign(lhs.w, rhs.w)); }
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_copysign(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_copysign(lhs[i], rhs[i]);
     }
     return ret;
@@ -1591,10 +1493,10 @@ __device__ oc_float oc_lerp(oc_float v0, oc_float v1, oc_float v2) { return v1 +
 __device__ oc_float2 oc_lerp(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y)); }
 __device__ oc_float3 oc_lerp(oc_float3 v0, oc_float3 v1, oc_float3 v2) { return oc_float3(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y), oc_lerp(v0.z, v1.z, v2.z)); }
 __device__ oc_float4 oc_lerp(oc_float4 v0, oc_float4 v1, oc_float4 v2) { return oc_float4(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y), oc_lerp(v0.z, v1.z, v2.z), oc_lerp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_float, N> oc_lerp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1604,10 +1506,10 @@ __device__ oc_half oc_lerp(oc_half v0, oc_half v1, oc_half v2) { return v1 + v0 
 __device__ oc_half2 oc_lerp(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y)); }
 __device__ oc_half3 oc_lerp(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y), oc_lerp(v0.z, v1.z, v2.z)); }
 __device__ oc_half4 oc_lerp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_lerp(v0.x, v1.x, v2.x), oc_lerp(v0.y, v1.y, v2.y), oc_lerp(v0.z, v1.z, v2.z), oc_lerp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_half, N> oc_lerp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1618,10 +1520,10 @@ __device__ oc_float oc_clamp(oc_float v0, oc_float v1, oc_float v2) { return oc_
 __device__ oc_float2 oc_clamp(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
 __device__ oc_float3 oc_clamp(oc_float3 v0, oc_float3 v1, oc_float3 v2) { return oc_float3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
 __device__ oc_float4 oc_clamp(oc_float4 v0, oc_float4 v1, oc_float4 v2) { return oc_float4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_float, N> oc_clamp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1631,10 +1533,10 @@ __device__ oc_uint oc_clamp(oc_uint v0, oc_uint v1, oc_uint v2) { return oc_min(
 __device__ oc_uint2 oc_clamp(oc_uint2 v0, oc_uint2 v1, oc_uint2 v2) { return oc_uint2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
 __device__ oc_uint3 oc_clamp(oc_uint3 v0, oc_uint3 v1, oc_uint3 v2) { return oc_uint3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
 __device__ oc_uint4 oc_clamp(oc_uint4 v0, oc_uint4 v1, oc_uint4 v2) { return oc_uint4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_uint, N> oc_clamp(oc_array<oc_uint, N> v0, oc_array<oc_uint, N> v1, oc_array<oc_uint, N> v2) {
     oc_array<oc_uint, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1644,10 +1546,10 @@ __device__ oc_int oc_clamp(oc_int v0, oc_int v1, oc_int v2) { return oc_min(v2, 
 __device__ oc_int2 oc_clamp(oc_int2 v0, oc_int2 v1, oc_int2 v2) { return oc_int2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
 __device__ oc_int3 oc_clamp(oc_int3 v0, oc_int3 v1, oc_int3 v2) { return oc_int3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
 __device__ oc_int4 oc_clamp(oc_int4 v0, oc_int4 v1, oc_int4 v2) { return oc_int4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_int, N> oc_clamp(oc_array<oc_int, N> v0, oc_array<oc_int, N> v1, oc_array<oc_int, N> v2) {
     oc_array<oc_int, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1657,10 +1559,10 @@ __device__ oc_half oc_clamp(oc_half v0, oc_half v1, oc_half v2) { return oc_min(
 __device__ oc_half2 oc_clamp(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
 __device__ oc_half3 oc_clamp(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
 __device__ oc_half4 oc_clamp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_half, N> oc_clamp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1671,10 +1573,10 @@ __device__ oc_float oc_fma(oc_float v0, oc_float v1, oc_float v2) { return fmaf(
 __device__ oc_float2 oc_fma(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y)); }
 __device__ oc_float3 oc_fma(oc_float3 v0, oc_float3 v1, oc_float3 v2) { return oc_float3(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y), oc_fma(v0.z, v1.z, v2.z)); }
 __device__ oc_float4 oc_fma(oc_float4 v0, oc_float4 v1, oc_float4 v2) { return oc_float4(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y), oc_fma(v0.z, v1.z, v2.z), oc_fma(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_float, N> oc_fma(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_fma(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1684,10 +1586,10 @@ __device__ oc_half oc_fma(oc_half v0, oc_half v1, oc_half v2) { return __hfma(v0
 __device__ oc_half2 oc_fma(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y)); }
 __device__ oc_half3 oc_fma(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y), oc_fma(v0.z, v1.z, v2.z)); }
 __device__ oc_half4 oc_fma(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y), oc_fma(v0.z, v1.z, v2.z), oc_fma(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_half, N> oc_fma(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_fma(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1698,10 +1600,10 @@ __device__ oc_float oc_inverse_lerp(oc_float v0, oc_float v1, oc_float v2) { ret
 __device__ oc_float2 oc_inverse_lerp(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y)); }
 __device__ oc_float3 oc_inverse_lerp(oc_float3 v0, oc_float3 v1, oc_float3 v2) { return oc_float3(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y), oc_inverse_lerp(v0.z, v1.z, v2.z)); }
 __device__ oc_float4 oc_inverse_lerp(oc_float4 v0, oc_float4 v1, oc_float4 v2) { return oc_float4(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y), oc_inverse_lerp(v0.z, v1.z, v2.z), oc_inverse_lerp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_float, N> oc_inverse_lerp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_inverse_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1711,10 +1613,10 @@ __device__ oc_half oc_inverse_lerp(oc_half v0, oc_half v1, oc_half v2) { return 
 __device__ oc_half2 oc_inverse_lerp(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y)); }
 __device__ oc_half3 oc_inverse_lerp(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y), oc_inverse_lerp(v0.z, v1.z, v2.z)); }
 __device__ oc_half4 oc_inverse_lerp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_inverse_lerp(v0.x, v1.x, v2.x), oc_inverse_lerp(v0.y, v1.y, v2.y), oc_inverse_lerp(v0.z, v1.z, v2.z), oc_inverse_lerp(v0.w, v1.w, v2.w)); }
-template<oc_uint N>
+template<size_t N>
 oc_array<oc_half, N> oc_inverse_lerp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_inverse_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;

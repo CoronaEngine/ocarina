@@ -230,7 +230,7 @@ struct is_selectable : conjunction<is_all_scalar<T, F>, is_addable<T, F>> {};
 OC_DEFINE_TEMPLATE_VALUE_MULTI(is_selectable)
 
 
-template<typename T, unsigned int N>
+template<typename T, size_t N>
 class array {
 private:
     T _data[N];
@@ -251,7 +251,7 @@ public:
 
 }// namespace ocarina
 
-template<typename T, unsigned int N>
+template<typename T, size_t N>
 using oc_array = ocarina::array<T, N>;
 
 #undef OC_DEFINE_TEMPLATE_VALUE_MULTI

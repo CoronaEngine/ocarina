@@ -130,7 +130,7 @@ def define_array():
     global content
     content += "\n"
     string = """
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 class oc_array {
 private:
     T _data[N];
@@ -154,10 +154,10 @@ def define_array_unary(unary):
     global content
     for op in unary:
         func = f"""
-template<typename T, oc_uint N>
+template<typename T, size_t N>
 {device_flag} oc_array<T, N> operator{op}(oc_array<T, N> arg) {{
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = {op}arg[i];
     }}
     return ret;
@@ -171,10 +171,10 @@ def define_array_binary(cal_binary, cmp_binary, bit_binary):
     binary = cal_binary + cmp_binary + bit_binary
     for op in cal_binary:
         func = f"""
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[i];
     }}
     return ret;
@@ -187,30 +187,30 @@ template<typename T,typename U>
     return ret;
 }}
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, U rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs;
     }}
     return ret;
 }}
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, 1> rhs) {{
     return lhs {op} rhs[0];
 }}
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(T lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs {op} rhs[i];
     }}
     return ret;
 }}
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, 1> lhs, oc_array<U, N> rhs) {{
     return lhs[0] {op} rhs;
 }}
@@ -219,46 +219,46 @@ template<typename T,typename U, oc_uint N>
 
     for op in cmp_binary:
         func = f"""
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[i];
     }}
     return ret;
 }}
 
-template<typename T,typename U, oc_uint N>
+template<typename T,typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, U rhs) {{
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs;
     }}
     return ret;
 }}
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, oc_array<U, 1> rhs) {{    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[0];
     }}
     return ret;
 }}
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(T lhs, oc_array<U, N> rhs) {{
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs {op} rhs[i];
     }}
     return ret;
 }}
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, 1> lhs, oc_array<U, N> rhs) {{
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[0] {op} rhs[i];
     }}
     return ret;
@@ -270,39 +270,39 @@ template<typename T, typename U, oc_uint N>
 
     for op in bit_binary:
         func = f"""
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[i];
     }}
     return ret;
 }}
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, U rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs;
     }}
     return ret;
 }}
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, 1> rhs) {{
     return lhs {op} rhs[0];
 }}
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(T lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {{
+    for(size_t i = 0u; i < N; ++i) {{
         ret[i] = lhs {op} rhs[i];
     }}
     return ret;
 }}
 
-template<typename T, typename U, oc_uint N>
+template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, 1> lhs, oc_array<U, N> rhs) {{
     return lhs[0] {op} rhs;
 }}
@@ -342,25 +342,25 @@ def define_operator():
             content += string + "\n"
 
     fun = f"""
-template<oc_uint N>
+template<size_t N>
 [[nodiscard]] oc_bool oc_any(oc_array<oc_bool, N> arg) {{
     oc_bool ret = arg[0];
-    for(oc_uint i = 1u; i < N; ++i) {{
+    for(size_t i = 1u; i < N; ++i) {{
         ret = ret || arg[i];
     }}
     return ret;
 }}
 
-template<oc_uint N>
+template<size_t N>
 [[nodiscard]] oc_bool oc_all(oc_array<oc_bool, N> arg) {{
     oc_bool ret = arg[0];
-    for(oc_uint i = 1u; i < N; ++i) {{
+    for(size_t i = 1u; i < N; ++i) {{
         ret = ret && arg[i];
     }}
     return ret;
 }}
 
-template<oc_uint N>
+template<size_t N>
 [[nodiscard]] oc_bool oc_none(oc_array<oc_bool, N> arg) {{
     return !oc_any(arg);
 }}
@@ -417,11 +417,11 @@ def define_matrix():
 
         struct += (
             get_indent(1)
-            + "__device__ auto &operator[](oc_uint i) noexcept { return cols[i]; }\n"
+            + "__device__ auto &operator[](size_t i) noexcept { return cols[i]; }\n"
         )
         struct += (
             get_indent(1)
-            + "__device__ auto operator[](oc_uint i) const noexcept { return cols[i]; }\n"
+            + "__device__ auto operator[](size_t i) const noexcept { return cols[i]; }\n"
         )
         struct += "};\n \n"
         content += struct
@@ -507,10 +507,10 @@ def define_select():
         content += "\n"
 
     content += """
-template<typename P, typename T, oc_uint N>
+template<typename P, typename T, size_t N>
 [[nodiscard]] __device__ oc_array<T, N> oc_select(const oc_array<P, N> &pred, const oc_array<T, N> &t, const oc_array<T, N> &f) noexcept {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_select(static_cast<oc_bool>(pred[i]), t[i], f[i]);
     }
     return ret;
@@ -548,8 +548,8 @@ def define_unary_func(func_name, need_array, param):
         t_elm_type = f"{prefix}_{scalar}"
         t_ret_type = f"oc_array<T, N>"
         t_body = f"\n    {t_ret_type} ret{{}};\n"
-        t_body += f"    for(oc_uint i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);\n    return ret;\n"
-        ff = f"template<typename T, oc_uint N>\n__device__ {t_ret_type} {prefix}_{func_name}(oc_array<T, N> x) {{{t_body}}}\n"
+        t_body += f"    for(size_t i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);\n    return ret;\n"
+        ff = f"template<typename T, size_t N>\n__device__ {t_ret_type} {prefix}_{func_name}(oc_array<T, N> x) {{{t_body}}}\n"
         content += ff
 
     content += "\n"
@@ -881,10 +881,10 @@ def define_binary_func(func_name, param):
                 )
             func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body_vec} }}\n"
             content += func
-    string = f"""template<typename T, oc_uint N>
+    string = f"""template<typename T, size_t N>
 oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> {prefix}_{func_name}(oc_array<T, N> lhs, oc_array<T, N> rhs) {{
     oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {{
+    for(size_t i = 0; i < N; ++i) {{
         ret[i] = {prefix}_{func_name}(lhs[i], rhs[i]);
     }}
     return ret;
@@ -959,10 +959,10 @@ def define_triple_func(tab):
                 )
             vec_func = f"__device__ {vec_ret_type} {prefix}_{func_name}({arg_type}{dim} v0, {arg_type}{dim} v1, {arg_type}{dim} v2) {{ {vec_body} }}\n"
             content += vec_func
-        string = f"""template<oc_uint N>
+        string = f"""template<size_t N>
 oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, N> v0, oc_array<{prefix}_{scalar}, N> v1, oc_array<{prefix}_{scalar}, N> v2) {{
     oc_array<{prefix}_{scalar}, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {{
+    for(size_t i = 0; i < N; ++i) {{
         ret[i] = {prefix}_{func_name}(v0[i], v1[i], v2[i]);
     }}
     return ret;
@@ -1093,7 +1093,7 @@ def main():
     global content
     curr_dir = dirname(realpath(__file__))
     define_operator()
-    define_select()
+    # define_select()
     define_unary_funcs()
     define_binary_funcs()
     define_triple_funcs()

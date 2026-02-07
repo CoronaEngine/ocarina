@@ -359,7 +359,7 @@ __device__ void oc_byte_buffer_write(OCBuffer<oc_uchar> buffer, oc_ulong offset,
     ref[0] = val;
 }
 
-template<oc_uint N>
+template<size_t N>
 __device__ oc_array<float, N> oc_tex3d_sample_float_impl(cudaTextureObject_t texture, oc_float u, oc_float v, oc_float w = 0.f) noexcept {
     if constexpr (N == 1) {
         auto ret = tex3D<float>(texture, u, v, w);
@@ -377,19 +377,19 @@ __device__ oc_array<float, N> oc_tex3d_sample_float_impl(cudaTextureObject_t tex
     return {};
 }
 
-template<oc_uint N>
+template<size_t N>
 __device__ oc_array<float, N> oc_tex3d_sample_float(OCTextureDesc obj, oc_float u, oc_float v, oc_float w = 0.f) noexcept {
     return oc_tex3d_sample_float_impl<N>(obj.texture, u, v, w);
 }
 
-template<oc_uint N>
+template<size_t N>
 __device__ oc_array<float, N> oc_bindless_array_tex3d_sample(OCBindlessArrayDesc bindless_array, oc_uint tex_index,
                                                            oc_float u, oc_float v, oc_float w = 0.f) noexcept {
     cudaTextureObject_t texture = bindless_array.tex3d_slot[tex_index];
     return oc_tex3d_sample_float_impl<N>(texture, u, v, w);
 }
 
-template<oc_uint N>
+template<size_t N>
 __device__ oc_array<float, N> oc_tex2d_sample_float_impl(cudaTextureObject_t texture, oc_float u, oc_float v) noexcept {
     if constexpr (N == 1) {
         auto ret = tex2D<float>(texture, u, v);
@@ -407,12 +407,12 @@ __device__ oc_array<float, N> oc_tex2d_sample_float_impl(cudaTextureObject_t tex
     return {};
 }
 
-template<oc_uint N>
+template<size_t N>
 __device__ oc_array<float, N> oc_tex2d_sample_float(OCTextureDesc obj, oc_float u, oc_float v) noexcept {
     return oc_tex2d_sample_float_impl<N>(obj.texture, u, v);
 }
 
-template<oc_uint N>
+template<size_t N>
 __device__ oc_array<float, N> oc_bindless_array_tex2d_sample(OCBindlessArrayDesc bindless_array, oc_uint tex_index,
                                                            oc_float u, oc_float v) noexcept {
     cudaTextureObject_t texture = bindless_array.tex2d_slot[tex_index];
