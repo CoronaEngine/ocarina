@@ -133,39 +133,46 @@ namespace ocarina {
 
 namespace detail {
 
-template<size_t N, typename T, typename U, size_t... index>
-static constexpr auto dot_helper(Vector<T, N> a, Vector<U, N> b, ocarina::index_sequence<index...>) {
+template<template<typename, size_t> typename Container, size_t N,
+         typename T, typename U, size_t... index>
+static constexpr auto dot_helper(Container<T, N> a, Container<U, N> b,
+                                 ocarina::index_sequence<index...>) {
     return ((a[index] * b[index]) + ...);
 }
 }// namespace detail
 
-template<size_t N, typename T, typename U>
-static constexpr auto dot(Vector<T, N> lhs, Vector<U, N> rhs) {
+template<template<typename, size_t> typename Container,
+         size_t N, typename T, typename U>
+static constexpr auto dot(Container<T, N> lhs, Container<U, N> rhs) {
     return detail::dot_helper(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
-template<size_t N, typename T>
-static constexpr auto length_squared(Vector<T, N> v) {
+template<template<typename, size_t> typename Container,
+         size_t N, typename T>
+static constexpr auto length_squared(Container<T, N> v) {
     return dot(v, v);
 }
 
-template<size_t N, typename T>
-static constexpr auto length(Vector<T, N> v) {
+template<template<typename, size_t> typename Container,
+         size_t N, typename T>
+static constexpr auto length(Container<T, N> v) {
     return oc_sqrt(length_squared(v));
 }
 
-template<size_t N, typename T, typename U>
-static constexpr auto distance(Vector<T, N> a, Vector<U, N> b) {
+template<template<typename, size_t> typename Container,
+         size_t N, typename T, typename U>
+static constexpr auto distance(Container<T, N> a, Container<U, N> b) {
     return length(a - b);
 }
 
-template<size_t N, typename T, typename U>
-static constexpr auto distance_squared(Vector<T, N> a, Vector<U, N> b) {
+template<template<typename, size_t> typename Container,
+         size_t N, typename T, typename U>
+static constexpr auto distance_squared(Container<T, N> a, Container<U, N> b) {
     return length_squared(a - b);
 }
 
-template<size_t N, typename T>
-static constexpr auto normalize(Vector<T, N> v) {
+template<template<typename, size_t> typename Container, size_t N, typename T>
+static constexpr auto normalize(Container<T, N> v) {
     return v * oc_rsqrt(dot(v, v));
 }
 
