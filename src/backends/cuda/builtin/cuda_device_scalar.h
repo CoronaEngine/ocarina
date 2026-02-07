@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include <cuda_fp16.h>
-
 using oc_int = int;
 using oc_uint = unsigned int;
 using oc_half = half;
@@ -24,11 +22,6 @@ template<typename Dst, typename Src>
 Dst oc_static_cast(Src src) {
     return static_cast<Dst>(src);
 }
-
-// template<typename Dst>
-// Dst oc_static_cast(oc_half src) {
-//     return static_cast<Dst>(oc_half2float(src));
-// }
 
 namespace ocarina {
 namespace detail {
