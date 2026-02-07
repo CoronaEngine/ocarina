@@ -105,6 +105,19 @@ struct disjunction<First, Rest...> : conditional_t<bool(First::value), First, di
 
 OC_DEFINE_TEMPLATE_VALUE(disjunction)
 
+template<typename... B>
+struct conjunction;
+
+template<>
+struct conjunction<> : true_type {};
+
+template<typename First, typename... Rest>
+struct conjunction<First, Rest...>
+    : conditional_t<(sizeof...(Rest) == 0 || !bool(First::value)), First, conjunction<Rest...>> {};
+
+template<typename B>
+struct negation : integral_constant<bool, !bool(B::value)> {};
+
 namespace detail {
 template<typename T>
 struct is_integral_impl : public false_type {};
@@ -152,6 +165,24 @@ template<typename T>
 struct is_scalar : disjunction<is_integral<T>, is_floating_point<T>, is_boolean<T>> {};
 OC_DEFINE_TEMPLATE_VALUE(is_scalar)
 
+#define MAKE_TYPE_TRAITS(type)                             \
+    template<typename... Ts>                               \
+    using is_all_##type = conjunction<is_##type<Ts>...>;   \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_all_##type)          \
+    template<typename... Ts>                               \
+    using is_any_##type = disjunction<is_##type<Ts>...>;   \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_any_##type)          \
+    template<typename... Ts>                               \
+    using is_none_##type = negation<is_any_##type<Ts...>>; \
+    OC_DEFINE_TEMPLATE_VALUE_MULTI(is_none_##type)
+
+MAKE_TYPE_TRAITS(scalar)
+MAKE_TYPE_TRAITS(integral)
+MAKE_TYPE_TRAITS(floating_point)
+MAKE_TYPE_TRAITS(boolean)
+
+#undef MAKE_TYPE_TRAITS
+
 namespace detail {
 template<typename... Ts>
 struct make_void {
@@ -188,6 +219,16 @@ struct enable_if<true, T> {
 template<bool B, typename T = void>
 using enable_if_t = typename enable_if<B, T>::type;
 
+template<typename, typename, typename = void>
+struct is_addable : false_type {};
+
+template<typename T, typename F>
+struct is_addable<T, F, void_t<decltype(T{} + T{}), decltype(static_cast<decltype(T{} + T{})>(T{})), decltype(static_cast<decltype(T{} + T{})>(F{}))>> : true_type {};
+
+template<typename T, typename F>
+struct selectable : conjunction<is_scalar<T>, is_scalar<F>, is_addable<T, F>> {};
+OC_DEFINE_TEMPLATE_VALUE_MULTI(selectable)
+
 template<typename T, unsigned int N>
 class array {
 private:
@@ -211,3 +252,8 @@ public:
 
 template<typename T, unsigned int N>
 using oc_array = ocarina::array<T, N>;
+
+#undef OC_DEFINE_TEMPLATE_VALUE_MULTI
+#undef OC_DEFINE_TEMPLATE_VALUE
+#undef OC_DEFINE_TEMPLATE_TYPE
+#undef OC_DEFINE_TEMPLATE_TYPE_MULTI
