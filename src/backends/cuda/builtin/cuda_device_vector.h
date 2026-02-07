@@ -109,41 +109,45 @@ operator+(const ocarina::Vector<T, N> v) noexcept {
     return v;
 }
 
-template<typename T, size_t N>
-[[nodiscard]] __device__ constexpr auto
-operator-(const ocarina::Vector<T, N> v) noexcept {
-    using R = ocarina::Vector<T, N>;
-    if constexpr (N == 2) {
-        return R{-v.x, -v.y};
-    } else if constexpr (N == 3) {
-        return R{-v.x, -v.y, -v.z};
-    } else {
-        return R{-v.x, -v.y, -v.z, -v.w};
-    }
+namespace detail {
+
+template<typename T, size_t N, size_t... i>
+static constexpr auto construct_negative_helper(ocarina::Vector<T, N> v, ocarina::index_sequence<i...>) {
+    return ocarina::Vector<T, N>{(-v[i])...};
 }
+}// namespace detail
+
+template<typename T, size_t N>
+[[nodiscard]] constexpr auto
+operator-(ocarina::Vector<T, N> v) noexcept {
+    return detail::construct_negative_helper(v, ocarina::make_index_sequence<N>());
+}
+
+namespace detail {
+
+template<typename T, size_t N, size_t... i>
+static constexpr auto construct_logical_not_helper(ocarina::Vector<T, N> v, ocarina::index_sequence<i...>) {
+    return ocarina::Vector<bool, N>{!v[i]...};
+}
+}// namespace detail
 
 template<typename T, size_t N>
 [[nodiscard]] __device__ constexpr auto operator!(const ocarina::Vector<T, N> v) noexcept {
-    if constexpr (N == 2u) {
-        return ocarina::Vector<bool, 2>{!v.x, !v.y};
-    } else if constexpr (N == 3u) {
-        return ocarina::Vector<bool, 3>{!v.x, !v.y, !v.z};
-    } else {
-        return ocarina::Vector<bool, 3>{!v.x, !v.y, !v.z, !v.w};
-    }
+    return detail::construct_logical_not_helper(v, ocarina::make_index_sequence<N>());
 }
+
+namespace detail {
+
+template<typename T, size_t N, size_t... i>
+static constexpr auto construct_bitwise_not_helper(ocarina::Vector<T, N> v, ocarina::index_sequence<i...>) {
+    return ocarina::Vector<T, N>{~v[i]...};
+}
+}// namespace detail
 
 template<typename T, size_t N>
 [[nodiscard]] __device__ constexpr auto
 operator~(const ocarina::Vector<T, N> v) noexcept {
-    using R = ocarina::Vector<T, N>;
-    if constexpr (N == 2) {
-        return R{~v.x, ~v.y};
-    } else if constexpr (N == 3) {
-        return R{~v.x, ~v.y, ~v.z};
-    } else {
-        return R{~v.x, ~v.y, ~v.z, ~v.w};
-    }
+    return detail::construct_bitwise_not_helper(v, ocarina::make_index_sequence<N>());
 }
 
 #define OC_MAKE_VECTOR(type)  \

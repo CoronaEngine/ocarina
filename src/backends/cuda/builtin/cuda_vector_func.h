@@ -16,6 +16,10 @@ static constexpr auto dot(Vector<T, N> lhs, Vector<U, N> rhs) {
     return detail::dot_helper(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
-
-
 }// namespace ocarina
+
+namespace ocarina {
+
+
+
+}

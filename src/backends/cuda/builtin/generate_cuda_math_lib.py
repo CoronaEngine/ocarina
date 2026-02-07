@@ -946,12 +946,10 @@ def main():
     global content
     curr_dir = dirname(realpath(__file__))
     define_operator()
-    # define_select()
     define_unary_funcs()
     define_binary_funcs()
     define_triple_funcs()
     define_vec_func()
-    # define_make_vecs()
 
     content += "\n "
     content += "\n "

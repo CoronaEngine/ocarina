@@ -71,16 +71,18 @@ int main() {
 //        b = a;
 
         float3 f3 = make_float3(1.6f,5.f, 9.f);
-        half3 h3 = make_float3(1.9f, 2.f, 3.f);
+        Half3 h3 = make_float3(1.9f, 2.f, 3.f);
         Half3 t3 = make_float3(0.5f, 0.5f, 0.5f);
 
-        auto aaa = lerp(t3,f3, h3);
+        auto aaa = lerp(1.f,h3, h3 - h3);
 
 //        buffer.write(0, h3);
 //        Float4 f4 = make_float4(h3,half( 1.f));
 //        h3 = f3;
 
         h3 = f3.xyz();
+
+
 
         auto bbb = ocarina::select(bool3{} , half3{} , float3{});
 
