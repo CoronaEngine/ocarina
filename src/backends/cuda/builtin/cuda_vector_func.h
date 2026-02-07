@@ -12,6 +12,32 @@
 
 namespace ocarina {
 
+namespace detail {
+
+template<size_t N, template<typename, size_t> typename Container, typename P, typename T, typename F, size_t... i>
+[[nodiscard]] constexpr auto select_helper(Container<P, N> pred, Container<T, N> t, Container<F, N> f, ocarina::index_sequence<i...>) {
+    using scalar_type = decltype(ocarina::select(bool{}, T{}, F{}));
+    return Container<scalar_type, N>{ocarina::select(pred[i], t[i], f[i])...};
+}
+
+}// namespace detail
+
+template<size_t N, template<typename, size_t> typename Container, typename P, typename T, typename F>
+[[nodiscard]] constexpr auto select(Container<P, N> pred, Container<T, N> t, Container<F, N> f) {
+    return detail::select_helper(pred, t, f, ocarina::make_index_sequence<N>());
+}
+
+template<size_t N, template<typename, size_t> typename Container, typename P, typename T, typename F>
+[[nodiscard]] constexpr auto select(P pred, Container<T, N> t, Container<F, N> f) {
+    return select(Container<P, N>(pred), t, f);
+}
+
+}// namespace ocarina
+
+OC_MAKE_FUNCTION_GLOBAL(select)
+
+namespace ocarina {
+
 template<typename T, typename U, typename V,
          ocarina::enable_if_t<is_all_scalar_v<T, U, V>, int> = 0>
 static constexpr auto lerp(T t, U a, V b) {

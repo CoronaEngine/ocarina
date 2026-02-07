@@ -168,46 +168,42 @@ OC_MAKE_VECTOR(oc_ulong)
 
 #undef OC_MAKE_VECTOR
 
-#define OC_MAKE_VECTOR_BINARY_OPERATOR(op, name)                                                   \
-    namespace ocarina {                                                                            \
-    template<typename T, typename U, size_t N, size_t... i>                                        \
-    static constexpr auto construct_##name##_helper(ocarina::Vector<T, N> lhs,                     \
-                                                    ocarina::Vector<U, N> rhs,                     \
-                                                    ocarina::index_sequence<i...>) {               \
-        using scalar_type = decltype(T {} op U{});                                                 \
-                                                                                                   \
-        return ocarina::Vector<scalar_type, N>{(lhs[i] op rhs[i])...};                             \
-    }                                                                                              \
-    }                                                                                              \
-    template<typename T, typename U, size_t N>                                                     \
-    [[nodiscard]] OC_DEVICE_FLAG constexpr auto                                                    \
-    operator op(                                                                                   \
-        ocarina::Vector<T, N> lhs, ocarina::Vector<U, N> rhs) noexcept {                           \
-        return ocarina::construct_##name##_helper(lhs, rhs,                                        \
-                                                  ocarina::make_index_sequence<N>());              \
-    }                                                                                              \
-    template<typename T, typename U, size_t N>                                                     \
-    [[nodiscard]] OC_DEVICE_FLAG constexpr auto                                                    \
-    operator op(ocarina::Vector<T, N> lhs, U rhs) noexcept {                                       \
-        return lhs op ocarina::Vector<U, N>{rhs};                                                  \
-    }                                                                                              \
-    template<typename T, typename U, size_t N>                                                     \
-    [[nodiscard]] OC_DEVICE_FLAG constexpr auto                                                    \
-    operator op(T lhs, ocarina::Vector<U, N> rhs) noexcept {                                       \
-        return ocarina::Vector<T, N>{lhs} op rhs;                                                  \
-    }                                                                                              \
-    template<typename T, typename U, size_t N>                                                     \
-    OC_DEVICE_FLAG constexpr decltype(auto) operator op## = (ocarina::Vector<T, N> & lhs,          \
-                                                             ocarina::Vector<U, N> rhs) noexcept { \
-        lhs = lhs op rhs;                                                                          \
-        return (lhs);                                                                              \
-    }                                                                                              \
-    template<typename T, typename U, size_t N>                                                     \
-    OC_DEVICE_FLAG constexpr decltype(auto) operator op## = (ocarina::Vector<T, N> & lhs,          \
-                                                             U rhs) noexcept {                     \
-        return (lhs op## = ocarina::Vector<U, N>{rhs});                                            \
+#define OC_MAKE_VECTOR_BINARY_OPERATOR(op, name)                                                           \
+    namespace ocarina {                                                                                    \
+    template<template<typename, size_t> typename Container, typename T, typename U, size_t N, size_t... i> \
+    static constexpr auto construct_##name##_helper(Container<T, N> lhs,                                   \
+                                                    Container<U, N> rhs,                                   \
+                                                    ocarina::index_sequence<i...>) {                       \
+        using scalar_type = decltype(T {} op U{});                                                         \
+        return Container<scalar_type, N>{(lhs[i] op rhs[i])...};                                           \
+    }                                                                                                      \
+    }                                                                                                      \
+    template<template<typename, size_t> typename Container, typename T, typename U, size_t N>              \
+    [[nodiscard]] OC_DEVICE_FLAG constexpr auto                                                            \
+    operator op(Container<T, N> lhs, Container<U, N> rhs) noexcept {                                       \
+        return ocarina::construct_##name##_helper<Container, T, U, N>(lhs, rhs,                            \
+                                                                      ocarina::make_index_sequence<N>());  \
+    }                                                                                                      \
+    template<template<typename, size_t> typename Container, typename T, typename U, size_t N>              \
+    [[nodiscard]] OC_DEVICE_FLAG constexpr auto                                                            \
+    operator op(Container<T, N> lhs, U rhs) noexcept {                                                     \
+        return lhs op Container<U, N>{rhs};                                                                \
+    }                                                                                                      \
+    template<template<typename, size_t> typename Container, typename T, typename U, size_t N>              \
+    [[nodiscard]] OC_DEVICE_FLAG constexpr auto                                                            \
+    operator op(T lhs, Container<U, N> rhs) noexcept {                                                     \
+        return Container<T, N>{lhs} op rhs;                                                                \
+    }                                                                                                      \
+    template<template<typename, size_t> typename Container, typename T, typename U, size_t N>              \
+    OC_DEVICE_FLAG constexpr decltype(auto) operator op## = (Container<T, N> & lhs,                        \
+                                                             Container<U, N> rhs) noexcept {               \
+        lhs = lhs op rhs;                                                                                  \
+        return (lhs);                                                                                      \
+    }                                                                                                      \
+    template<template<typename, size_t> typename Container, typename T, typename U, size_t N>              \
+    OC_DEVICE_FLAG constexpr decltype(auto) operator op## = (Container<T, N> & lhs, U rhs) noexcept {      \
+        return (lhs op## = Container<U, N>{rhs});                                                          \
     }
-
 OC_MAKE_VECTOR_BINARY_OPERATOR(+, add)
 OC_MAKE_VECTOR_BINARY_OPERATOR(-, sub)
 OC_MAKE_VECTOR_BINARY_OPERATOR(*, mul)
@@ -339,32 +335,7 @@ OC_MAKE_TYPE_N(char)
 }// namespace ocarina
 #undef OC_MAKE_TYPE_N
 
-namespace ocarina {
 
-namespace detail {
-
-template<size_t N, template<typename, size_t> typename Container, typename P, typename T, typename F, size_t... i>
-[[nodiscard]] constexpr auto select_helper(Container<P, N> pred, Container<T, N> t, Container<F, N> f, ocarina::index_sequence<i...>) {
-    using scalar_type = decltype(ocarina::select(bool{}, T{}, F{}));
-    return Container<scalar_type, N>{ocarina::select(pred[i], t[i], f[i])...};
-}
-
-}// namespace detail
-
-template<size_t N, template<typename, size_t> typename Container, typename P, typename T, typename F>
-[[nodiscard]] constexpr auto select(Container<P, N> pred, Container<T, N> t, Container<F, N> f) {
-    return detail::select_helper(pred, t, f, ocarina::make_index_sequence<N>());
-}
-
-template<size_t N, template<typename, size_t> typename Container, typename P, typename T, typename F>
-[[nodiscard]] constexpr auto select(P pred, Container<T, N> t, Container<F, N> f) {
-    return select(Container<P, N>(pred), t, f);
-}
-
-}// namespace ocarina
-
-template<typename... Args>
-[[nodiscard]] constexpr auto oc_select(Args... args) noexcept { return ocarina::select(args...); }
 
 #define OC_MAKE_VECTOR_MAKER(type, N) \
     template<typename... Args>        \
