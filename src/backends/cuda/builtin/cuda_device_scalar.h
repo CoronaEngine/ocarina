@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "cuda_device_std.h"
+
 using oc_int = int;
 using oc_uint = unsigned int;
 using oc_half = half;

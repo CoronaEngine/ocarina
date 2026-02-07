@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "cuda_device_vector.h"
+
 namespace ocarina {
 
 template<typename T, size_t N, size_t M>

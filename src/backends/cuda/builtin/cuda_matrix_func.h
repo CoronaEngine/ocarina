@@ -1,3 +1,8 @@
+
+#pragma once
+
+#include "cuda_device_matrix.h"
+
 #define OC_MATRIX_UNARY_FUNC(func)                                                                                        \
     template<typename T, size_t N, size_t M, size_t... i>                                                                 \
     [[nodiscard]] ocarina::Matrix<T, N, M> func##_impl(ocarina::Matrix<T, N, M> m, ocarina::index_sequence<i...>) noexcept { \

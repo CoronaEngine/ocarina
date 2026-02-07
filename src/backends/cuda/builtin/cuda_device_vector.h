@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "cuda_device_scalar.h"
+
 namespace ocarina {
 
 namespace detail {
