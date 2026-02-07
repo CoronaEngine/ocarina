@@ -105,51 +105,52 @@ OC_MAKE_VECTOR_TYPES(ulong)
 
 #define OC_MAKE_VECTOR_N(type, dim) using type##dim = ocarina::Vector<type, dim>;
 
-template<typename T, size_t N>
+template<template<typename, size_t> typename Container, typename T, size_t N>
 [[nodiscard]] OC_DEVICE_FLAG constexpr auto
-operator+(const ocarina::Vector<T, N> v) noexcept {
+operator+(const Container<T, N> v) noexcept {
     return v;
 }
 
 namespace detail {
 
-template<typename T, size_t N, size_t... i>
-static constexpr auto construct_negative_helper(ocarina::Vector<T, N> v, ocarina::index_sequence<i...>) {
-    return ocarina::Vector<T, N>{(-v[i])...};
+template<template<typename, size_t> typename Container, typename T, size_t N, size_t... i>
+static constexpr auto construct_negative_helper(Container<T, N> v,
+                                                ocarina::index_sequence<i...>) {
+    return Container<T, N>{(-v[i])...};
 }
 }// namespace detail
 
-template<typename T, size_t N>
+template<template<typename, size_t> typename Container, typename T, size_t N>
 [[nodiscard]] constexpr auto
-operator-(ocarina::Vector<T, N> v) noexcept {
-    return detail::construct_negative_helper(v, ocarina::make_index_sequence<N>());
+operator-(Container<T, N> v) noexcept {
+    return detail::construct_negative_helper<Container, T, N>(v, ocarina::make_index_sequence<N>());
 }
 
 namespace detail {
 
-template<typename T, size_t N, size_t... i>
-static constexpr auto construct_logical_not_helper(ocarina::Vector<T, N> v, ocarina::index_sequence<i...>) {
-    return ocarina::Vector<bool, N>{!v[i]...};
+template<template<typename, size_t> typename Container, typename T, size_t N, size_t... i>
+static constexpr auto construct_logical_not_helper(Container<T, N> v, ocarina::index_sequence<i...>) {
+    return Container<bool, N>{!v[i]...};
 }
 }// namespace detail
 
-template<typename T, size_t N>
-[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator!(const ocarina::Vector<T, N> v) noexcept {
-    return detail::construct_logical_not_helper(v, ocarina::make_index_sequence<N>());
+template<template<typename, size_t> typename Container, typename T, size_t N>
+[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator!(const Container<T, N> v) noexcept {
+    return detail::construct_logical_not_helper<Container, T, N>(v, ocarina::make_index_sequence<N>());
 }
 
 namespace detail {
 
-template<typename T, size_t N, size_t... i>
-static constexpr auto construct_bitwise_not_helper(ocarina::Vector<T, N> v, ocarina::index_sequence<i...>) {
-    return ocarina::Vector<T, N>{~v[i]...};
+template<template<typename, size_t> typename Container, typename T, size_t N, size_t... i>
+static constexpr auto construct_bitwise_not_helper(Container<T, N> v, ocarina::index_sequence<i...>) {
+    return Container<T, N>{~v[i]...};
 }
 }// namespace detail
 
-template<typename T, size_t N>
+template<template<typename, size_t> typename Container, typename T, size_t N>
 [[nodiscard]] OC_DEVICE_FLAG constexpr auto
-operator~(const ocarina::Vector<T, N> v) noexcept {
-    return detail::construct_bitwise_not_helper(v, ocarina::make_index_sequence<N>());
+operator~(const Container<T, N> v) noexcept {
+    return detail::construct_bitwise_not_helper<Container, T, N>(v, ocarina::make_index_sequence<N>());
 }
 
 #define OC_MAKE_VECTOR(type)  \
@@ -334,8 +335,6 @@ OC_MAKE_TYPE_N(ulong)
 OC_MAKE_TYPE_N(char)
 }// namespace ocarina
 #undef OC_MAKE_TYPE_N
-
-
 
 #define OC_MAKE_VECTOR_MAKER(type, N) \
     template<typename... Args>        \
