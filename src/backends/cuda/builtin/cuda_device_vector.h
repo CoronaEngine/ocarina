@@ -369,7 +369,12 @@ template<size_t N, typename T, typename F, size_t... i>
 
 template<size_t N, typename T, typename F>
 [[nodiscard]] constexpr auto select(Vector<bool, N> pred, Vector<T, N> t, Vector<F, N> f) {
-    return detail::select_helper<N, T, F>(pred, t, f, ocarina::make_index_sequence<N>());
+    return detail::select_helper(pred, t, f, ocarina::make_index_sequence<N>());
+}
+
+template<size_t N, typename T, typename F>
+[[nodiscard]] constexpr auto select(bool pred, Vector<T, N> t, Vector<F, N> f) {
+    return select(Vector<bool, N>(pred), t, f);
 }
 
 }// namespace ocarina
