@@ -61,9 +61,10 @@ requires ocarina::is_scalar_v<T>
 }
 
 template<typename T, typename F>
-requires (type_dimension_v<T> == type_dimension_v<F> && is_all_basic_v<T, F>)
+requires concepts::selectable<T, F>
 [[nodiscard]] constexpr auto select(bool pred, T &&t, F &&f) noexcept {
-    return pred ? t : f;
+    using ret_type = decltype(std::declval<T>() + std::declval<F>());
+    return pred ? ret_type(t) : ret_type(f);
 }
 
 template<typename T>

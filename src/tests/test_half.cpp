@@ -47,20 +47,48 @@ int main() {
 
     auto ts = TypeDesc<half3x3>::name();
 
+    float3 h3;
+    half3x3 h33;
+
+    auto rrr = int{-1} + uint{0};
+
+    auto re = uint3{}.x + int3{1,2,3}.xyz();
+
+    auto lll = lerp(float{} ,float3 {}, float3{});
+
+    auto res = h33 * float{};
+
+    Buffer<float3> buffer = device.create_buffer<float3>(1);
+
+    bool b = static_cast<bool>(half{});
+
+
     Kernel kernel = [&](Float f) {
 //        $info("{} ", f);
-        Half3x3 h3 = (make_half3x3(f));
         sqrt(Half{});
-        uint3 a;
-        int3 b;
+//        Uint3 a = make_uint3(3);
+//        Int3 b ;
 //        b = a;
 
-        rcp(h3[0][0]);
-        Float3 f3 = make_float3(0.8f,0.5f, 1.f);
-        auto xx = to_general_vector<3>(f3);
-int i = 0;
-        auto ret = lerp(f3.y,f3 -1.f ,f3);
-        $info("---  {} {} {} , {}", ret.x, ret.y, ret.z, h3[0][0]);
+        Float3 f3 = make_float3(1.f,5.f, 9.f);
+        Half3 h3 = make_float3(1.f, 2.f, 3.f);
+//        buffer.write(0, h3);
+//        Float4 f4 = make_float4(h3,half( 1.f));
+//        h3 = f3;
+
+        h3 = f3.xyz();
+
+        auto bbb = ocarina::select(bool3{} , half3{} , float3{});
+
+//        auto a3 = ocarina::select(make_bool3(1,0,1).xyz(), uint3{5,6,7}, float3{1,2,3}.xyz());
+
+//        auto re = f3.x * h3.xyz() ;
+
+//        re = h3.xxx();
+
+//      $info("------  {} {} {} ", Uint3{});
+      $info("---  {} {} {} ", sqrt(h3) );
+      $info("------==  {} {} {} ", Uint3{});
     };
     auto shader = device.compile(kernel);
     stream << shader(6.f).dispatch(1) << Env::printer().retrieve();

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "math/basic_types.h"
+#include "math/basic_traits.h"
 #include "stl.h"
 
 namespace ocarina::concepts {
@@ -53,6 +53,12 @@ concept span_convertible = requires(T v) {
 template<typename T, typename... Args>
 concept constructible = requires(Args... args) {
     T{args...};
+};
+
+template<typename T, typename F>
+concept selectable = is_all_scalar_v<T, F> && requires {
+    bool{} ? static_cast<decltype(std::declval<T>() + std::declval<F>())>(std::declval<T>()) :
+             static_cast<decltype(std::declval<T>() + std::declval<F>())>(std::declval<F>());
 };
 
 template<typename Dest, typename Src>
@@ -131,7 +137,7 @@ concept matrix4 = is_matrix4_v<T>;
 template<typename T>
 concept basic = is_basic_v<T>;
 
-template<typename ...Ts>
+template<typename... Ts>
 concept all_basic = is_all_basic_v<Ts...>;
 
 template<typename... T>

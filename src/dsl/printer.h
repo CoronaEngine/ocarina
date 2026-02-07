@@ -181,7 +181,7 @@ void Printer::_log(spdlog::level::level_enum level, const string &fmt, const Arg
         comment(desc_);
     }
 
-    constexpr array<uint, sizeof...(Args)> size_arr = {(is_dsl_v<Args> ? (sizeof(expr_value_t<Args>) / sizeof(uint)) : 0u)...};
+    constexpr array<uint, sizeof...(Args)> size_arr = {(is_dsl_v<Args> ? ((sizeof(expr_value_t<Args>) / sizeof(uint)) == 0 ? 1 : sizeof(expr_value_t<Args>) / sizeof(uint)) : 0u)...};
 
     constexpr uint total_size = std::accumulate(size_arr.begin(), size_arr.end(), 0);
 

@@ -49,13 +49,28 @@ private:
         return Vector<T, N>(oc_static_cast<T>(v[i])...);
     }
 
+    template<typename U, size_t... i>
+    void assign_helper(const Vector<U, N> &other, ocarina::index_sequence<i...>) noexcept {
+        ((this->operator[](i) = static_cast<T>(other[i])), ...);
+    }
+
 public:
     template<typename U>
     explicit constexpr Vector(U s) noexcept : Vector(oc_static_cast<T>(s)) {}
 
-    template<typename U, size_t NN, ocarina::enable_if_t<NN >= N, int> = 0>
+    template<typename U, size_t NN, ocarina::enable_if_t<(NN > N), int> = 0>
     explicit constexpr Vector(Vector<U, NN> v)
         : Vector{construct_helper(v, ocarina::make_index_sequence<N>())} {}
+
+    template<typename U>
+    constexpr Vector(Vector<U, N> v)
+        : Vector{construct_helper(v, ocarina::make_index_sequence<N>())} {}
+
+    template<typename U>
+    constexpr Vector &operator=(Vector<U, N> other) noexcept {
+        assign_helper<U>(other, ocarina::make_index_sequence<N>());
+        return *this;
+    }
 
     __device__ constexpr T &operator[](size_t index) noexcept { return (&(this->x))[index]; }
     __device__ constexpr const T &operator[](size_t index) const noexcept { return (&(this->x))[index]; }
@@ -85,8 +100,6 @@ OC_MAKE_VECTOR_TYPES(ulong)
 #undef OC_MAKE_VECTOR_TYPES
 
 }// namespace ocarina
-
-
 
 #define OC_MAKE_VECTOR_N(type, dim) using type##dim = ocarina::Vector<type, dim>;
 
@@ -147,6 +160,8 @@ OC_MAKE_VECTOR(oc_uchar)
 OC_MAKE_VECTOR(oc_ushort)
 OC_MAKE_VECTOR(oc_ulong)
 
+#undef OC_MAKE_VECTOR
+
 #define OC_MAKE_VECTOR_BINARY_OPERATOR(op, ...)                          \
     template<typename T, typename U, size_t N>                           \
     [[nodiscard]] __device__ constexpr auto                              \
@@ -192,6 +207,8 @@ OC_MAKE_VECTOR_BINARY_OPERATOR(|, ocarina::is_all_integral_v<T, U>)
 OC_MAKE_VECTOR_BINARY_OPERATOR(&, ocarina::is_all_integral_v<T, U>)
 OC_MAKE_VECTOR_BINARY_OPERATOR(^, ocarina::is_all_integral_v<T, U>)
 
+#undef OC_MAKE_VECTOR_BINARY_OPERATOR
+
 #define OC_MAKE_VECTOR_ASSIGN_OPERATOR(op, ...)                           \
     template<typename T, typename U, size_t N>                            \
     __device__ constexpr decltype(auto) operator op(                      \
@@ -218,6 +235,8 @@ OC_MAKE_VECTOR_ASSIGN_OPERATOR(>>=, ocarina::is_all_integral_v<T, U>)
 OC_MAKE_VECTOR_ASSIGN_OPERATOR(|=, ocarina::is_all_integral_v<T, U>)
 OC_MAKE_VECTOR_ASSIGN_OPERATOR(&=, ocarina::is_all_integral_v<T, U>)
 OC_MAKE_VECTOR_ASSIGN_OPERATOR(^=, ocarina::is_all_integral_v<T, U>)
+
+#undef OC_MAKE_VECTOR_ASSIGN_OPERATOR
 
 #define OC_MAKE_VECTOR_LOGIC_OPERATOR(op, ...)                           \
     template<typename T, size_t N>                                       \
@@ -259,3 +278,104 @@ OC_MAKE_VECTOR_LOGIC_OPERATOR(<, ocarina::is_all_number_v<T>)
 OC_MAKE_VECTOR_LOGIC_OPERATOR(>, ocarina::is_all_number_v<T>)
 OC_MAKE_VECTOR_LOGIC_OPERATOR(<=, ocarina::is_all_number_v<T>)
 OC_MAKE_VECTOR_LOGIC_OPERATOR(>=, ocarina::is_all_number_v<T>)
+
+#undef OC_MAKE_VECTOR_LOGIC_OPERATOR
+
+#define OC_MAKE_TYPE_N(type)                                                                                                 \
+    [[nodiscard]] constexpr auto make_##type##2(type s = {}) noexcept { return type##2(s); }                                 \
+    [[nodiscard]] constexpr auto make_##type##2(type x, type y) noexcept { return type##2(x, y); }                           \
+    template<typename T, size_t N, ocarina::enable_if_t<N >= 2, int> = 0>                                                    \
+    [[nodiscard]] constexpr auto make_##type##2(Vector<T, N> v) noexcept {                                                   \
+        return type##2(                                                                                                      \
+            static_cast<type>(v.x),                                                                                          \
+            static_cast<type>(v.y));                                                                                         \
+    }                                                                                                                        \
+    template<typename T, size_t N, ocarina::enable_if_t<N >= 2, int> = 0>                                                    \
+    [[nodiscard]] constexpr auto make_##type##2(ocarina::array<T, N> v) noexcept {                                           \
+        return type##2(                                                                                                      \
+            static_cast<type>(v[0]),                                                                                         \
+            static_cast<type>(v[1]));                                                                                        \
+    }                                                                                                                        \
+                                                                                                                             \
+    [[nodiscard]] constexpr auto make_##type##3(type s = {}) noexcept { return type##3(s); }                                 \
+    [[nodiscard]] constexpr auto make_##type##3(type x, type y, type z) noexcept { return type##3(x, y, z); }                \
+    template<typename T, size_t N, ocarina::enable_if_t<N >= 3, int> = 0>                                                    \
+    [[nodiscard]] constexpr auto make_##type##3(Vector<T, N> v) noexcept {                                                   \
+        return type##3(                                                                                                      \
+            static_cast<type>(v.x),                                                                                          \
+            static_cast<type>(v.y),                                                                                          \
+            static_cast<type>(v.z));                                                                                         \
+    }                                                                                                                        \
+    template<typename T, size_t N, ocarina::enable_if_t<N >= 3, int> = 0>                                                    \
+    [[nodiscard]] constexpr auto make_##type##3(ocarina::array<T, N> v) noexcept {                                           \
+        return type##3(                                                                                                      \
+            static_cast<type>(v[0]),                                                                                         \
+            static_cast<type>(v[1]),                                                                                         \
+            static_cast<type>(v[2]));                                                                                        \
+    }                                                                                                                        \
+    [[nodiscard]] constexpr auto make_##type##3(type##2 v, type z) noexcept { return type##3(v.x, v.y, z); }                 \
+    [[nodiscard]] constexpr auto make_##type##3(type x, type##2 v) noexcept { return type##3(x, v.x, v.y); }                 \
+    [[nodiscard]] constexpr auto make_##type##3(type##4 v) noexcept { return type##3(v.x, v.y, v.z); }                       \
+                                                                                                                             \
+    [[nodiscard]] constexpr auto make_##type##4(type s = {}) noexcept { return type##4(s); }                                 \
+    [[nodiscard]] constexpr auto make_##type##4(type x, type y, type z, type w) noexcept { return type##4(x, y, z, w); }     \
+    template<typename T, size_t N, ocarina::enable_if_t<N == 4, int> = 0>                                                    \
+    [[nodiscard]] constexpr auto make_##type##4(Vector<T, N> v) noexcept {                                                   \
+        return type##4(                                                                                                      \
+            static_cast<type>(v.x),                                                                                          \
+            static_cast<type>(v.y),                                                                                          \
+            static_cast<type>(v.z),                                                                                          \
+            static_cast<type>(v.w));                                                                                         \
+    }                                                                                                                        \
+    template<typename T, size_t N, ocarina::enable_if_t<N == 4, int> = 0>                                                    \
+    [[nodiscard]] constexpr auto make_##type##4(ocarina::array<T, N> v) noexcept {                                           \
+        return type##4(                                                                                                      \
+            static_cast<type>(v[0]),                                                                                         \
+            static_cast<type>(v[1]),                                                                                         \
+            static_cast<type>(v[2]),                                                                                         \
+            static_cast<type>(v[3]));                                                                                        \
+    }                                                                                                                        \
+    [[nodiscard]] constexpr auto make_##type##4(type##2 v, type z, type w) noexcept { return type##4(v.x, v.y, z, w); }      \
+    [[nodiscard]] constexpr auto make_##type##4(type x, type##2 v, type w) noexcept { return type##4(x, v.x, v.y, w); }      \
+    [[nodiscard]] constexpr auto make_##type##4(type x, type y, type##2 v) noexcept { return type##4(x, y, v.x, v.y); }      \
+    [[nodiscard]] constexpr auto make_##type##4(type##2 xy, type##2 zw) noexcept { return type##4(xy.x, xy.y, zw.x, zw.y); } \
+    [[nodiscard]] constexpr auto make_##type##4(type##3 v, type w) noexcept { return type##4(v.x, v.y, v.z, w); }            \
+    [[nodiscard]] constexpr auto make_##type##4(type x, type##3 v) noexcept { return type##4(x, v.x, v.y, v.z); }
+
+namespace ocarina {
+OC_MAKE_TYPE_N(bool)
+OC_MAKE_TYPE_N(float)
+OC_MAKE_TYPE_N(half)
+OC_MAKE_TYPE_N(int)
+OC_MAKE_TYPE_N(uint)
+OC_MAKE_TYPE_N(uchar)
+OC_MAKE_TYPE_N(short)
+OC_MAKE_TYPE_N(ushort)
+OC_MAKE_TYPE_N(ulong)
+OC_MAKE_TYPE_N(char)
+}// namespace ocarina
+
+//#undef OC_MAKE_TYPE_N
+
+#define OC_MAKE_VECTOR_MAKER(type, N) \
+    template<typename... Args>        \
+    [[nodiscard]] constexpr auto oc_make_##type##N(Args... args) noexcept { return ocarina::make_##type##N(args...); }
+
+#define OC_MAKE_VECTOR_MAKER_FOR_TYPE(type) \
+    OC_MAKE_VECTOR_MAKER(type, 2)           \
+    OC_MAKE_VECTOR_MAKER(type, 3)           \
+    OC_MAKE_VECTOR_MAKER(type, 4)
+
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(bool)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(float)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(half)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(int)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(uint)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(uchar)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(short)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(ushort)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(ulong)
+OC_MAKE_VECTOR_MAKER_FOR_TYPE(char)
+
+#undef OC_MAKE_VECTOR_MAKER
+#undef OC_MAKE_VECTOR_MAKER_FOR_TYPE

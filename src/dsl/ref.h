@@ -560,9 +560,9 @@ struct Proxy : public ocarina::detail::Ref<T> {
     static_assert(ocarina::always_false_v<T>, "proxy is invalid !");
 };
 
-#define OC_MAKE_GET_PROXY                                                                      \
-    auto operator->() noexcept { return reinterpret_cast<ocarina::Proxy<this_type> *>(this); } \
-    auto operator->() const noexcept { return reinterpret_cast<const ocarina::Proxy<this_type> *>(this); }
+#define OC_MAKE_GET_PROXY                                                                     \
+    auto operator->() noexcept { return reinterpret_cast<ocarina::Proxy<org_type> *>(this); } \
+    auto operator->() const noexcept { return reinterpret_cast<const ocarina::Proxy<org_type> *>(this); }
 
 #define OC_MAKE_PROXY(S) \
     template<>           \
