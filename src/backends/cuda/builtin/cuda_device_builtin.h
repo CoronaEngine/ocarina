@@ -1489,59 +1489,6 @@ oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_
     return ret;
 }
 
-OC_DEVICE_FLAG oc_float oc_clamp(oc_float v0, oc_float v1, oc_float v2) { return oc_min(v2, oc_max(v1, v0)); }
-OC_DEVICE_FLAG oc_float2 oc_clamp(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
-OC_DEVICE_FLAG oc_float3 oc_clamp(oc_float3 v0, oc_float3 v1, oc_float3 v2) { return oc_float3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
-OC_DEVICE_FLAG oc_float4 oc_clamp(oc_float4 v0, oc_float4 v1, oc_float4 v2) { return oc_float4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<size_t N>
-oc_array<oc_float, N> oc_clamp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
-    oc_array<oc_float, N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
-    }
-    return ret;
-}
-
-OC_DEVICE_FLAG oc_uint oc_clamp(oc_uint v0, oc_uint v1, oc_uint v2) { return oc_min(v2, oc_max(v1, v0)); }
-OC_DEVICE_FLAG oc_uint2 oc_clamp(oc_uint2 v0, oc_uint2 v1, oc_uint2 v2) { return oc_uint2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
-OC_DEVICE_FLAG oc_uint3 oc_clamp(oc_uint3 v0, oc_uint3 v1, oc_uint3 v2) { return oc_uint3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
-OC_DEVICE_FLAG oc_uint4 oc_clamp(oc_uint4 v0, oc_uint4 v1, oc_uint4 v2) { return oc_uint4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<size_t N>
-oc_array<oc_uint, N> oc_clamp(oc_array<oc_uint, N> v0, oc_array<oc_uint, N> v1, oc_array<oc_uint, N> v2) {
-    oc_array<oc_uint, N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
-    }
-    return ret;
-}
-
-OC_DEVICE_FLAG oc_int oc_clamp(oc_int v0, oc_int v1, oc_int v2) { return oc_min(v2, oc_max(v1, v0)); }
-OC_DEVICE_FLAG oc_int2 oc_clamp(oc_int2 v0, oc_int2 v1, oc_int2 v2) { return oc_int2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
-OC_DEVICE_FLAG oc_int3 oc_clamp(oc_int3 v0, oc_int3 v1, oc_int3 v2) { return oc_int3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
-OC_DEVICE_FLAG oc_int4 oc_clamp(oc_int4 v0, oc_int4 v1, oc_int4 v2) { return oc_int4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<size_t N>
-oc_array<oc_int, N> oc_clamp(oc_array<oc_int, N> v0, oc_array<oc_int, N> v1, oc_array<oc_int, N> v2) {
-    oc_array<oc_int, N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
-    }
-    return ret;
-}
-
-OC_DEVICE_FLAG oc_half oc_clamp(oc_half v0, oc_half v1, oc_half v2) { return oc_min(v2, oc_max(v1, v0)); }
-OC_DEVICE_FLAG oc_half2 oc_clamp(oc_half2 v0, oc_half2 v1, oc_half2 v2) { return oc_half2(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y)); }
-OC_DEVICE_FLAG oc_half3 oc_clamp(oc_half3 v0, oc_half3 v1, oc_half3 v2) { return oc_half3(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z)); }
-OC_DEVICE_FLAG oc_half4 oc_clamp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return oc_half4(oc_clamp(v0.x, v1.x, v2.x), oc_clamp(v0.y, v1.y, v2.y), oc_clamp(v0.z, v1.z, v2.z), oc_clamp(v0.w, v1.w, v2.w)); }
-template<size_t N>
-oc_array<oc_half, N> oc_clamp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
-    oc_array<oc_half, N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
-    }
-    return ret;
-}
-
-
 OC_DEVICE_FLAG oc_float oc_fma(oc_float v0, oc_float v1, oc_float v2) { return fmaf(v0, v1, v2); }
 OC_DEVICE_FLAG oc_float2 oc_fma(oc_float2 v0, oc_float2 v1, oc_float2 v2) { return oc_float2(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y)); }
 OC_DEVICE_FLAG oc_float3 oc_fma(oc_float3 v0, oc_float3 v1, oc_float3 v2) { return oc_float3(oc_fma(v0.x, v1.x, v2.x), oc_fma(v0.y, v1.y, v2.y), oc_fma(v0.z, v1.z, v2.z)); }

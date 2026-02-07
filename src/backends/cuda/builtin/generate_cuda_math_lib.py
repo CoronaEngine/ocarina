@@ -891,16 +891,16 @@ def define_triple_funcs():
         #     "body": "return v1 + v0 * (v2 - v1);",
         #     "types": [{"arg_type": "float"}, {"arg_type": "half"}],
         # },
-        {
-            "name": "clamp",
-            "body": "return oc_min(v2, oc_max(v1, v0));",
-            "types": [
-                {"arg_type": "float"},
-                {"arg_type": "uint"},
-                {"arg_type": "int"},
-                {"arg_type": "half"},
-            ],
-        },
+        # {
+        #     "name": "clamp",
+        #     "body": "return oc_min(v2, oc_max(v1, v0));",
+        #     "types": [
+        #         {"arg_type": "float"},
+        #         {"arg_type": "uint"},
+        #         {"arg_type": "int"},
+        #         {"arg_type": "half"},
+        #     ],
+        # },
         {
             "name": "fma",
             "body": "return fmaf(v0, v1, v2);",
