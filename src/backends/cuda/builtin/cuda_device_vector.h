@@ -355,6 +355,25 @@ OC_MAKE_TYPE_N(ulong)
 OC_MAKE_TYPE_N(char)
 }// namespace ocarina
 
+namespace ocarina {
+
+namespace detail {
+
+template<size_t N, typename T, typename F, size_t... i>
+[[nodiscard]] constexpr auto select_helper(Vector<bool, N> pred, Vector<T, N> t, Vector<F, N> f, ocarina::index_sequence<i...>) {
+    using scalar_type = decltype(ocarina::select(bool{}, T{}, F{}));
+    return Vector<scalar_type, N>{ocarina::select(pred[i], t[i], f[i])...};
+}
+
+}// namespace detail
+
+template<size_t N, typename T, typename F>
+[[nodiscard]] constexpr auto select(Vector<bool, N> pred, Vector<T, N> t, Vector<F, N> f) {
+    return detail::select_helper<N, T, F>(pred, t, f, ocarina::make_index_sequence<N>());
+}
+
+}// namespace ocarina
+
 //#undef OC_MAKE_TYPE_N
 
 #define OC_MAKE_VECTOR_MAKER(type, N) \

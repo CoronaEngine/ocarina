@@ -56,6 +56,12 @@ struct binary_op_half_target {
 template<typename T>
 using binary_op_half_target_t = typename detail::binary_op_half_target<ocarina::remove_cvref_t<T>>::type;
 
+template<typename T, typename F, enable_if_t<is_selectable<T, F>::value, int> = 0>
+constexpr auto select(bool condition, T t, F f) noexcept {
+    using ret_type = decltype(t + f);
+    return condition ? static_cast<ret_type>(t) : static_cast<ret_type>(f);
+}
+
 }// namespace ocarina
 
 // Half operator implementations
