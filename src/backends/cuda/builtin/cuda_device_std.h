@@ -229,6 +229,7 @@ template<typename T, typename F>
 struct is_selectable : conjunction<is_all_scalar<T, F>, is_addable<T, F>> {};
 OC_DEFINE_TEMPLATE_VALUE_MULTI(is_selectable)
 
+#define OC_DEVICE_FLAG 
 
 template<typename T, size_t N>
 class array {
@@ -236,17 +237,17 @@ private:
     T _data[N];
 
 public:
-    __device__ constexpr array() noexcept : _data{} {}
+    OC_DEVICE_FLAG constexpr array() noexcept : _data{} {}
     template<typename... Elem>
-    __device__ constexpr array(Elem... elem) noexcept : _data{elem...} {}
-    __device__ constexpr array(array &&) noexcept = default;
-    __device__ constexpr array(const array &) noexcept = default;
-    __device__ constexpr array &operator=(array &&) noexcept = default;
-    __device__ constexpr array &operator=(const array &) noexcept = default;
-    __device__ constexpr T *data() noexcept { return &_data[0]; }
-    __device__ constexpr const T *data() const noexcept { return &_data[0]; }
-    [[nodiscard]] __device__ T &operator[](size_t i) noexcept { return _data[i]; }
-    [[nodiscard]] __device__ T operator[](size_t i) const noexcept { return _data[i]; }
+    OC_DEVICE_FLAG constexpr array(Elem... elem) noexcept : _data{elem...} {}
+    OC_DEVICE_FLAG constexpr array(array &&) noexcept = default;
+    OC_DEVICE_FLAG constexpr array(const array &) noexcept = default;
+    OC_DEVICE_FLAG constexpr array &operator=(array &&) noexcept = default;
+    OC_DEVICE_FLAG constexpr array &operator=(const array &) noexcept = default;
+    OC_DEVICE_FLAG constexpr T *data() noexcept { return &_data[0]; }
+    OC_DEVICE_FLAG constexpr const T *data() const noexcept { return &_data[0]; }
+    [[nodiscard]] OC_DEVICE_FLAG T &operator[](size_t i) noexcept { return _data[i]; }
+    [[nodiscard]] OC_DEVICE_FLAG T operator[](size_t i) const noexcept { return _data[i]; }
 };
 
 }// namespace ocarina
