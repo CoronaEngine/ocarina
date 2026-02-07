@@ -909,11 +909,11 @@ def define_triple_funcs():
         #         {"arg_type": "half", "body": "return __hfma(v0, v1, v2);"},
         #     ],
         # },
-        {
-            "name": "inverse_lerp",
-            "body": "return (v0 - v1) / (v2 - v1);",
-            "types": [{"arg_type": "float"}, {"arg_type": "half"}],
-        },
+        # {
+        #     "name": "inverse_lerp",
+        #     "body": "return (v0 - v1) / (v2 - v1);",
+        #     "types": [{"arg_type": "float"}, {"arg_type": "half"}],
+        # },
     ]
     for v in lst:
         define_triple_func(v)
