@@ -354,6 +354,7 @@ OC_MAKE_TYPE_N(ushort)
 OC_MAKE_TYPE_N(ulong)
 OC_MAKE_TYPE_N(char)
 }// namespace ocarina
+#undef OC_MAKE_TYPE_N
 
 namespace ocarina {
 
@@ -382,7 +383,24 @@ template<size_t N, template<typename, size_t> typename Container, typename P, ty
 template<typename... Args>
 [[nodiscard]] constexpr auto oc_select(Args... args) noexcept { return ocarina::select(args...); }
 
-//#undef OC_MAKE_TYPE_N
+namespace ocarina {
+
+namespace detail {
+
+template<size_t N, typename T, typename U, size_t... index>
+static constexpr auto dot_helper(Vector<T, N> a, Vector<U, N> b, ocarina::index_sequence<index...>) {
+    return ((a[index] * b[index]) + ...);
+}
+}// namespace detail
+
+template<size_t N, typename T, typename U>
+static constexpr auto dot(Vector<T, N> lhs, Vector<U, N> rhs) {
+    return detail::dot_helper(lhs, rhs, ocarina::make_index_sequence<N>());
+}
+
+
+
+}// namespace ocarina
 
 #define OC_MAKE_VECTOR_MAKER(type, N) \
     template<typename... Args>        \
