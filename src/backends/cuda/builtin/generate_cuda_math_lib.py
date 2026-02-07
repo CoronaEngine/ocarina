@@ -44,112 +44,6 @@ def get_indent(num=1):
     return indent * num
 
 
-def using_scalar():
-    global content
-    string = ""
-    for i, scalar in enumerate(scalar_types):
-        string += f"using {prefix}_{scalar} = {native_types[i]};\n"
-
-    content += string
-
-
-def emit_member(scalar_name, dim):
-    ret = "\n"
-    for d in range(0, dim):
-        ret += indent + scalar_name + " " + name_lst[d] + ";\n"
-    return ret
-
-
-def emit_functions(scalar_name, dim):
-    ret = "\n"
-    struct_name = f"{scalar_name}{dim}"
-
-    ret += indent + f"{device_flag} {struct_name}() noexcept \n" + get_indent(2) + ":"
-    for d in range(0, dim):
-        split = ", " if d != dim - 1 else ""
-        ret += f"{name_lst[d]}{{}}" + split
-    ret += " {}\n"
-
-    ret += (
-        indent
-        + f"{device_flag} {struct_name}({scalar_name} s) noexcept \n"
-        + get_indent(2)
-        + ":"
-    )
-    for d in range(0, dim):
-        split = ", " if d != dim - 1 else ""
-        ret += f"{name_lst[d]}(s)" + split
-    ret += " {}\n"
-
-    args = ""
-    assign = ""
-    for d in range(0, dim):
-        split = ", " if d != dim - 1 else ""
-        member_name = name_lst[d]
-        args += f"{scalar_name} {member_name}" + split
-        assign += f"{member_name}({member_name})" + split
-    ret += (
-        indent
-        + f"{device_flag} {struct_name}({args}) noexcept \n"
-        + get_indent(2)
-        + ":"
-    )
-    ret += assign
-    ret += " {}\n"
-
-    access = (
-        f"{device_flag} inline {scalar_name} operator[]({prefix}_uint i) const noexcept %s\n"
-        % ("{ return (&x)[i]; }")
-    )
-    access += (
-        indent
-        + f"{device_flag} inline {scalar_name} &operator[]({prefix}_uint i) noexcept %s\n"
-        % ("{ return (&x)[i]; }")
-    )
-    ret += indent + access
-
-    return ret
-
-
-def define_vector():
-    global content
-    content += "\n"
-    for j, scalar in enumerate(scalar_types):
-        for dim in range(2, 5):
-            alignment = vector_alignments[dim]
-            scalar_name = f"{prefix}_{scalar}"
-            struct_name = f"struct alignas({alignment}) {scalar_name}{dim}" + "{"
-            content += struct_name
-            body = emit_member(scalar_name, dim)
-            body += emit_functions(scalar_name, dim)
-            content += body
-            content += "};\n\n"
-
-
-def define_array():
-    global content
-    content += "\n"
-    string = """
-template<typename T, size_t N>
-class oc_array {
-private:
-    T _data[N];
-
-public:
-    template<typename... Elem>
-    OC_DEVICE_FLAG constexpr oc_array(Elem... elem) noexcept : _data{elem...} {}
-    OC_DEVICE_FLAG constexpr oc_array(oc_array &&) noexcept = default;
-    OC_DEVICE_FLAG constexpr oc_array(const oc_array &) noexcept = default;
-    OC_DEVICE_FLAG constexpr oc_array &operator=(oc_array &&) noexcept = default;
-    OC_DEVICE_FLAG constexpr oc_array &operator=(const oc_array &) noexcept = default;
-    [[nodiscard]] OC_DEVICE_FLAG T &operator[](size_t i) noexcept { return _data[i]; }
-    [[nodiscard]] OC_DEVICE_FLAG T operator[](size_t i) const noexcept { return _data[i]; }
-};
-"""
-
-    content += string
-
-
 def define_array_unary(unary):
     global content
     for op in unary:
@@ -368,62 +262,6 @@ template<size_t N>
 """
     content += fun
     content += "\n"
-
-
-def matrix_operator():
-    global content
-    operator = ["+", "-", "*", "/"]
-    for dim in range(2, 5):
-        for scalar in scalar_types[:3]:
-            for op in operator:
-                func = f"OC_DEVICE_FLAG auto operator{op}(oc_float{dim}x{dim} m, oc_{scalar} s) {{\n"
-                func1 = f"OC_DEVICE_FLAG auto operator{op}(oc_{scalar} s, oc_float{dim}x{dim} m) {{\n"
-                args = ""
-                args1 = ""
-                for d in range(0, dim):
-                    split = ", " if d != dim - 1 else ""
-                    args += f"m[{d}] {op} s" + split
-                    args1 += f"s {op} m[{d}]" + split
-                func += get_indent(1) + f"return oc_float{dim}x{dim}({args});\n"
-                func1 += get_indent(1) + f"return oc_float{dim}x{dim}({args1});\n"
-                func += "}\n"
-                func1 += "}\n"
-                content += func
-                content += func1
-
-        op = "*"
-        func = (
-            f"OC_DEVICE_FLAG auto operator{op}(oc_float{dim}x{dim} m, oc_float{dim} v) {{\n"
-        )
-        args = args = f""
-        for d in range(0, dim):
-            split = " + " if d != dim - 1 else ""
-            args += f"v[{d}] {op} m[{d}]" + split
-        func += get_indent(1) + "return %s;\n" % (args)
-        func += "}\n"
-        content += func
-
-        for op in operator[:3]:
-            if op != "*":
-                func = f"OC_DEVICE_FLAG auto operator{op}(oc_float{dim}x{dim} lhs, oc_float{dim}x{dim} rhs) {{\n"
-                args = f"oc_float{dim}x{dim}("
-                for d in range(0, dim):
-                    split = ", " if d != dim - 1 else ")"
-                    args += f"lhs[{d}] {op} rhs[{d}]" + split
-                func += get_indent(1) + "return %s;\n" % (args)
-                func += "}\n"
-                content += func
-            else:
-                func = f"OC_DEVICE_FLAG auto operator{op}(oc_float{dim}x{dim} lhs, oc_float{dim}x{dim} rhs) {{\n"
-                args = f"oc_float{dim}x{dim}("
-                for d in range(0, dim):
-                    split_m = ", " if d != dim - 1 else ")"
-                    args += f"lhs {op} rhs[{d}]" + split_m
-                func += get_indent(1) + "return %s;\n" % (args)
-                func += "}\n"
-                content += func
-    content += "\n"
-
 
 def define_unary_func(func_name, need_array, param):
     global content, name_lst
@@ -921,20 +759,20 @@ def define_triple_funcs():
 
 def define_vec_func():
     global content, name_lst
-    for dim in range(2, 5):
-        body = "return "
-        for d in range(0, dim):
-            field_name = name_lst[d]
-            split = " + " if d != dim - 1 else ";"
-            body += f"a.{field_name} * b.{field_name}" + split
-        func = f"OC_DEVICE_FLAG inline auto oc_dot(oc_float{dim} a, oc_float{dim} b) {{ {body} }}\n"
-        content += func
-        content += f"OC_DEVICE_FLAG inline auto oc_length(oc_float{dim} v) noexcept {{ return oc_sqrt(oc_dot(v, v)); }}\n"
-        content += f"OC_DEVICE_FLAG inline auto oc_length_squared(oc_float{dim} v) noexcept {{ return oc_dot(v, v); }}\n"
-        content += f"OC_DEVICE_FLAG inline auto oc_distance(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length(a - b); }}\n"
-        content += f"OC_DEVICE_FLAG inline auto oc_distance_squared(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length_squared(a - b); }}\n"
-        content += f"OC_DEVICE_FLAG inline auto oc_normalize(oc_float{dim} v) noexcept {{ return v * oc_rsqrt(oc_dot(v, v)); }}\n"
-        content += "\n"
+    # for dim in range(2, 5):
+    #     body = "return "
+    #     for d in range(0, dim):
+    #         field_name = name_lst[d]
+    #         split = " + " if d != dim - 1 else ";"
+    #         body += f"a.{field_name} * b.{field_name}" + split
+    #     func = f"OC_DEVICE_FLAG inline auto oc_dot(oc_float{dim} a, oc_float{dim} b) {{ {body} }}\n"
+    #     content += func
+    #     content += f"OC_DEVICE_FLAG inline auto oc_length(oc_float{dim} v) noexcept {{ return oc_sqrt(oc_dot(v, v)); }}\n"
+    #     content += f"OC_DEVICE_FLAG inline auto oc_length_squared(oc_float{dim} v) noexcept {{ return oc_dot(v, v); }}\n"
+    #     content += f"OC_DEVICE_FLAG inline auto oc_distance(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length(a - b); }}\n"
+    #     content += f"OC_DEVICE_FLAG inline auto oc_distance_squared(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length_squared(a - b); }}\n"
+    #     content += f"OC_DEVICE_FLAG inline auto oc_normalize(oc_float{dim} v) noexcept {{ return v * oc_rsqrt(oc_dot(v, v)); }}\n"
+    #     content += "\n"
 
     for scalar in scalar_types[:3]:
         content += f"[[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_{scalar}3 u, oc_{scalar}3 v) noexcept {{ return oc_{scalar}3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }}\n"

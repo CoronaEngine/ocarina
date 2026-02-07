@@ -1489,27 +1489,6 @@ oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_
     return ret;
 }
 
-OC_DEVICE_FLAG inline auto oc_dot(oc_float2 a, oc_float2 b) { return a.x * b.x + a.y * b.y; }
-OC_DEVICE_FLAG inline auto oc_length(oc_float2 v) noexcept { return oc_sqrt(oc_dot(v, v)); }
-OC_DEVICE_FLAG inline auto oc_length_squared(oc_float2 v) noexcept { return oc_dot(v, v); }
-OC_DEVICE_FLAG inline auto oc_distance(oc_float2 a, oc_float2 b) noexcept { return oc_length(a - b); }
-OC_DEVICE_FLAG inline auto oc_distance_squared(oc_float2 a, oc_float2 b) noexcept { return oc_length_squared(a - b); }
-OC_DEVICE_FLAG inline auto oc_normalize(oc_float2 v) noexcept { return v * oc_rsqrt(oc_dot(v, v)); }
-
-OC_DEVICE_FLAG inline auto oc_dot(oc_float3 a, oc_float3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-OC_DEVICE_FLAG inline auto oc_length(oc_float3 v) noexcept { return oc_sqrt(oc_dot(v, v)); }
-OC_DEVICE_FLAG inline auto oc_length_squared(oc_float3 v) noexcept { return oc_dot(v, v); }
-OC_DEVICE_FLAG inline auto oc_distance(oc_float3 a, oc_float3 b) noexcept { return oc_length(a - b); }
-OC_DEVICE_FLAG inline auto oc_distance_squared(oc_float3 a, oc_float3 b) noexcept { return oc_length_squared(a - b); }
-OC_DEVICE_FLAG inline auto oc_normalize(oc_float3 v) noexcept { return v * oc_rsqrt(oc_dot(v, v)); }
-
-OC_DEVICE_FLAG inline auto oc_dot(oc_float4 a, oc_float4 b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
-OC_DEVICE_FLAG inline auto oc_length(oc_float4 v) noexcept { return oc_sqrt(oc_dot(v, v)); }
-OC_DEVICE_FLAG inline auto oc_length_squared(oc_float4 v) noexcept { return oc_dot(v, v); }
-OC_DEVICE_FLAG inline auto oc_distance(oc_float4 a, oc_float4 b) noexcept { return oc_length(a - b); }
-OC_DEVICE_FLAG inline auto oc_distance_squared(oc_float4 a, oc_float4 b) noexcept { return oc_length_squared(a - b); }
-OC_DEVICE_FLAG inline auto oc_normalize(oc_float4 v) noexcept { return v * oc_rsqrt(oc_dot(v, v)); }
-
 [[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_int3 u, oc_int3 v) noexcept { return oc_int3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }
 [[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_uint3 u, oc_uint3 v) noexcept { return oc_uint3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }
 [[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_float3 u, oc_float3 v) noexcept { return oc_float3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }

@@ -12,23 +12,6 @@
 
 namespace ocarina {
 
-namespace detail {
-
-template<size_t N, typename T, typename U, size_t... index>
-static constexpr auto dot_helper(Vector<T, N> a, Vector<U, N> b, ocarina::index_sequence<index...>) {
-    return ((a[index] * b[index]) + ...);
-}
-}// namespace detail
-
-template<size_t N, typename T, typename U>
-static constexpr auto dot(Vector<T, N> lhs, Vector<U, N> rhs) {
-    return detail::dot_helper(lhs, rhs, ocarina::make_index_sequence<N>());
-}
-
-}// namespace ocarina
-
-namespace ocarina {
-
 template<typename T, typename U, typename V,
          ocarina::enable_if_t<is_all_scalar_v<T, U, V>, int> = 0>
 static constexpr auto lerp(T t, U a, V b) {
@@ -145,3 +128,52 @@ static constexpr auto inverse_lerp(Container<T, N> v0, Container<U, N> v1, Conta
 }// namespace ocarina
 
 OC_MAKE_FUNCTION_GLOBAL(inverse_lerp)
+
+namespace ocarina {
+
+namespace detail {
+
+template<size_t N, typename T, typename U, size_t... index>
+static constexpr auto dot_helper(Vector<T, N> a, Vector<U, N> b, ocarina::index_sequence<index...>) {
+    return ((a[index] * b[index]) + ...);
+}
+}// namespace detail
+
+template<size_t N, typename T, typename U>
+static constexpr auto dot(Vector<T, N> lhs, Vector<U, N> rhs) {
+    return detail::dot_helper(lhs, rhs, ocarina::make_index_sequence<N>());
+}
+
+template<size_t N, typename T>
+static constexpr auto length_squared(Vector<T, N> v) {
+    return dot(v, v);
+}
+
+template<size_t N, typename T>
+static constexpr auto length(Vector<T, N> v) {
+    return oc_sqrt(length_squared(v));
+}
+
+template<size_t N, typename T, typename U>
+static constexpr auto distance(Vector<T, N> a, Vector<U, N> b) {
+    return length(a - b);
+}
+
+template<size_t N, typename T, typename U>
+static constexpr auto distance_squared(Vector<T, N> a, Vector<U, N> b) {
+    return length_squared(a - b);
+}
+
+template<size_t N, typename T>
+static constexpr auto normalize(Vector<T, N> v) {
+    return v * oc_rsqrt(dot(v, v));
+}
+
+}// namespace ocarina
+
+OC_MAKE_FUNCTION_GLOBAL(dot)
+OC_MAKE_FUNCTION_GLOBAL(length_squared)
+OC_MAKE_FUNCTION_GLOBAL(length)
+OC_MAKE_FUNCTION_GLOBAL(distance)
+OC_MAKE_FUNCTION_GLOBAL(distance_squared)
+OC_MAKE_FUNCTION_GLOBAL(normalize)
