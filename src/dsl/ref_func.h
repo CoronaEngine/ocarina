@@ -145,7 +145,7 @@ struct EnableReadAndWrite {
     }
 
     template<typename Index, typename Val>
-    requires concepts::integral<expr_value_t<Index>> && ocarina::is_same_v<element_type, expr_value_t<Val>>
+    requires concepts::integral<expr_value_t<Index>> && concepts::static_convertible<element_type, expr_value_t<Val>>
     void write(Index &&index, Val &&elm, bool check_boundary = true) {
         Var<expr_value_t<Index>> new_index = OC_FORWARD(index);
         if (check_boundary) {

@@ -282,7 +282,7 @@ public:
     }
 
     template<typename Index, typename Val>
-    requires concepts::integral<expr_value_t<Index>> && ocarina::is_same_v<element_type, expr_value_t<Val>>
+    requires concepts::integral<expr_value_t<Index>> && concepts::static_convertible<element_type, expr_value_t<Val>>
     void write(Index &&index, Val &&elm, bool check_boundary = true) {
         auto expr = make_expr<Buffer<T>>(expression());
         expr.write(OC_FORWARD(index), OC_FORWARD(elm), check_boundary);
