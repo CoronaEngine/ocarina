@@ -482,43 +482,6 @@ def matrix_operator():
     content += "\n"
 
 
-def define_select():
-    global content, name_lst
-    for scalar in scalar_types:
-        ret_type = f"{prefix}_{scalar}"
-        func = f"__device__ {ret_type} {prefix}_select({prefix}_bool pred, {ret_type} t, {ret_type} f) {{"
-        func += " return pred ? t : f; }"
-        content += func
-        content += "\n"
-        for dim in range(2, 5):
-            ret_type = f"{prefix}_{scalar}{dim}"
-            func = f"__device__ {ret_type} {prefix}_select({prefix}_bool{dim} pred, {ret_type} t, {ret_type} f) {{\n"
-            args = f"return {ret_type}("
-            for d in range(0, dim):
-                field_name = name_lst[d]
-                split = ", " if d != dim - 1 else ");\n}"
-                args += (
-                    f"{prefix}_select(pred.{field_name}, t.{field_name}, f.{field_name})"
-                    + split
-                )
-            func += get_indent(1) + args
-            content += func
-            content += "\n"
-        content += "\n"
-
-    content += """
-template<typename P, typename T, size_t N>
-[[nodiscard]] __device__ oc_array<T, N> oc_select(const oc_array<P, N> &pred, const oc_array<T, N> &t, const oc_array<T, N> &f) noexcept {
-    oc_array<T, N> ret{};
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_select(static_cast<oc_bool>(pred[i]), t[i], f[i]);
-    }
-    return ret;
-}
-
-"""
-
-
 def define_unary_func(func_name, need_array, param):
     global content, name_lst
     org_body, types = param
@@ -928,8 +891,14 @@ def define_binary_funcs():
                 {"arg_type": "half", "body": "return __hmax(lhs, rhs);"},
             ],
         ],
-        "atan2": ["return atan2f(lhs, rhs);", [{"arg_type": "float"}, {"arg_type": "half"}]],
-        "copysign": ["return ::copysignf(lhs, rhs);", [{"arg_type": "float"},{"arg_type": "half"}]],
+        "atan2": [
+            "return atan2f(lhs, rhs);",
+            [{"arg_type": "float"}, {"arg_type": "half"}],
+        ],
+        "copysign": [
+            "return ::copysignf(lhs, rhs);",
+            [{"arg_type": "float"}, {"arg_type": "half"}],
+        ],
     }
     for k, v in tab.items():
         define_binary_func(k, v)
@@ -974,31 +943,33 @@ oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, 
 
 def define_triple_funcs():
     lst = [
-        {   
-            "name": "lerp", 
-            "body": "return v1 + v0 * (v2 - v1);", 
-            "types": [{"arg_type" :"float"}, {"arg_type" :"half"}]
+        {
+            "name": "lerp",
+            "body": "return v1 + v0 * (v2 - v1);",
+            "types": [{"arg_type": "float"}, {"arg_type": "half"}],
         },
         {
             "name": "clamp",
             "body": "return oc_min(v2, oc_max(v1, v0));",
-            "types": [{"arg_type" :"float"}, {"arg_type":"uint"}, {"arg_type":"int"},{"arg_type" :"half"},],
+            "types": [
+                {"arg_type": "float"},
+                {"arg_type": "uint"},
+                {"arg_type": "int"},
+                {"arg_type": "half"},
+            ],
         },
         {
-            "name": "fma", 
-            "body": "return fmaf(v0, v1, v2);", 
+            "name": "fma",
+            "body": "return fmaf(v0, v1, v2);",
             "types": [
-                {"arg_type":"float"}, 
-                {
-                    "arg_type" : "half", 
-                    "body" : "return __hfma(v0, v1, v2);" 
-                }
-            ]
+                {"arg_type": "float"},
+                {"arg_type": "half", "body": "return __hfma(v0, v1, v2);"},
+            ],
         },
         {
             "name": "inverse_lerp",
             "body": "return (v0 - v1) / (v2 - v1);",
-            "types": [{"arg_type":"float"},{"arg_type":"half"}],
+            "types": [{"arg_type": "float"}, {"arg_type": "half"}],
         },
     ]
     for v in lst:
@@ -1024,67 +995,6 @@ def define_vec_func():
 
     for scalar in scalar_types[:3]:
         content += f"[[nodiscard]] __device__ inline auto oc_cross(oc_{scalar}3 u, oc_{scalar}3 v) noexcept {{ return oc_{scalar}3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }}\n"
-
-    content += "\n"
-
-
-def define_make_vecs():
-    global content, name_lst
-    for type in scalar_types:
-        content += (
-            f"""[[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{type} s = 0) noexcept {{ return oc_{type}2{{s, s}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{type} x, oc_{type} y) noexcept {{ return oc_{type}2{{x, y}}; }}"""
-            + "\n"
-        )
-
-        for t in scalar_types:
-            if type == "half":
-                if t in invalid_cast_half:
-                    continue
-            if type in invalid_cast_half:
-                if t == "half":
-                    continue
-            for l in range(2, 5):
-                content += f"[[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{t}{l} v) noexcept {{ return oc_{type}2{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y)}}; }}"
-                content += "\n"
-        content += (
-            f"""[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type} s = 0) noexcept {{ return oc_{type}3{{s, s, s}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type} x, oc_{type} y, oc_{type} z) noexcept {{ return oc_{type}3{{x, y, z}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type} x, oc_{type}2 yz) noexcept {{ return oc_{type}3{{x, yz.x, yz.y}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type}2 xy, oc_{type} z) noexcept {{ return oc_{type}3{{xy.x, xy.y, z}}; }}"""
-            + "\n"
-        )
-
-        for t in scalar_types:
-            if type == "half":
-                if t in invalid_cast_half:
-                    continue
-            if type in invalid_cast_half:
-                if t == "half":
-                    continue
-            for l in range(3, 5):
-
-                content += f"[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{t}{l} v) noexcept {{ return oc_{type}3{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y), static_cast<oc_{type}>(v.z)}}; }}"
-                content += "\n"
-        # make type4
-        content += f"""[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} s = 0) noexcept {{ return oc_{type}4{{s, s, s, s}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type} y, oc_{type} z, oc_{type} w) noexcept {{ return oc_{type}4{{x, y, z, w}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type} y, oc_{type}2 zw) noexcept {{ return oc_{type}4{{x, y, zw.x, zw.y}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type}2 yz, oc_{type} w) noexcept {{ return oc_{type}4{{x, yz.x, yz.y, w}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type}2 xy, oc_{type} z, oc_{type} w) noexcept {{ return oc_{type}4{{xy.x, xy.y, z, w}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type}2 xy, oc_{type}2 zw) noexcept {{ return oc_{type}4{{xy.x, xy.y, zw.x, zw.y}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type}3 yzw) noexcept {{ return oc_{type}4{{x, yzw.x, yzw.y, yzw.z}}; }}
-[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type}3 xyz, oc_{type} w) noexcept {{ return oc_{type}4{{xyz.x, xyz.y, xyz.z, w}}; }}\n"""
-
-        for t in scalar_types:
-            if type == "half":
-                if t in invalid_cast_half:
-                    continue
-            if type in invalid_cast_half:
-                if t == "half":
-                    continue
-            content += f"[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{t}4 v) noexcept {{ return oc_{type}4{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y), static_cast<oc_{type}>(v.z), static_cast<oc_{type}>(v.w)}}; }}"
-            content += "\n"
 
     content += "\n"
 
