@@ -230,9 +230,9 @@ struct is_selectable : conjunction<is_all_scalar<T, F>, is_addable<T, F>> {};
 OC_DEFINE_TEMPLATE_VALUE_MULTI(is_selectable)
 
 template<typename T, typename F, enable_if_t<is_selectable<T, F>::value, int> = 0>
-constexpr auto select(bool condition, T true_value, F false_value) noexcept {
-    return condition ? static_cast<decltype(true_value + false_value)>(true_value) :
-                       static_cast<decltype(true_value + false_value)>(false_value);
+constexpr auto select(bool condition, T t, F f) noexcept {
+    using ret_type = decltype(t + f);
+    return condition ? static_cast<ret_type>(t) : static_cast<ret_type>(f);
 }
 
 template<typename T, unsigned int N>
