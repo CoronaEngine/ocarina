@@ -886,11 +886,11 @@ oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, 
 
 def define_triple_funcs():
     lst = [
-        {
-            "name": "lerp",
-            "body": "return v1 + v0 * (v2 - v1);",
-            "types": [{"arg_type": "float"}, {"arg_type": "half"}],
-        },
+        # {
+        #     "name": "lerp",
+        #     "body": "return v1 + v0 * (v2 - v1);",
+        #     "types": [{"arg_type": "float"}, {"arg_type": "half"}],
+        # },
         {
             "name": "clamp",
             "body": "return oc_min(v2, oc_max(v1, v0));",
