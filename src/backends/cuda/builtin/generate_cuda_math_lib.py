@@ -44,6 +44,112 @@ def get_indent(num=1):
     return indent * num
 
 
+def using_scalar():
+    global content
+    string = ""
+    for i, scalar in enumerate(scalar_types):
+        string += f"using {prefix}_{scalar} = {native_types[i]};\n"
+
+    content += string
+
+
+def emit_member(scalar_name, dim):
+    ret = "\n"
+    for d in range(0, dim):
+        ret += indent + scalar_name + " " + name_lst[d] + ";\n"
+    return ret
+
+
+def emit_functions(scalar_name, dim):
+    ret = "\n"
+    struct_name = f"{scalar_name}{dim}"
+
+    ret += indent + f"{device_flag} {struct_name}() noexcept \n" + get_indent(2) + ":"
+    for d in range(0, dim):
+        split = ", " if d != dim - 1 else ""
+        ret += f"{name_lst[d]}{{}}" + split
+    ret += " {}\n"
+
+    ret += (
+        indent
+        + f"{device_flag} {struct_name}({scalar_name} s) noexcept \n"
+        + get_indent(2)
+        + ":"
+    )
+    for d in range(0, dim):
+        split = ", " if d != dim - 1 else ""
+        ret += f"{name_lst[d]}(s)" + split
+    ret += " {}\n"
+
+    args = ""
+    assign = ""
+    for d in range(0, dim):
+        split = ", " if d != dim - 1 else ""
+        member_name = name_lst[d]
+        args += f"{scalar_name} {member_name}" + split
+        assign += f"{member_name}({member_name})" + split
+    ret += (
+        indent
+        + f"{device_flag} {struct_name}({args}) noexcept \n"
+        + get_indent(2)
+        + ":"
+    )
+    ret += assign
+    ret += " {}\n"
+
+    access = (
+        f"{device_flag} inline {scalar_name} operator[]({prefix}_uint i) const noexcept %s\n"
+        % ("{ return (&x)[i]; }")
+    )
+    access += (
+        indent
+        + f"{device_flag} inline {scalar_name} &operator[]({prefix}_uint i) noexcept %s\n"
+        % ("{ return (&x)[i]; }")
+    )
+    ret += indent + access
+
+    return ret
+
+
+def define_vector():
+    global content
+    content += "\n"
+    for j, scalar in enumerate(scalar_types):
+        for dim in range(2, 5):
+            alignment = vector_alignments[dim]
+            scalar_name = f"{prefix}_{scalar}"
+            struct_name = f"struct alignas({alignment}) {scalar_name}{dim}" + "{"
+            content += struct_name
+            body = emit_member(scalar_name, dim)
+            body += emit_functions(scalar_name, dim)
+            content += body
+            content += "};\n\n"
+
+
+def define_array():
+    global content
+    content += "\n"
+    string = """
+template<typename T, size_t N>
+class oc_array {
+private:
+    T _data[N];
+
+public:
+    template<typename... Elem>
+    __device__ constexpr oc_array(Elem... elem) noexcept : _data{elem...} {}
+    __device__ constexpr oc_array(oc_array &&) noexcept = default;
+    __device__ constexpr oc_array(const oc_array &) noexcept = default;
+    __device__ constexpr oc_array &operator=(oc_array &&) noexcept = default;
+    __device__ constexpr oc_array &operator=(const oc_array &) noexcept = default;
+    [[nodiscard]] __device__ T &operator[](size_t i) noexcept { return _data[i]; }
+    [[nodiscard]] __device__ T operator[](size_t i) const noexcept { return _data[i]; }
+};
+"""
+
+    content += string
+
+
 def define_array_unary(unary):
     global content
     for op in unary:
@@ -51,7 +157,7 @@ def define_array_unary(unary):
 template<typename T, size_t N>
 {device_flag} oc_array<T, N> operator{op}(oc_array<T, N> arg) {{
     oc_array<T, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = {op}arg[i];
     }}
     return ret;
@@ -68,7 +174,7 @@ def define_array_binary(cal_binary, cmp_binary, bit_binary):
 template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[i];
     }}
     return ret;
@@ -84,7 +190,7 @@ template<typename T,typename U>
 template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, U rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs;
     }}
     return ret;
@@ -98,7 +204,7 @@ template<typename T,typename U, size_t N>
 template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(T lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs {op} rhs[i];
     }}
     return ret;
@@ -116,7 +222,7 @@ template<typename T,typename U, size_t N>
 template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
     oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[i];
     }}
     return ret;
@@ -125,7 +231,7 @@ template<typename T, typename U, size_t N>
 template<typename T,typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, U rhs) {{
     oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs;
     }}
     return ret;
@@ -134,7 +240,7 @@ template<typename T,typename U, size_t N>
 template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, oc_array<U, 1> rhs) {{    
     oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[0];
     }}
     return ret;
@@ -143,7 +249,7 @@ template<typename T, typename U, size_t N>
 template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(T lhs, oc_array<U, N> rhs) {{
     oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs {op} rhs[i];
     }}
     return ret;
@@ -152,7 +258,7 @@ template<typename T, typename U, size_t N>
 template<typename T, typename U, size_t N>
 {device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, 1> lhs, oc_array<U, N> rhs) {{
     oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[0] {op} rhs[i];
     }}
     return ret;
@@ -167,7 +273,7 @@ template<typename T, typename U, size_t N>
 template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs[i];
     }}
     return ret;
@@ -176,7 +282,7 @@ template<typename T, typename U, size_t N>
 template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, U rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs[i] {op} rhs;
     }}
     return ret;
@@ -190,7 +296,7 @@ template<typename T, typename U, size_t N>
 template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(T lhs, oc_array<U, N> rhs) {{
     oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
+    for(oc_uint i = 0u; i < N; ++i) {{
         ret[i] = lhs {op} rhs[i];
     }}
     return ret;
@@ -239,7 +345,7 @@ def define_operator():
 template<size_t N>
 [[nodiscard]] oc_bool oc_any(oc_array<oc_bool, N> arg) {{
     oc_bool ret = arg[0];
-    for(size_t i = 1u; i < N; ++i) {{
+    for(oc_uint i = 1u; i < N; ++i) {{
         ret = ret || arg[i];
     }}
     return ret;
@@ -248,7 +354,7 @@ template<size_t N>
 template<size_t N>
 [[nodiscard]] oc_bool oc_all(oc_array<oc_bool, N> arg) {{
     oc_bool ret = arg[0];
-    for(size_t i = 1u; i < N; ++i) {{
+    for(oc_uint i = 1u; i < N; ++i) {{
         ret = ret && arg[i];
     }}
     return ret;
@@ -263,6 +369,156 @@ template<size_t N>
     content += fun
     content += "\n"
 
+
+def define_matrix():
+    global content
+    struct = ""
+    for dim in range(2, 5):
+        struct = f"struct {prefix}_float{dim}x{dim} {{\n"
+        struct_name = f"{prefix}_float{dim}x{dim}"
+        struct += get_indent(1) + f"{prefix}_float{dim} cols[{dim}];\n"
+        struct += (
+            get_indent(1)
+            + f"__device__ explicit inline {prefix}_float{dim}x{dim}({prefix}_float s = 1.f)\n"
+        )
+        args = ""
+        for d in range(0, dim):
+            split = ", " if d != dim - 1 else ""
+
+            vec = f"{prefix}_float{dim}("
+            for j in range(0, dim):
+                split_j = ", " if j != dim - 1 else ")"
+                scalar = "s" if j == d else "0.f"
+                vec += scalar + split_j
+            args += vec + split
+        struct += get_indent(2) + f":cols{{{args}}} {{}}\n"
+
+        args = ""
+        lst = ""
+        for d in range(0, dim):
+            split = ", " if d != dim - 1 else ""
+            args += f"{prefix}_float{dim} c{d}" + split
+            lst += f"c{d}" + split
+        struct += get_indent(1) + f"__device__ {prefix}_float{dim}x{dim}({args})\n"
+        struct += get_indent(2) + f":cols{{{lst}}} {{}}\n"
+
+        args = ""
+        body = f":{struct_name}("
+        for i in range(0, dim):
+            col = f"oc_float{dim}("
+            for j in range(0, dim):
+                split = ", " if i * j != (dim - 1) ** 2 else ""
+                split_col = ", " if j != dim - 1 else ")"
+                args += f"{prefix}_float m{i}{j}" + split
+                col += f"m{i}{j}" + split_col
+            split_body = ", " if i != dim - 1 else ")"
+            body += col + split_body
+        struct += get_indent(1) + f"__device__ {struct_name} ({args}){body} {{}}\n"
+
+        struct += (
+            get_indent(1)
+            + "__device__ auto &operator[](oc_uint i) noexcept { return cols[i]; }\n"
+        )
+        struct += (
+            get_indent(1)
+            + "__device__ auto operator[](oc_uint i) const noexcept { return cols[i]; }\n"
+        )
+        struct += "};\n \n"
+        content += struct
+
+
+def matrix_operator():
+    global content
+    operator = ["+", "-", "*", "/"]
+    for dim in range(2, 5):
+        for scalar in scalar_types[:3]:
+            for op in operator:
+                func = f"__device__ auto operator{op}(oc_float{dim}x{dim} m, oc_{scalar} s) {{\n"
+                func1 = f"__device__ auto operator{op}(oc_{scalar} s, oc_float{dim}x{dim} m) {{\n"
+                args = ""
+                args1 = ""
+                for d in range(0, dim):
+                    split = ", " if d != dim - 1 else ""
+                    args += f"m[{d}] {op} s" + split
+                    args1 += f"s {op} m[{d}]" + split
+                func += get_indent(1) + f"return oc_float{dim}x{dim}({args});\n"
+                func1 += get_indent(1) + f"return oc_float{dim}x{dim}({args1});\n"
+                func += "}\n"
+                func1 += "}\n"
+                content += func
+                content += func1
+
+        op = "*"
+        func = (
+            f"__device__ auto operator{op}(oc_float{dim}x{dim} m, oc_float{dim} v) {{\n"
+        )
+        args = args = f""
+        for d in range(0, dim):
+            split = " + " if d != dim - 1 else ""
+            args += f"v[{d}] {op} m[{d}]" + split
+        func += get_indent(1) + "return %s;\n" % (args)
+        func += "}\n"
+        content += func
+
+        for op in operator[:3]:
+            if op != "*":
+                func = f"__device__ auto operator{op}(oc_float{dim}x{dim} lhs, oc_float{dim}x{dim} rhs) {{\n"
+                args = f"oc_float{dim}x{dim}("
+                for d in range(0, dim):
+                    split = ", " if d != dim - 1 else ")"
+                    args += f"lhs[{d}] {op} rhs[{d}]" + split
+                func += get_indent(1) + "return %s;\n" % (args)
+                func += "}\n"
+                content += func
+            else:
+                func = f"__device__ auto operator{op}(oc_float{dim}x{dim} lhs, oc_float{dim}x{dim} rhs) {{\n"
+                args = f"oc_float{dim}x{dim}("
+                for d in range(0, dim):
+                    split_m = ", " if d != dim - 1 else ")"
+                    args += f"lhs {op} rhs[{d}]" + split_m
+                func += get_indent(1) + "return %s;\n" % (args)
+                func += "}\n"
+                content += func
+    content += "\n"
+
+
+def define_select():
+    global content, name_lst
+    for scalar in scalar_types:
+        ret_type = f"{prefix}_{scalar}"
+        func = f"__device__ {ret_type} {prefix}_select({prefix}_bool pred, {ret_type} t, {ret_type} f) {{"
+        func += " return pred ? t : f; }"
+        content += func
+        content += "\n"
+        for dim in range(2, 5):
+            ret_type = f"{prefix}_{scalar}{dim}"
+            func = f"__device__ {ret_type} {prefix}_select({prefix}_bool{dim} pred, {ret_type} t, {ret_type} f) {{\n"
+            args = f"return {ret_type}("
+            for d in range(0, dim):
+                field_name = name_lst[d]
+                split = ", " if d != dim - 1 else ");\n}"
+                args += (
+                    f"{prefix}_select(pred.{field_name}, t.{field_name}, f.{field_name})"
+                    + split
+                )
+            func += get_indent(1) + args
+            content += func
+            content += "\n"
+        content += "\n"
+
+    content += """
+template<typename P, typename T, size_t N>
+[[nodiscard]] __device__ oc_array<T, N> oc_select(const oc_array<P, N> &pred, const oc_array<T, N> &t, const oc_array<T, N> &f) noexcept {
+    oc_array<T, N> ret{};
+    for(oc_uint i = 0; i < N; ++i) {
+        ret[i] = oc_select(static_cast<oc_bool>(pred[i]), t[i], f[i]);
+    }
+    return ret;
+}
+
+"""
+
+
 def define_unary_func(func_name, need_array, param):
     global content, name_lst
     org_body, types = param
@@ -273,7 +529,7 @@ def define_unary_func(func_name, need_array, param):
         ret_type = f"{prefix}_{ret_t}"
         arg_type = f"{prefix}_{scalar}"
         func = (
-            f"OC_DEVICE_FLAG {ret_type} {prefix}_{func_name}({arg_type} v) {{ {body} }}\n"
+            f"__device__ {ret_type} {prefix}_{func_name}({arg_type} v) {{ {body} }}\n"
         )
         content += func
         for dim in range(2, 5):
@@ -284,7 +540,7 @@ def define_unary_func(func_name, need_array, param):
                 split = ", " if d != dim - 1 else ");"
                 field_name = name_lst[d]
                 body2 += f"{prefix}_{func_name}(v.{field_name})" + split
-            func = f"OC_DEVICE_FLAG {ret_type} {prefix}_{func_name}({arg_type} v) {{ {body2} }}\n"
+            func = f"__device__ {ret_type} {prefix}_{func_name}({arg_type} v) {{ {body2} }}\n"
             content += func
 
     if need_array:
@@ -292,8 +548,8 @@ def define_unary_func(func_name, need_array, param):
         t_elm_type = f"{prefix}_{scalar}"
         t_ret_type = f"oc_array<T, N>"
         t_body = f"\n    {t_ret_type} ret{{}};\n"
-        t_body += f"    for(size_t i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);\n    return ret;\n"
-        ff = f"template<typename T, size_t N>\nOC_DEVICE_FLAG {t_ret_type} {prefix}_{func_name}(oc_array<T, N> x) {{{t_body}}}\n"
+        t_body += f"    for(oc_uint i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);\n    return ret;\n"
+        ff = f"template<typename T, size_t N>\n__device__ {t_ret_type} {prefix}_{func_name}(oc_array<T, N> x) {{{t_body}}}\n"
         content += ff
 
     content += "\n"
@@ -612,7 +868,7 @@ def define_binary_func(func_name, param):
         scalar = v.get("arg_type")
         body = v.get("body", org_body)
         ret_type = f"{prefix}_{scalar}"
-        func = f"OC_DEVICE_FLAG {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body} }}\n"
+        func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body} }}\n"
         content += func
         for dim in range(2, 5):
             ret_type = f"{prefix}_{scalar}{dim}"
@@ -623,12 +879,12 @@ def define_binary_func(func_name, param):
                 body_vec += (
                     f"{prefix}_{func_name}(lhs.{field_name}, rhs.{field_name})" + split
                 )
-            func = f"OC_DEVICE_FLAG {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body_vec} }}\n"
+            func = f"__device__ {ret_type} {prefix}_{func_name}({ret_type} lhs, {ret_type} rhs) {{ {body_vec} }}\n"
             content += func
     string = f"""template<typename T, size_t N>
 oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> {prefix}_{func_name}(oc_array<T, N> lhs, oc_array<T, N> rhs) {{
     oc_array<decltype({prefix}_{func_name}(T{{}}, T{{}})), N> ret;
-    for(size_t i = 0; i < N; ++i) {{
+    for(oc_uint i = 0; i < N; ++i) {{
         ret[i] = {prefix}_{func_name}(lhs[i], rhs[i]);
     }}
     return ret;
@@ -672,14 +928,8 @@ def define_binary_funcs():
                 {"arg_type": "half", "body": "return __hmax(lhs, rhs);"},
             ],
         ],
-        "atan2": [
-            "return atan2f(lhs, rhs);",
-            [{"arg_type": "float"}, {"arg_type": "half"}],
-        ],
-        "copysign": [
-            "return ::copysignf(lhs, rhs);",
-            [{"arg_type": "float"}, {"arg_type": "half"}],
-        ],
+        "atan2": ["return atan2f(lhs, rhs);", [{"arg_type": "float"}, {"arg_type": "half"}]],
+        "copysign": ["return ::copysignf(lhs, rhs);", [{"arg_type": "float"},{"arg_type": "half"}]],
     }
     for k, v in tab.items():
         define_binary_func(k, v)
@@ -695,7 +945,7 @@ def define_triple_func(tab):
         arg_type = f"{prefix}_{scalar}"
         ret_type = f"{prefix}_{scalar}"
         body = elm.get("body", org_body)
-        scalar_func = f"OC_DEVICE_FLAG {ret_type} {prefix}_{func_name}({arg_type} v0, {arg_type} v1, {arg_type} v2) {{ {body} }}\n"
+        scalar_func = f"__device__ {ret_type} {prefix}_{func_name}({arg_type} v0, {arg_type} v1, {arg_type} v2) {{ {body} }}\n"
         content += scalar_func
         for dim in range(2, 5):
             vec_ret_type = f"{ret_type}{dim}"
@@ -707,12 +957,12 @@ def define_triple_func(tab):
                     f"{prefix}_{func_name}(v0.{field_name}, v1.{field_name}, v2.{field_name})"
                     + split
                 )
-            vec_func = f"OC_DEVICE_FLAG {vec_ret_type} {prefix}_{func_name}({arg_type}{dim} v0, {arg_type}{dim} v1, {arg_type}{dim} v2) {{ {vec_body} }}\n"
+            vec_func = f"__device__ {vec_ret_type} {prefix}_{func_name}({arg_type}{dim} v0, {arg_type}{dim} v1, {arg_type}{dim} v2) {{ {vec_body} }}\n"
             content += vec_func
         string = f"""template<size_t N>
 oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, N> v0, oc_array<{prefix}_{scalar}, N> v1, oc_array<{prefix}_{scalar}, N> v2) {{
     oc_array<{prefix}_{scalar}, N> ret;
-    for(size_t i = 0; i < N; ++i) {{
+    for(oc_uint i = 0; i < N; ++i) {{
         ret[i] = {prefix}_{func_name}(v0[i], v1[i], v2[i]);
     }}
     return ret;
@@ -724,34 +974,32 @@ oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, 
 
 def define_triple_funcs():
     lst = [
-        # {
-        #     "name": "lerp",
-        #     "body": "return v1 + v0 * (v2 - v1);",
-        #     "types": [{"arg_type": "float"}, {"arg_type": "half"}],
-        # },
-        # {
-        #     "name": "clamp",
-        #     "body": "return oc_min(v2, oc_max(v1, v0));",
-        #     "types": [
-        #         {"arg_type": "float"},
-        #         {"arg_type": "uint"},
-        #         {"arg_type": "int"},
-        #         {"arg_type": "half"},
-        #     ],
-        # },
-        # {
-        #     "name": "fma",
-        #     "body": "return fmaf(v0, v1, v2);",
-        #     "types": [
-        #         {"arg_type": "float"},
-        #         {"arg_type": "half", "body": "return __hfma(v0, v1, v2);"},
-        #     ],
-        # },
-        # {
-        #     "name": "inverse_lerp",
-        #     "body": "return (v0 - v1) / (v2 - v1);",
-        #     "types": [{"arg_type": "float"}, {"arg_type": "half"}],
-        # },
+        {   
+            "name": "lerp", 
+            "body": "return v1 + v0 * (v2 - v1);", 
+            "types": [{"arg_type" :"float"}, {"arg_type" :"half"}]
+        },
+        {
+            "name": "clamp",
+            "body": "return oc_min(v2, oc_max(v1, v0));",
+            "types": [{"arg_type" :"float"}, {"arg_type":"uint"}, {"arg_type":"int"},{"arg_type" :"half"},],
+        },
+        {
+            "name": "fma", 
+            "body": "return fmaf(v0, v1, v2);", 
+            "types": [
+                {"arg_type":"float"}, 
+                {
+                    "arg_type" : "half", 
+                    "body" : "return __hfma(v0, v1, v2);" 
+                }
+            ]
+        },
+        {
+            "name": "inverse_lerp",
+            "body": "return (v0 - v1) / (v2 - v1);",
+            "types": [{"arg_type":"float"},{"arg_type":"half"}],
+        },
     ]
     for v in lst:
         define_triple_func(v)
@@ -759,23 +1007,84 @@ def define_triple_funcs():
 
 def define_vec_func():
     global content, name_lst
-    # for dim in range(2, 5):
-    #     body = "return "
-    #     for d in range(0, dim):
-    #         field_name = name_lst[d]
-    #         split = " + " if d != dim - 1 else ";"
-    #         body += f"a.{field_name} * b.{field_name}" + split
-    #     func = f"OC_DEVICE_FLAG inline auto oc_dot(oc_float{dim} a, oc_float{dim} b) {{ {body} }}\n"
-    #     content += func
-    #     content += f"OC_DEVICE_FLAG inline auto oc_length(oc_float{dim} v) noexcept {{ return oc_sqrt(oc_dot(v, v)); }}\n"
-    #     content += f"OC_DEVICE_FLAG inline auto oc_length_squared(oc_float{dim} v) noexcept {{ return oc_dot(v, v); }}\n"
-    #     content += f"OC_DEVICE_FLAG inline auto oc_distance(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length(a - b); }}\n"
-    #     content += f"OC_DEVICE_FLAG inline auto oc_distance_squared(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length_squared(a - b); }}\n"
-    #     content += f"OC_DEVICE_FLAG inline auto oc_normalize(oc_float{dim} v) noexcept {{ return v * oc_rsqrt(oc_dot(v, v)); }}\n"
-    #     content += "\n"
+    for dim in range(2, 5):
+        body = "return "
+        for d in range(0, dim):
+            field_name = name_lst[d]
+            split = " + " if d != dim - 1 else ";"
+            body += f"a.{field_name} * b.{field_name}" + split
+        func = f"__device__ inline auto oc_dot(oc_float{dim} a, oc_float{dim} b) {{ {body} }}\n"
+        content += func
+        content += f"__device__ inline auto oc_length(oc_float{dim} v) noexcept {{ return oc_sqrt(oc_dot(v, v)); }}\n"
+        content += f"__device__ inline auto oc_length_squared(oc_float{dim} v) noexcept {{ return oc_dot(v, v); }}\n"
+        content += f"__device__ inline auto oc_distance(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length(a - b); }}\n"
+        content += f"__device__ inline auto oc_distance_squared(oc_float{dim} a, oc_float{dim} b) noexcept {{ return oc_length_squared(a - b); }}\n"
+        content += f"__device__ inline auto oc_normalize(oc_float{dim} v) noexcept {{ return v * oc_rsqrt(oc_dot(v, v)); }}\n"
+        content += "\n"
 
-    # for scalar in scalar_types[:3]:
-    #     content += f"[[nodiscard]] OC_DEVICE_FLAG inline auto oc_cross(oc_{scalar}3 a, oc_{scalar}3 b) noexcept {{ return oc_{scalar}3(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y);  }}\n"
+    for scalar in scalar_types[:3]:
+        content += f"[[nodiscard]] __device__ inline auto oc_cross(oc_{scalar}3 u, oc_{scalar}3 v) noexcept {{ return oc_{scalar}3(u.y * v.z - v.y * u.z, u.z * v.x - v.z * u.x, u.x * v.y - v.x * u.y);  }}\n"
+
+    content += "\n"
+
+
+def define_make_vecs():
+    global content, name_lst
+    for type in scalar_types:
+        content += (
+            f"""[[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{type} s = 0) noexcept {{ return oc_{type}2{{s, s}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{type} x, oc_{type} y) noexcept {{ return oc_{type}2{{x, y}}; }}"""
+            + "\n"
+        )
+
+        for t in scalar_types:
+            if type == "half":
+                if t in invalid_cast_half:
+                    continue
+            if type in invalid_cast_half:
+                if t == "half":
+                    continue
+            for l in range(2, 5):
+                content += f"[[nodiscard]] __device__ inline auto oc_make_{type}2(oc_{t}{l} v) noexcept {{ return oc_{type}2{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y)}}; }}"
+                content += "\n"
+        content += (
+            f"""[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type} s = 0) noexcept {{ return oc_{type}3{{s, s, s}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type} x, oc_{type} y, oc_{type} z) noexcept {{ return oc_{type}3{{x, y, z}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type} x, oc_{type}2 yz) noexcept {{ return oc_{type}3{{x, yz.x, yz.y}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{type}2 xy, oc_{type} z) noexcept {{ return oc_{type}3{{xy.x, xy.y, z}}; }}"""
+            + "\n"
+        )
+
+        for t in scalar_types:
+            if type == "half":
+                if t in invalid_cast_half:
+                    continue
+            if type in invalid_cast_half:
+                if t == "half":
+                    continue
+            for l in range(3, 5):
+
+                content += f"[[nodiscard]] __device__ inline auto oc_make_{type}3(oc_{t}{l} v) noexcept {{ return oc_{type}3{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y), static_cast<oc_{type}>(v.z)}}; }}"
+                content += "\n"
+        # make type4
+        content += f"""[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} s = 0) noexcept {{ return oc_{type}4{{s, s, s, s}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type} y, oc_{type} z, oc_{type} w) noexcept {{ return oc_{type}4{{x, y, z, w}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type} y, oc_{type}2 zw) noexcept {{ return oc_{type}4{{x, y, zw.x, zw.y}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type}2 yz, oc_{type} w) noexcept {{ return oc_{type}4{{x, yz.x, yz.y, w}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type}2 xy, oc_{type} z, oc_{type} w) noexcept {{ return oc_{type}4{{xy.x, xy.y, z, w}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type}2 xy, oc_{type}2 zw) noexcept {{ return oc_{type}4{{xy.x, xy.y, zw.x, zw.y}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type} x, oc_{type}3 yzw) noexcept {{ return oc_{type}4{{x, yzw.x, yzw.y, yzw.z}}; }}
+[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{type}3 xyz, oc_{type} w) noexcept {{ return oc_{type}4{{xyz.x, xyz.y, xyz.z, w}}; }}\n"""
+
+        for t in scalar_types:
+            if type == "half":
+                if t in invalid_cast_half:
+                    continue
+            if type in invalid_cast_half:
+                if t == "half":
+                    continue
+            content += f"[[nodiscard]] __device__ inline auto oc_make_{type}4(oc_{t}4 v) noexcept {{ return oc_{type}4{{static_cast<oc_{type}>(v.x), static_cast<oc_{type}>(v.y), static_cast<oc_{type}>(v.z), static_cast<oc_{type}>(v.w)}}; }}"
+            content += "\n"
 
     content += "\n"
 
@@ -784,10 +1093,12 @@ def main():
     global content
     curr_dir = dirname(realpath(__file__))
     define_operator()
+    define_select()
     define_unary_funcs()
     define_binary_funcs()
     define_triple_funcs()
-    # define_vec_func()
+    define_vec_func()
+    # define_make_vecs()
 
     content += "\n "
     content += "\n "
