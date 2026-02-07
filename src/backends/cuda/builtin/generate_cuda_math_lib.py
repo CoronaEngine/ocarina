@@ -370,63 +370,6 @@ template<size_t N>
     content += "\n"
 
 
-def define_matrix():
-    global content
-    struct = ""
-    for dim in range(2, 5):
-        struct = f"struct {prefix}_float{dim}x{dim} {{\n"
-        struct_name = f"{prefix}_float{dim}x{dim}"
-        struct += get_indent(1) + f"{prefix}_float{dim} cols[{dim}];\n"
-        struct += (
-            get_indent(1)
-            + f"__device__ explicit inline {prefix}_float{dim}x{dim}({prefix}_float s = 1.f)\n"
-        )
-        args = ""
-        for d in range(0, dim):
-            split = ", " if d != dim - 1 else ""
-
-            vec = f"{prefix}_float{dim}("
-            for j in range(0, dim):
-                split_j = ", " if j != dim - 1 else ")"
-                scalar = "s" if j == d else "0.f"
-                vec += scalar + split_j
-            args += vec + split
-        struct += get_indent(2) + f":cols{{{args}}} {{}}\n"
-
-        args = ""
-        lst = ""
-        for d in range(0, dim):
-            split = ", " if d != dim - 1 else ""
-            args += f"{prefix}_float{dim} c{d}" + split
-            lst += f"c{d}" + split
-        struct += get_indent(1) + f"__device__ {prefix}_float{dim}x{dim}({args})\n"
-        struct += get_indent(2) + f":cols{{{lst}}} {{}}\n"
-
-        args = ""
-        body = f":{struct_name}("
-        for i in range(0, dim):
-            col = f"oc_float{dim}("
-            for j in range(0, dim):
-                split = ", " if i * j != (dim - 1) ** 2 else ""
-                split_col = ", " if j != dim - 1 else ")"
-                args += f"{prefix}_float m{i}{j}" + split
-                col += f"m{i}{j}" + split_col
-            split_body = ", " if i != dim - 1 else ")"
-            body += col + split_body
-        struct += get_indent(1) + f"__device__ {struct_name} ({args}){body} {{}}\n"
-
-        struct += (
-            get_indent(1)
-            + "__device__ auto &operator[](size_t i) noexcept { return cols[i]; }\n"
-        )
-        struct += (
-            get_indent(1)
-            + "__device__ auto operator[](size_t i) const noexcept { return cols[i]; }\n"
-        )
-        struct += "};\n \n"
-        content += struct
-
-
 def matrix_operator():
     global content
     operator = ["+", "-", "*", "/"]
