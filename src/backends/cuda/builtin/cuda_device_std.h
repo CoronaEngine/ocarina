@@ -263,7 +263,7 @@ template<typename, typename, typename = void>
 struct is_addable : false_type {};
 
 template<typename T, typename F>
-struct is_addable<T, F, void_t<decltype(T{} + T{}), decltype(static_cast<decltype(T{} + T{})>(T{})), decltype(static_cast<decltype(T{} + T{})>(F{}))>> : true_type {};
+struct is_addable<T, F, void_t<decltype(T{} + F{})>> : true_type {};
 
 template<typename T, typename F>
 struct is_selectable : conjunction<is_all_scalar<T, F>, is_addable<T, F>> {};
