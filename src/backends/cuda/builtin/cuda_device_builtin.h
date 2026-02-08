@@ -3,10 +3,12 @@
 #pragma once
 
 #include <cuda_device_vector.h>
+
+
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator+(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = +arg[i];
     }
     return ret;
@@ -15,7 +17,7 @@ OC_DEVICE_FLAG oc_array<T, N> operator+(oc_array<T, N> arg) {
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator-(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = -arg[i];
     }
     return ret;
@@ -24,7 +26,7 @@ OC_DEVICE_FLAG oc_array<T, N> operator-(oc_array<T, N> arg) {
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator!(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = !arg[i];
     }
     return ret;
@@ -33,7 +35,7 @@ OC_DEVICE_FLAG oc_array<T, N> operator!(oc_array<T, N> arg) {
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator~(oc_array<T, N> arg) {
     oc_array<T, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = ~arg[i];
     }
     return ret;
@@ -42,7 +44,7 @@ OC_DEVICE_FLAG oc_array<T, N> operator~(oc_array<T, N> arg) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator+(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} + U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] + rhs[i];
     }
     return ret;
@@ -58,7 +60,7 @@ OC_DEVICE_FLAG auto operator+(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator+(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} + U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] + rhs;
     }
     return ret;
@@ -72,7 +74,7 @@ OC_DEVICE_FLAG auto operator+(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator+(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} + U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs + rhs[i];
     }
     return ret;
@@ -86,7 +88,7 @@ OC_DEVICE_FLAG auto operator+(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator-(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} - U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] - rhs[i];
     }
     return ret;
@@ -102,7 +104,7 @@ OC_DEVICE_FLAG auto operator-(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator-(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} - U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] - rhs;
     }
     return ret;
@@ -116,7 +118,7 @@ OC_DEVICE_FLAG auto operator-(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator-(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} - U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs - rhs[i];
     }
     return ret;
@@ -130,7 +132,7 @@ OC_DEVICE_FLAG auto operator-(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator*(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} * U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] * rhs[i];
     }
     return ret;
@@ -146,7 +148,7 @@ OC_DEVICE_FLAG auto operator*(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator*(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} * U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] * rhs;
     }
     return ret;
@@ -160,7 +162,7 @@ OC_DEVICE_FLAG auto operator*(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator*(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} * U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs * rhs[i];
     }
     return ret;
@@ -174,7 +176,7 @@ OC_DEVICE_FLAG auto operator*(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator/(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} / U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] / rhs[i];
     }
     return ret;
@@ -190,7 +192,7 @@ OC_DEVICE_FLAG auto operator/(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator/(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} / U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] / rhs;
     }
     return ret;
@@ -204,7 +206,7 @@ OC_DEVICE_FLAG auto operator/(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator/(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} / U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs / rhs[i];
     }
     return ret;
@@ -218,7 +220,7 @@ OC_DEVICE_FLAG auto operator/(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator%(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} % U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] % rhs[i];
     }
     return ret;
@@ -234,7 +236,7 @@ OC_DEVICE_FLAG auto operator%(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator%(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} % U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] % rhs;
     }
     return ret;
@@ -248,7 +250,7 @@ OC_DEVICE_FLAG auto operator%(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator%(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} % U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs % rhs[i];
     }
     return ret;
@@ -262,7 +264,7 @@ OC_DEVICE_FLAG auto operator%(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] == rhs[i];
     }
     return ret;
@@ -271,7 +273,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, oc_array<U, N
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] == rhs;
     }
     return ret;
@@ -280,7 +282,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] == rhs[0];
     }
     return ret;
@@ -289,7 +291,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, N> lhs, oc_array<U, 1
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs == rhs[i];
     }
     return ret;
@@ -298,7 +300,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] == rhs[i];
     }
     return ret;
@@ -309,7 +311,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator==(oc_array<T, 1> lhs, oc_array<U, N
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] != rhs[i];
     }
     return ret;
@@ -318,7 +320,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, oc_array<U, N
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] != rhs;
     }
     return ret;
@@ -327,7 +329,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] != rhs[0];
     }
     return ret;
@@ -336,7 +338,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, N> lhs, oc_array<U, 1
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs != rhs[i];
     }
     return ret;
@@ -345,7 +347,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] != rhs[i];
     }
     return ret;
@@ -356,7 +358,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator!=(oc_array<T, 1> lhs, oc_array<U, N
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] > rhs[i];
     }
     return ret;
@@ -365,7 +367,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, oc_array<U, N>
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] > rhs;
     }
     return ret;
@@ -374,7 +376,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] > rhs[0];
     }
     return ret;
@@ -383,7 +385,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, N> lhs, oc_array<U, 1>
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs > rhs[i];
     }
     return ret;
@@ -392,7 +394,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] > rhs[i];
     }
     return ret;
@@ -403,7 +405,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>(oc_array<T, 1> lhs, oc_array<U, N>
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] < rhs[i];
     }
     return ret;
@@ -412,7 +414,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, oc_array<U, N>
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] < rhs;
     }
     return ret;
@@ -421,7 +423,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] < rhs[0];
     }
     return ret;
@@ -430,7 +432,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, N> lhs, oc_array<U, 1>
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs < rhs[i];
     }
     return ret;
@@ -439,7 +441,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] < rhs[i];
     }
     return ret;
@@ -450,7 +452,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<(oc_array<T, 1> lhs, oc_array<U, N>
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >= rhs[i];
     }
     return ret;
@@ -459,7 +461,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, oc_array<U, N
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >= rhs;
     }
     return ret;
@@ -468,7 +470,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >= rhs[0];
     }
     return ret;
@@ -477,7 +479,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, N> lhs, oc_array<U, 1
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs >= rhs[i];
     }
     return ret;
@@ -486,7 +488,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] >= rhs[i];
     }
     return ret;
@@ -497,7 +499,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator>=(oc_array<T, 1> lhs, oc_array<U, N
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] <= rhs[i];
     }
     return ret;
@@ -506,7 +508,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, oc_array<U, N
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] <= rhs;
     }
     return ret;
@@ -515,7 +517,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] <= rhs[0];
     }
     return ret;
@@ -524,7 +526,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, N> lhs, oc_array<U, 1
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs <= rhs[i];
     }
     return ret;
@@ -533,7 +535,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] <= rhs[i];
     }
     return ret;
@@ -544,7 +546,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator<=(oc_array<T, 1> lhs, oc_array<U, N
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] && rhs[i];
     }
     return ret;
@@ -553,7 +555,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, oc_array<U, N
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] && rhs;
     }
     return ret;
@@ -562,7 +564,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] && rhs[0];
     }
     return ret;
@@ -571,7 +573,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, N> lhs, oc_array<U, 1
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs && rhs[i];
     }
     return ret;
@@ -580,7 +582,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] && rhs[i];
     }
     return ret;
@@ -591,7 +593,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator&&(oc_array<T, 1> lhs, oc_array<U, N
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] || rhs[i];
     }
     return ret;
@@ -600,7 +602,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, oc_array<U, N
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, U rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] || rhs;
     }
     return ret;
@@ -609,7 +611,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, U rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, oc_array<U, 1> rhs) {    
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] || rhs[0];
     }
     return ret;
@@ -618,7 +620,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, N> lhs, oc_array<U, 1
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(T lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs || rhs[i];
     }
     return ret;
@@ -627,7 +629,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(T lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     oc_array<oc_bool, N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[0] || rhs[i];
     }
     return ret;
@@ -638,7 +640,7 @@ OC_DEVICE_FLAG oc_array<oc_bool, N> operator||(oc_array<T, 1> lhs, oc_array<U, N
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator&(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} & U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] & rhs[i];
     }
     return ret;
@@ -647,7 +649,7 @@ OC_DEVICE_FLAG auto operator&(oc_array<T, N> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator&(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} & U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] & rhs;
     }
     return ret;
@@ -661,7 +663,7 @@ OC_DEVICE_FLAG auto operator&(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator&(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} & U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs & rhs[i];
     }
     return ret;
@@ -675,7 +677,7 @@ OC_DEVICE_FLAG auto operator&(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator|(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} | U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] | rhs[i];
     }
     return ret;
@@ -684,7 +686,7 @@ OC_DEVICE_FLAG auto operator|(oc_array<T, N> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator|(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} | U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] | rhs;
     }
     return ret;
@@ -698,7 +700,7 @@ OC_DEVICE_FLAG auto operator|(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator|(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} | U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs | rhs[i];
     }
     return ret;
@@ -712,7 +714,7 @@ OC_DEVICE_FLAG auto operator|(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator^(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} ^ U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] ^ rhs[i];
     }
     return ret;
@@ -721,7 +723,7 @@ OC_DEVICE_FLAG auto operator^(oc_array<T, N> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator^(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} ^ U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] ^ rhs;
     }
     return ret;
@@ -735,7 +737,7 @@ OC_DEVICE_FLAG auto operator^(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator^(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} ^ U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs ^ rhs[i];
     }
     return ret;
@@ -749,7 +751,7 @@ OC_DEVICE_FLAG auto operator^(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator<<(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} << U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] << rhs[i];
     }
     return ret;
@@ -758,7 +760,7 @@ OC_DEVICE_FLAG auto operator<<(oc_array<T, N> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator<<(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} << U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] << rhs;
     }
     return ret;
@@ -772,7 +774,7 @@ OC_DEVICE_FLAG auto operator<<(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator<<(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} << U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs << rhs[i];
     }
     return ret;
@@ -786,7 +788,7 @@ OC_DEVICE_FLAG auto operator<<(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator>>(oc_array<T, N> lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} >> U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >> rhs[i];
     }
     return ret;
@@ -795,7 +797,7 @@ OC_DEVICE_FLAG auto operator>>(oc_array<T, N> lhs, oc_array<U, N> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator>>(oc_array<T, N> lhs, U rhs) {
     oc_array<decltype(T{} >> U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs[i] >> rhs;
     }
     return ret;
@@ -809,7 +811,7 @@ OC_DEVICE_FLAG auto operator>>(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
 template<typename T, typename U, size_t N>
 OC_DEVICE_FLAG auto operator>>(T lhs, oc_array<U, N> rhs) {
     oc_array<decltype(T{} >> U{}), N> ret;
-    for(oc_uint i = 0u; i < N; ++i) {
+    for(size_t i = 0u; i < N; ++i) {
         ret[i] = lhs >> rhs[i];
     }
     return ret;
@@ -832,7 +834,7 @@ OC_DEVICE_FLAG oc_bool oc_none(oc_bool4 vec) { return !oc_any(vec); }
 template<size_t N>
 [[nodiscard]] oc_bool oc_any(oc_array<oc_bool, N> arg) {
     oc_bool ret = arg[0];
-    for(oc_uint i = 1u; i < N; ++i) {
+    for(size_t i = 1u; i < N; ++i) {
         ret = ret || arg[i];
     }
     return ret;
@@ -841,7 +843,7 @@ template<size_t N>
 template<size_t N>
 [[nodiscard]] oc_bool oc_all(oc_array<oc_bool, N> arg) {
     oc_bool ret = arg[0];
-    for(oc_uint i = 1u; i < N; ++i) {
+    for(size_t i = 1u; i < N; ++i) {
         ret = ret && arg[i];
     }
     return ret;
@@ -945,7 +947,7 @@ OC_DEVICE_FLAG oc_ulong4 oc_select(oc_bool4 pred, oc_ulong4 t, oc_ulong4 f) {
 template<typename P, typename T, size_t N>
 [[nodiscard]] OC_DEVICE_FLAG oc_array<T, N> oc_select(const oc_array<P, N> &pred, const oc_array<T, N> &t, const oc_array<T, N> &f) noexcept {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_select(static_cast<oc_bool>(pred[i]), t[i], f[i]);
     }
     return ret;
@@ -970,7 +972,7 @@ OC_DEVICE_FLAG oc_half4 oc_rcp(oc_half4 v) { return oc_half4(oc_rcp(v.x), oc_rcp
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_rcp(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_rcp(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_rcp(x[i]);
     return ret;
 }
 
@@ -985,7 +987,7 @@ OC_DEVICE_FLAG oc_float4 oc_sign(oc_float4 v) { return oc_float4(oc_sign(v.x), o
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sign(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sign(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sign(x[i]);
     return ret;
 }
 
@@ -1018,7 +1020,7 @@ OC_DEVICE_FLAG oc_int4 oc_abs(oc_int4 v) { return oc_int4(oc_abs(v.x), oc_abs(v.
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_abs(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_abs(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_abs(x[i]);
     return ret;
 }
 
@@ -1033,7 +1035,7 @@ OC_DEVICE_FLAG oc_half4 oc_ceil(oc_half4 v) { return oc_half4(oc_ceil(v.x), oc_c
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_ceil(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_ceil(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_ceil(x[i]);
     return ret;
 }
 
@@ -1048,7 +1050,7 @@ OC_DEVICE_FLAG oc_half4 oc_floor(oc_half4 v) { return oc_half4(oc_floor(v.x), oc
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_floor(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_floor(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_floor(x[i]);
     return ret;
 }
 
@@ -1063,7 +1065,7 @@ OC_DEVICE_FLAG oc_half4 oc_fract(oc_half4 v) { return oc_half4(oc_fract(v.x), oc
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_fract(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_fract(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_fract(x[i]);
     return ret;
 }
 
@@ -1078,7 +1080,7 @@ OC_DEVICE_FLAG oc_half4 oc_round(oc_half4 v) { return oc_half4(oc_round(v.x), oc
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_round(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_round(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_round(x[i]);
     return ret;
 }
 
@@ -1093,7 +1095,7 @@ OC_DEVICE_FLAG oc_half4 oc_sin(oc_half4 v) { return oc_half4(oc_sin(v.x), oc_sin
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sin(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sin(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sin(x[i]);
     return ret;
 }
 
@@ -1104,7 +1106,7 @@ OC_DEVICE_FLAG oc_float4 oc_cos(oc_float4 v) { return oc_float4(oc_cos(v.x), oc_
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_cos(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_cos(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_cos(x[i]);
     return ret;
 }
 
@@ -1115,7 +1117,7 @@ OC_DEVICE_FLAG oc_float4 oc_tan(oc_float4 v) { return oc_float4(oc_tan(v.x), oc_
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_tan(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_tan(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_tan(x[i]);
     return ret;
 }
 
@@ -1126,7 +1128,7 @@ OC_DEVICE_FLAG oc_float4 oc_sinh(oc_float4 v) { return oc_float4(oc_sinh(v.x), o
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sinh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sinh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sinh(x[i]);
     return ret;
 }
 
@@ -1137,7 +1139,7 @@ OC_DEVICE_FLAG oc_float4 oc_cosh(oc_float4 v) { return oc_float4(oc_cosh(v.x), o
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_cosh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_cosh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_cosh(x[i]);
     return ret;
 }
 
@@ -1148,7 +1150,7 @@ OC_DEVICE_FLAG oc_float4 oc_tanh(oc_float4 v) { return oc_float4(oc_tanh(v.x), o
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_tanh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_tanh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_tanh(x[i]);
     return ret;
 }
 
@@ -1159,7 +1161,7 @@ OC_DEVICE_FLAG oc_float4 oc_asin(oc_float4 v) { return oc_float4(oc_asin(v.x), o
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_asin(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_asin(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_asin(x[i]);
     return ret;
 }
 
@@ -1170,7 +1172,7 @@ OC_DEVICE_FLAG oc_float4 oc_acos(oc_float4 v) { return oc_float4(oc_acos(v.x), o
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_acos(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_acos(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_acos(x[i]);
     return ret;
 }
 
@@ -1181,7 +1183,7 @@ OC_DEVICE_FLAG oc_float4 oc_atan(oc_float4 v) { return oc_float4(oc_atan(v.x), o
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_atan(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_atan(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_atan(x[i]);
     return ret;
 }
 
@@ -1192,7 +1194,7 @@ OC_DEVICE_FLAG oc_float4 oc_asinh(oc_float4 v) { return oc_float4(oc_asinh(v.x),
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_asinh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_asinh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_asinh(x[i]);
     return ret;
 }
 
@@ -1203,7 +1205,7 @@ OC_DEVICE_FLAG oc_float4 oc_acosh(oc_float4 v) { return oc_float4(oc_acosh(v.x),
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_acosh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_acosh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_acosh(x[i]);
     return ret;
 }
 
@@ -1214,7 +1216,7 @@ OC_DEVICE_FLAG oc_float4 oc_atanh(oc_float4 v) { return oc_float4(oc_atanh(v.x),
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_atanh(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_atanh(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_atanh(x[i]);
     return ret;
 }
 
@@ -1237,7 +1239,7 @@ OC_DEVICE_FLAG oc_bool4 oc_is_inf(oc_uint4 v) { return oc_bool4(oc_is_inf(v.x), 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_is_inf(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_is_inf(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_is_inf(x[i]);
     return ret;
 }
 
@@ -1260,7 +1262,7 @@ OC_DEVICE_FLAG oc_bool4 oc_is_nan(oc_uint4 v) { return oc_bool4(oc_is_nan(v.x), 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_is_nan(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_is_nan(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_is_nan(x[i]);
     return ret;
 }
 
@@ -1275,7 +1277,7 @@ OC_DEVICE_FLAG oc_half4 oc_exp(oc_half4 v) { return oc_half4(oc_exp(v.x), oc_exp
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_exp(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_exp(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_exp(x[i]);
     return ret;
 }
 
@@ -1290,7 +1292,7 @@ OC_DEVICE_FLAG oc_half4 oc_exp2(oc_half4 v) { return oc_half4(oc_exp2(v.x), oc_e
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_exp2(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_exp2(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_exp2(x[i]);
     return ret;
 }
 
@@ -1305,7 +1307,7 @@ OC_DEVICE_FLAG oc_half4 oc_exp10(oc_half4 v) { return oc_half4(oc_exp10(v.x), oc
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_exp10(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_exp10(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_exp10(x[i]);
     return ret;
 }
 
@@ -1320,7 +1322,7 @@ OC_DEVICE_FLAG oc_half4 oc_log(oc_half4 v) { return oc_half4(oc_log(v.x), oc_log
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_log(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_log(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_log(x[i]);
     return ret;
 }
 
@@ -1335,7 +1337,7 @@ OC_DEVICE_FLAG oc_half4 oc_log2(oc_half4 v) { return oc_half4(oc_log2(v.x), oc_l
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_log2(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_log2(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_log2(x[i]);
     return ret;
 }
 
@@ -1350,7 +1352,7 @@ OC_DEVICE_FLAG oc_half4 oc_log10(oc_half4 v) { return oc_half4(oc_log10(v.x), oc
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_log10(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_log10(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_log10(x[i]);
     return ret;
 }
 
@@ -1373,7 +1375,7 @@ OC_DEVICE_FLAG oc_half4 oc_sqr(oc_half4 v) { return oc_half4(oc_sqr(v.x), oc_sqr
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sqr(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sqr(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sqr(x[i]);
     return ret;
 }
 
@@ -1388,7 +1390,7 @@ OC_DEVICE_FLAG oc_half4 oc_sqrt(oc_half4 v) { return oc_half4(oc_sqrt(v.x), oc_s
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sqrt(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_sqrt(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_sqrt(x[i]);
     return ret;
 }
 
@@ -1403,7 +1405,7 @@ OC_DEVICE_FLAG oc_half4 oc_rsqrt(oc_half4 v) { return oc_half4(oc_rsqrt(v.x), oc
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_rsqrt(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_rsqrt(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_rsqrt(x[i]);
     return ret;
 }
 
@@ -1418,7 +1420,7 @@ OC_DEVICE_FLAG oc_half4 oc_degrees(oc_half4 v) { return oc_half4(oc_degrees(v.x)
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_degrees(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_degrees(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_degrees(x[i]);
     return ret;
 }
 
@@ -1433,7 +1435,7 @@ OC_DEVICE_FLAG oc_half4 oc_radians(oc_half4 v) { return oc_half4(oc_radians(v.x)
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_radians(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_radians(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_radians(x[i]);
     return ret;
 }
 
@@ -1448,7 +1450,7 @@ OC_DEVICE_FLAG oc_half4 oc_saturate(oc_half4 v) { return oc_half4(oc_saturate(v.
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_saturate(oc_array<T, N> x) {
     oc_array<T, N> ret{};
-    for(oc_uint i = 0; i < N; ++i) ret[i] = oc_saturate(x[i]);
+    for(size_t i = 0; i < N; ++i) ret[i] = oc_saturate(x[i]);
     return ret;
 }
 
@@ -1463,7 +1465,7 @@ OC_DEVICE_FLAG oc_half4 oc_pow(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_
 template<typename T, size_t N>
 oc_array<decltype(oc_pow(T{}, T{})), N> oc_pow(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_pow(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_pow(lhs[i], rhs[i]);
     }
     return ret;
@@ -1480,7 +1482,7 @@ OC_DEVICE_FLAG oc_half4 oc_fmod(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc
 template<typename T, size_t N>
 oc_array<decltype(oc_fmod(T{}, T{})), N> oc_fmod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_fmod(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_fmod(lhs[i], rhs[i]);
     }
     return ret;
@@ -1497,7 +1499,7 @@ OC_DEVICE_FLAG oc_half4 oc_mod(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_
 template<typename T, size_t N>
 oc_array<decltype(oc_mod(T{}, T{})), N> oc_mod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_mod(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_mod(lhs[i], rhs[i]);
     }
     return ret;
@@ -1522,7 +1524,7 @@ OC_DEVICE_FLAG oc_half4 oc_min(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_
 template<typename T, size_t N>
 oc_array<decltype(oc_min(T{}, T{})), N> oc_min(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_min(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_min(lhs[i], rhs[i]);
     }
     return ret;
@@ -1547,7 +1549,7 @@ OC_DEVICE_FLAG oc_half4 oc_max(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_
 template<typename T, size_t N>
 oc_array<decltype(oc_max(T{}, T{})), N> oc_max(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_max(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_max(lhs[i], rhs[i]);
     }
     return ret;
@@ -1564,7 +1566,7 @@ OC_DEVICE_FLAG oc_half4 oc_atan2(oc_half4 lhs, oc_half4 rhs) { return oc_half4(o
 template<typename T, size_t N>
 oc_array<decltype(oc_atan2(T{}, T{})), N> oc_atan2(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_atan2(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_atan2(lhs[i], rhs[i]);
     }
     return ret;
@@ -1581,7 +1583,7 @@ OC_DEVICE_FLAG oc_half4 oc_copysign(oc_half4 lhs, oc_half4 rhs) { return oc_half
 template<typename T, size_t N>
 oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_array<T, N> rhs) {
     oc_array<decltype(oc_copysign(T{}, T{})), N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_copysign(lhs[i], rhs[i]);
     }
     return ret;
@@ -1594,7 +1596,7 @@ OC_DEVICE_FLAG oc_float4 oc_lerp(oc_float4 v0, oc_float4 v1, oc_float4 v2) { ret
 template<size_t N>
 oc_array<oc_float, N> oc_lerp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1607,7 +1609,7 @@ OC_DEVICE_FLAG oc_half4 oc_lerp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return 
 template<size_t N>
 oc_array<oc_half, N> oc_lerp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1621,7 +1623,7 @@ OC_DEVICE_FLAG oc_float4 oc_clamp(oc_float4 v0, oc_float4 v1, oc_float4 v2) { re
 template<size_t N>
 oc_array<oc_float, N> oc_clamp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1634,7 +1636,7 @@ OC_DEVICE_FLAG oc_uint4 oc_clamp(oc_uint4 v0, oc_uint4 v1, oc_uint4 v2) { return
 template<size_t N>
 oc_array<oc_uint, N> oc_clamp(oc_array<oc_uint, N> v0, oc_array<oc_uint, N> v1, oc_array<oc_uint, N> v2) {
     oc_array<oc_uint, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1647,7 +1649,7 @@ OC_DEVICE_FLAG oc_int4 oc_clamp(oc_int4 v0, oc_int4 v1, oc_int4 v2) { return oc_
 template<size_t N>
 oc_array<oc_int, N> oc_clamp(oc_array<oc_int, N> v0, oc_array<oc_int, N> v1, oc_array<oc_int, N> v2) {
     oc_array<oc_int, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1660,7 +1662,7 @@ OC_DEVICE_FLAG oc_half4 oc_clamp(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return
 template<size_t N>
 oc_array<oc_half, N> oc_clamp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_clamp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1674,7 +1676,7 @@ OC_DEVICE_FLAG oc_float4 oc_fma(oc_float4 v0, oc_float4 v1, oc_float4 v2) { retu
 template<size_t N>
 oc_array<oc_float, N> oc_fma(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_fma(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1687,7 +1689,7 @@ OC_DEVICE_FLAG oc_half4 oc_fma(oc_half4 v0, oc_half4 v1, oc_half4 v2) { return o
 template<size_t N>
 oc_array<oc_half, N> oc_fma(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_fma(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1701,7 +1703,7 @@ OC_DEVICE_FLAG oc_float4 oc_inverse_lerp(oc_float4 v0, oc_float4 v1, oc_float4 v
 template<size_t N>
 oc_array<oc_float, N> oc_inverse_lerp(oc_array<oc_float, N> v0, oc_array<oc_float, N> v1, oc_array<oc_float, N> v2) {
     oc_array<oc_float, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_inverse_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;
@@ -1714,7 +1716,7 @@ OC_DEVICE_FLAG oc_half4 oc_inverse_lerp(oc_half4 v0, oc_half4 v1, oc_half4 v2) {
 template<size_t N>
 oc_array<oc_half, N> oc_inverse_lerp(oc_array<oc_half, N> v0, oc_array<oc_half, N> v1, oc_array<oc_half, N> v2) {
     oc_array<oc_half, N> ret;
-    for(oc_uint i = 0; i < N; ++i) {
+    for(size_t i = 0; i < N; ++i) {
         ret[i] = oc_inverse_lerp(v0[i], v1[i], v2[i]);
     }
     return ret;
