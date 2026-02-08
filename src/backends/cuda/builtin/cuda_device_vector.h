@@ -112,42 +112,23 @@ operator+(const Container<T, N> v) noexcept {
     return v;
 }
 
-template<typename T, size_t N>
-[[nodiscard]] OC_DEVICE_FLAG constexpr auto
-operator-(const ocarina::Vector<T, N> v) noexcept {
-    using R = ocarina::Vector<T, N>;
-    if constexpr (N == 2) {
-        return R{-v.x, -v.y};
-    } else if constexpr (N == 3) {
-        return R{-v.x, -v.y, -v.z};
-    } else {
-        return R{-v.x, -v.y, -v.z, -v.w};
+#define OC_MAKE_UNARY_VECTOR_OPERATOR(op)                 \
+    template<typename T, size_t N>                        \
+    [[nodiscard]] OC_DEVICE_FLAG constexpr auto           \
+    operator op(const ocarina::Vector<T, N> v) noexcept { \
+        using R = ocarina::Vector<decltype(op T{}), N>;   \
+        if constexpr (N == 2) {                           \
+            return R{op v.x, op v.y};                     \
+        } else if constexpr (N == 3) {                    \
+            return R{op v.x, op v.y, op v.z};             \
+        } else {                                          \
+            return R{op v.x, op v.y, op v.z, op v.w};     \
+        }                                                 \
     }
-}
 
-template<typename T, size_t N>
-[[nodiscard]] OC_DEVICE_FLAG constexpr auto operator!(const ocarina::Vector<T, N> v) noexcept {
-    if constexpr (N == 2u) {
-        return ocarina::Vector<bool, 2>{!v.x, !v.y};
-    } else if constexpr (N == 3u) {
-        return ocarina::Vector<bool, 3>{!v.x, !v.y, !v.z};
-    } else {
-        return ocarina::Vector<bool, 3>{!v.x, !v.y, !v.z, !v.w};
-    }
-}
-
-template<typename T, size_t N>
-[[nodiscard]] OC_DEVICE_FLAG constexpr auto
-operator~(const ocarina::Vector<T, N> v) noexcept {
-    using R = ocarina::Vector<T, N>;
-    if constexpr (N == 2) {
-        return R{~v.x, ~v.y};
-    } else if constexpr (N == 3) {
-        return R{~v.x, ~v.y, ~v.z};
-    } else {
-        return R{~v.x, ~v.y, ~v.z, ~v.w};
-    }
-}
+OC_MAKE_UNARY_VECTOR_OPERATOR(-)
+OC_MAKE_UNARY_VECTOR_OPERATOR(!)
+OC_MAKE_UNARY_VECTOR_OPERATOR(~)
 
 #define OC_MAKE_VECTOR(type)  \
     OC_MAKE_VECTOR_N(type, 2) \
