@@ -433,13 +433,21 @@ def define_unary_func(func_name, need_array, param):
             content += func
 
     if need_array:
-        t_body = f""
-        t_elm_type = f"{prefix}_{scalar}"
-        t_ret_type = f"oc_array<T, N>"
-        t_body = f"\n    {t_ret_type} ret{{}};\n"
-        t_body += f"    for(size_t i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);\n    return ret;\n"
-        ff = f"template<typename T, size_t N>\nOC_DEVICE_FLAG {t_ret_type} {prefix}_{func_name}(oc_array<T, N> x) {{{t_body}}}\n"
-        content += ff
+        t_body = f"""
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto {func_name}_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {{
+    using decltype_t = decltype({prefix}_{func_name}(arr[0]));
+    return oc_array<decltype_t, N>{{({prefix}_{func_name}(arr[i]))...}};
+}}
+
+template<typename T, size_t N>
+OC_DEVICE_FLAG oc_array<T, N> {prefix}_{func_name}(oc_array<T, N> x) {{
+    oc_array<T, N> ret{{}};
+    for(size_t i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);
+    return ret;
+}}
+"""
+        content += t_body
 
     content += "\n"
 
