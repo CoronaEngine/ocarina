@@ -171,7 +171,7 @@ def define_array_binary(cal_binary, cmp_binary, bit_binary):
         ">>": "rshift",
     }
 
-    for op in cal_binary:
+    for op in binary:
         name = name_dict[op]
         func = f"""
 template<typename T, typename U, size_t N, size_t ...size>
@@ -217,98 +217,6 @@ template<typename T,typename U, size_t N>
 }}
 
 template<typename T,typename U, size_t N>
-{device_flag} auto operator{op}(oc_array<T, 1> lhs, oc_array<U, N> rhs) {{
-    return lhs[0] {op} rhs;
-}}
-"""
-        content += func
-
-    for op in cmp_binary:
-        func = f"""
-template<typename T, typename U, size_t N>
-{device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
-    oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs[i] {op} rhs[i];
-    }}
-    return ret;
-}}
-
-template<typename T,typename U, size_t N>
-{device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, U rhs) {{
-    oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs[i] {op} rhs;
-    }}
-    return ret;
-}}
-
-template<typename T, typename U, size_t N>
-{device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, N> lhs, oc_array<U, 1> rhs) {{    
-    oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs[i] {op} rhs[0];
-    }}
-    return ret;
-}}
-
-template<typename T, typename U, size_t N>
-{device_flag} oc_array<oc_bool, N> operator{op}(T lhs, oc_array<U, N> rhs) {{
-    oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs {op} rhs[i];
-    }}
-    return ret;
-}}
-
-template<typename T, typename U, size_t N>
-{device_flag} oc_array<oc_bool, N> operator{op}(oc_array<T, 1> lhs, oc_array<U, N> rhs) {{
-    oc_array<oc_bool, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs[0] {op} rhs[i];
-    }}
-    return ret;
-}}
-
-
-"""
-        content += func
-
-    for op in bit_binary:
-        func = f"""
-template<typename T, typename U, size_t N>
-{device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, N> rhs) {{
-    oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs[i] {op} rhs[i];
-    }}
-    return ret;
-}}
-
-template<typename T, typename U, size_t N>
-{device_flag} auto operator{op}(oc_array<T, N> lhs, U rhs) {{
-    oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs[i] {op} rhs;
-    }}
-    return ret;
-}}
-
-template<typename T, typename U, size_t N>
-{device_flag} auto operator{op}(oc_array<T, N> lhs, oc_array<U, 1> rhs) {{
-    return lhs {op} rhs[0];
-}}
-
-template<typename T, typename U, size_t N>
-{device_flag} auto operator{op}(T lhs, oc_array<U, N> rhs) {{
-    oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs {op} rhs[i];
-    }}
-    return ret;
-}}
-
-template<typename T, typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, 1> lhs, oc_array<U, N> rhs) {{
     return lhs[0] {op} rhs;
 }}
