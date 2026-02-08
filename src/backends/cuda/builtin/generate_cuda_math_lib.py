@@ -442,9 +442,7 @@ OC_DEVICE_FLAG constexpr auto {func_name}_array_impl(const oc_array<T, N> &arr, 
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> {prefix}_{func_name}(oc_array<T, N> x) {{
-    oc_array<T, N> ret{{}};
-    for(size_t i = 0; i < N; ++i) ret[i] = {prefix}_{func_name}(x[i]);
-    return ret;
+    return {func_name}_array_impl(x, ocarina::make_index_sequence<N>());
 }}
 """
         content += t_body
