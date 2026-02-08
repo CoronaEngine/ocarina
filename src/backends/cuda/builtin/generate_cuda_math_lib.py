@@ -286,7 +286,7 @@ template<size_t N>
 }}
 
 """
-    # content += fun
+    content += fun
     content += "\n"
 
 

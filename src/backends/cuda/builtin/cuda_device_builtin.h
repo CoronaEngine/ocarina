@@ -1006,6 +1006,30 @@ OC_DEVICE_FLAG oc_bool oc_none(oc_bool2 vec) { return !oc_any(vec); }
 OC_DEVICE_FLAG oc_bool oc_none(oc_bool3 vec) { return !oc_any(vec); }
 OC_DEVICE_FLAG oc_bool oc_none(oc_bool4 vec) { return !oc_any(vec); }
 
+template<size_t N>
+[[nodiscard]] oc_bool oc_any(oc_array<oc_bool, N> arg) {
+    oc_bool ret = arg[0];
+    for(size_t i = 1u; i < N; ++i) {
+        ret = ret || arg[i];
+    }
+    return ret;
+}
+
+template<size_t N>
+[[nodiscard]] oc_bool oc_all(oc_array<oc_bool, N> arg) {
+    oc_bool ret = arg[0];
+    for(size_t i = 1u; i < N; ++i) {
+        ret = ret && arg[i];
+    }
+    return ret;
+}
+
+template<size_t N>
+[[nodiscard]] oc_bool oc_none(oc_array<oc_bool, N> arg) {
+    return !oc_any(arg);
+}
+
+
 OC_DEVICE_FLAG oc_int oc_select(oc_bool pred, oc_int t, oc_int f) { return pred ? t : f; }
 OC_DEVICE_FLAG oc_int2 oc_select(oc_bool2 pred, oc_int2 t, oc_int2 f) {
 	return oc_int2(oc_select(pred.x, t.x, f.x), oc_select(pred.y, t.y, f.y));
