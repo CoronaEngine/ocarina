@@ -205,35 +205,6 @@ OC_MAKE_VECTOR_BINARY_OPERATOR(^, ocarina::is_all_integral_v<T, U>)
 
 #undef OC_MAKE_VECTOR_BINARY_OPERATOR
 
-#define OC_MAKE_VECTOR_ASSIGN_OPERATOR(op, ...)                           \
-    template<typename T, typename U, size_t N>                            \
-    OC_DEVICE_FLAG constexpr decltype(auto) operator op(                  \
-        ocarina::Vector<T, N> &lhs, ocarina::Vector<U, N> rhs) noexcept { \
-        lhs.x op rhs.x;                                                   \
-        lhs.y op rhs.y;                                                   \
-        if constexpr (N >= 3) { lhs.z op rhs.z; }                         \
-        if constexpr (N == 4) { lhs.w op rhs.w; }                         \
-        return (lhs);                                                     \
-    }                                                                     \
-    template<typename T, typename U, size_t N>                            \
-    OC_DEVICE_FLAG constexpr decltype(auto) operator op(                  \
-        ocarina::Vector<T, N> &lhs, U rhs) noexcept {                     \
-        return (lhs op ocarina::Vector<U, N>{rhs});                       \
-    }
-
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(+=, ocarina::is_all_number_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(-=, ocarina::is_all_number_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(*=, ocarina::is_all_number_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(/=, ocarina::is_all_number_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(%=, ocarina::is_all_number_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(<<=, ocarina::is_all_integral_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(>>=, ocarina::is_all_integral_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(|=, ocarina::is_all_integral_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(&=, ocarina::is_all_integral_v<T, U>)
-//OC_MAKE_VECTOR_ASSIGN_OPERATOR(^=, ocarina::is_all_integral_v<T, U>)
-
-#undef OC_MAKE_VECTOR_ASSIGN_OPERATOR
-
 #define OC_MAKE_VECTOR_LOGIC_OPERATOR(op, ...)                           \
     template<typename T, size_t N>                                       \
     [[nodiscard]] OC_DEVICE_FLAG constexpr auto                          \
