@@ -15,8 +15,8 @@ namespace ocarina {
 namespace detail {
 
 template<size_t N, template<typename, size_t> typename Container,
-         typename P, typename T, typename F, size_t... i>
-[[nodiscard]] constexpr auto select_helper(Container<P, N> pred, Container<T, N> t,
+         typename T, typename F, size_t... i>
+[[nodiscard]] constexpr auto select_helper(Container<bool, N> pred, Container<T, N> t,
                                            Container<F, N> f, ocarina::index_sequence<i...>) {
     using scalar_type = decltype(ocarina::select(bool{}, T{}, F{}));
     return Container<scalar_type, N>{ocarina::select(pred[i], t[i], f[i])...};
@@ -24,18 +24,16 @@ template<size_t N, template<typename, size_t> typename Container,
 
 }// namespace detail
 
-template<size_t N, template<typename, size_t> typename Container,
-         typename P, typename T, typename F>
-[[nodiscard]] constexpr auto select(Container<P, N> pred, Container<T, N> t,
+template<size_t N, template<typename, size_t> typename Container, typename T, typename F>
+[[nodiscard]] constexpr auto select(Container<bool, N> pred, Container<T, N> t,
                                     Container<F, N> f) {
     return detail::select_helper(pred, t, f, ocarina::make_index_sequence<N>());
 }
 
-template<size_t N, template<typename, size_t> typename Container,
-         typename P, typename T, typename F>
-[[nodiscard]] constexpr auto select(P pred, Container<T, N> t,
+template<size_t N, template<typename, size_t> typename Container, typename T, typename F>
+[[nodiscard]] constexpr auto select(bool pred, Container<T, N> t,
                                     Container<F, N> f) {
-    return select(Container<P, N>(pred), t, f);
+    return select(Container<bool, N>(pred), t, f);
 }
 
 }// namespace ocarina
