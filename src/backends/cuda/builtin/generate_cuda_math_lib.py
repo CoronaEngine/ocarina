@@ -119,15 +119,28 @@ def define_array_unary(unary):
         "!": "logical_not",
         "~": "bit_not",
     }
+    
     for op in unary:
+        if op == "+":
+            func = """
+template<typename T, size_t N>
+OC_DEVICE_FLAG oc_array<T, N> operator+(oc_array<T, N> arg) {
+    return arg;
+}
+            """
+            content += func
+            continue
+        name = name_dict[op]
         func = f"""
+template<typename T, size_t N, size_t... i>
+OC_DEVICE_FLAG constexpr auto {name}_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {{
+    using decltype_t = decltype({op}arr[0]);
+    return oc_array<decltype_t, N>{{({op}arr[i])...}};
+}}
+        
 template<typename T, size_t N>
 {device_flag} oc_array<T, N> operator{op}(oc_array<T, N> arg) {{
-    oc_array<T, N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = {op}arg[i];
-    }}
-    return ret;
+    return {name}_array_impl(arg, ocarina::make_index_sequence<N>());
 }}
 """
         content += func

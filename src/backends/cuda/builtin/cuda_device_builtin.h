@@ -7,38 +7,40 @@
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator+(oc_array<T, N> arg) {
-    oc_array<T, N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = +arg[i];
-    }
-    return ret;
+    return arg;
 }
-
+            
+template<typename T, size_t N, size_t... i>
+OC_DEVICE_FLAG constexpr auto negative_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(-arr[0]);
+    return oc_array<decltype_t, N>{(-arr[i])...};
+}
+        
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator-(oc_array<T, N> arg) {
-    oc_array<T, N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = -arg[i];
-    }
-    return ret;
+    return negative_array_impl(arg, ocarina::make_index_sequence<N>());
 }
 
+template<typename T, size_t N, size_t... i>
+OC_DEVICE_FLAG constexpr auto logical_not_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(!arr[0]);
+    return oc_array<decltype_t, N>{(!arr[i])...};
+}
+        
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator!(oc_array<T, N> arg) {
-    oc_array<T, N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = !arg[i];
-    }
-    return ret;
+    return logical_not_array_impl(arg, ocarina::make_index_sequence<N>());
 }
 
+template<typename T, size_t N, size_t... i>
+OC_DEVICE_FLAG constexpr auto bit_not_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(~arr[0]);
+    return oc_array<decltype_t, N>{(~arr[i])...};
+}
+        
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> operator~(oc_array<T, N> arg) {
-    oc_array<T, N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = ~arg[i];
-    }
-    return ret;
+    return bit_not_array_impl(arg, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
