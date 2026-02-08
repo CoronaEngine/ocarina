@@ -43,11 +43,11 @@ OC_DEVICE_FLAG oc_array<T, N> operator~(oc_array<T, N> arg) {
     return bit_not_array_impl(arg, ocarina::make_index_sequence<N>());
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_add_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} + U{});
-    return oc_array<ret_type, N>{(lhs[size] + rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] + rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -62,13 +62,16 @@ OC_DEVICE_FLAG auto operator+(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_add_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} + U{});
+    return oc_array<ret_type, N>{(lhs[i] + rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator+(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} + U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] + rhs;
-    }
-    return ret;
+    return array_add_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -76,13 +79,16 @@ OC_DEVICE_FLAG auto operator+(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs + rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_add_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} + U{});
+    return oc_array<ret_type, N>{(lhs + rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator+(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} + U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs + rhs[i];
-    }
-    return ret;
+    return array_add_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -90,11 +96,11 @@ OC_DEVICE_FLAG auto operator+(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] + rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_sub_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} - U{});
-    return oc_array<ret_type, N>{(lhs[size] - rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] - rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -109,13 +115,16 @@ OC_DEVICE_FLAG auto operator-(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_sub_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} - U{});
+    return oc_array<ret_type, N>{(lhs[i] - rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator-(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} - U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] - rhs;
-    }
-    return ret;
+    return array_sub_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -123,13 +132,16 @@ OC_DEVICE_FLAG auto operator-(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs - rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_sub_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} - U{});
+    return oc_array<ret_type, N>{(lhs - rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator-(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} - U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs - rhs[i];
-    }
-    return ret;
+    return array_sub_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -137,11 +149,11 @@ OC_DEVICE_FLAG auto operator-(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] - rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_mul_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} * U{});
-    return oc_array<ret_type, N>{(lhs[size] * rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] * rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -156,13 +168,16 @@ OC_DEVICE_FLAG auto operator*(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_mul_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} * U{});
+    return oc_array<ret_type, N>{(lhs[i] * rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator*(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} * U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] * rhs;
-    }
-    return ret;
+    return array_mul_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -170,13 +185,16 @@ OC_DEVICE_FLAG auto operator*(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs * rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_mul_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} * U{});
+    return oc_array<ret_type, N>{(lhs * rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator*(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} * U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs * rhs[i];
-    }
-    return ret;
+    return array_mul_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -184,11 +202,11 @@ OC_DEVICE_FLAG auto operator*(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] * rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_div_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} / U{});
-    return oc_array<ret_type, N>{(lhs[size] / rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] / rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -203,13 +221,16 @@ OC_DEVICE_FLAG auto operator/(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_div_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} / U{});
+    return oc_array<ret_type, N>{(lhs[i] / rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator/(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} / U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] / rhs;
-    }
-    return ret;
+    return array_div_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -217,13 +238,16 @@ OC_DEVICE_FLAG auto operator/(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs / rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_div_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} / U{});
+    return oc_array<ret_type, N>{(lhs / rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator/(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} / U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs / rhs[i];
-    }
-    return ret;
+    return array_div_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -231,11 +255,11 @@ OC_DEVICE_FLAG auto operator/(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] / rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_mod_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} % U{});
-    return oc_array<ret_type, N>{(lhs[size] % rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] % rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -250,13 +274,16 @@ OC_DEVICE_FLAG auto operator%(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_mod_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} % U{});
+    return oc_array<ret_type, N>{(lhs[i] % rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator%(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} % U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] % rhs;
-    }
-    return ret;
+    return array_mod_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -264,13 +291,16 @@ OC_DEVICE_FLAG auto operator%(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs % rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_mod_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} % U{});
+    return oc_array<ret_type, N>{(lhs % rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator%(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} % U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs % rhs[i];
-    }
-    return ret;
+    return array_mod_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -278,11 +308,11 @@ OC_DEVICE_FLAG auto operator%(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] % rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_eq_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} == U{});
-    return oc_array<ret_type, N>{(lhs[size] == rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] == rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -297,13 +327,16 @@ OC_DEVICE_FLAG auto operator==(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_eq_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} == U{});
+    return oc_array<ret_type, N>{(lhs[i] == rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator==(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} == U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] == rhs;
-    }
-    return ret;
+    return array_eq_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -311,13 +344,16 @@ OC_DEVICE_FLAG auto operator==(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs == rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_eq_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} == U{});
+    return oc_array<ret_type, N>{(lhs == rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator==(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} == U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs == rhs[i];
-    }
-    return ret;
+    return array_eq_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -325,11 +361,11 @@ OC_DEVICE_FLAG auto operator==(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] == rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_ne_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} != U{});
-    return oc_array<ret_type, N>{(lhs[size] != rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] != rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -344,13 +380,16 @@ OC_DEVICE_FLAG auto operator!=(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_ne_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} != U{});
+    return oc_array<ret_type, N>{(lhs[i] != rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator!=(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} != U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] != rhs;
-    }
-    return ret;
+    return array_ne_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -358,13 +397,16 @@ OC_DEVICE_FLAG auto operator!=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs != rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_ne_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} != U{});
+    return oc_array<ret_type, N>{(lhs != rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator!=(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} != U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs != rhs[i];
-    }
-    return ret;
+    return array_ne_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -372,11 +414,11 @@ OC_DEVICE_FLAG auto operator!=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] != rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_gt_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} > U{});
-    return oc_array<ret_type, N>{(lhs[size] > rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] > rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -391,13 +433,16 @@ OC_DEVICE_FLAG auto operator>(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_gt_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} > U{});
+    return oc_array<ret_type, N>{(lhs[i] > rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator>(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} > U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] > rhs;
-    }
-    return ret;
+    return array_gt_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -405,13 +450,16 @@ OC_DEVICE_FLAG auto operator>(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs > rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_gt_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} > U{});
+    return oc_array<ret_type, N>{(lhs > rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator>(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} > U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs > rhs[i];
-    }
-    return ret;
+    return array_gt_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -419,11 +467,11 @@ OC_DEVICE_FLAG auto operator>(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] > rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_lt_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} < U{});
-    return oc_array<ret_type, N>{(lhs[size] < rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] < rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -438,13 +486,16 @@ OC_DEVICE_FLAG auto operator<(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_lt_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} < U{});
+    return oc_array<ret_type, N>{(lhs[i] < rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator<(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} < U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] < rhs;
-    }
-    return ret;
+    return array_lt_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -452,13 +503,16 @@ OC_DEVICE_FLAG auto operator<(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs < rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_lt_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} < U{});
+    return oc_array<ret_type, N>{(lhs < rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator<(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} < U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs < rhs[i];
-    }
-    return ret;
+    return array_lt_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -466,11 +520,11 @@ OC_DEVICE_FLAG auto operator<(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] < rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_ge_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} >= U{});
-    return oc_array<ret_type, N>{(lhs[size] >= rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] >= rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -485,13 +539,16 @@ OC_DEVICE_FLAG auto operator>=(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_ge_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} >= U{});
+    return oc_array<ret_type, N>{(lhs[i] >= rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator>=(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} >= U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] >= rhs;
-    }
-    return ret;
+    return array_ge_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -499,13 +556,16 @@ OC_DEVICE_FLAG auto operator>=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs >= rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_ge_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} >= U{});
+    return oc_array<ret_type, N>{(lhs >= rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator>=(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} >= U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs >= rhs[i];
-    }
-    return ret;
+    return array_ge_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -513,11 +573,11 @@ OC_DEVICE_FLAG auto operator>=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] >= rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_le_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} <= U{});
-    return oc_array<ret_type, N>{(lhs[size] <= rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] <= rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -532,13 +592,16 @@ OC_DEVICE_FLAG auto operator<=(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_le_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} <= U{});
+    return oc_array<ret_type, N>{(lhs[i] <= rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator<=(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} <= U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] <= rhs;
-    }
-    return ret;
+    return array_le_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -546,13 +609,16 @@ OC_DEVICE_FLAG auto operator<=(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs <= rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_le_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} <= U{});
+    return oc_array<ret_type, N>{(lhs <= rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator<=(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} <= U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs <= rhs[i];
-    }
-    return ret;
+    return array_le_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -560,11 +626,11 @@ OC_DEVICE_FLAG auto operator<=(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] <= rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_logical_and_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} && U{});
-    return oc_array<ret_type, N>{(lhs[size] && rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] && rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -579,13 +645,16 @@ OC_DEVICE_FLAG auto operator&&(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_logical_and_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} && U{});
+    return oc_array<ret_type, N>{(lhs[i] && rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator&&(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} && U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] && rhs;
-    }
-    return ret;
+    return array_logical_and_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -593,13 +662,16 @@ OC_DEVICE_FLAG auto operator&&(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs && rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_logical_and_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} && U{});
+    return oc_array<ret_type, N>{(lhs && rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator&&(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} && U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs && rhs[i];
-    }
-    return ret;
+    return array_logical_and_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -607,11 +679,11 @@ OC_DEVICE_FLAG auto operator&&(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] && rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_logical_or_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} || U{});
-    return oc_array<ret_type, N>{(lhs[size] || rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] || rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -626,13 +698,16 @@ OC_DEVICE_FLAG auto operator||(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_logical_or_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} || U{});
+    return oc_array<ret_type, N>{(lhs[i] || rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator||(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} || U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] || rhs;
-    }
-    return ret;
+    return array_logical_or_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -640,13 +715,16 @@ OC_DEVICE_FLAG auto operator||(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs || rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_logical_or_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} || U{});
+    return oc_array<ret_type, N>{(lhs || rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator||(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} || U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs || rhs[i];
-    }
-    return ret;
+    return array_logical_or_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -654,11 +732,11 @@ OC_DEVICE_FLAG auto operator||(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] || rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_bit_and_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} & U{});
-    return oc_array<ret_type, N>{(lhs[size] & rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] & rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -673,13 +751,16 @@ OC_DEVICE_FLAG auto operator&(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_bit_and_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} & U{});
+    return oc_array<ret_type, N>{(lhs[i] & rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator&(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} & U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] & rhs;
-    }
-    return ret;
+    return array_bit_and_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -687,13 +768,16 @@ OC_DEVICE_FLAG auto operator&(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs & rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_bit_and_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} & U{});
+    return oc_array<ret_type, N>{(lhs & rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator&(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} & U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs & rhs[i];
-    }
-    return ret;
+    return array_bit_and_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -701,11 +785,11 @@ OC_DEVICE_FLAG auto operator&(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] & rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_bit_or_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} | U{});
-    return oc_array<ret_type, N>{(lhs[size] | rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] | rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -720,13 +804,16 @@ OC_DEVICE_FLAG auto operator|(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_bit_or_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} | U{});
+    return oc_array<ret_type, N>{(lhs[i] | rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator|(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} | U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] | rhs;
-    }
-    return ret;
+    return array_bit_or_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -734,13 +821,16 @@ OC_DEVICE_FLAG auto operator|(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs | rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_bit_or_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} | U{});
+    return oc_array<ret_type, N>{(lhs | rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator|(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} | U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs | rhs[i];
-    }
-    return ret;
+    return array_bit_or_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -748,11 +838,11 @@ OC_DEVICE_FLAG auto operator|(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] | rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_bit_xor_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} ^ U{});
-    return oc_array<ret_type, N>{(lhs[size] ^ rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] ^ rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -767,13 +857,16 @@ OC_DEVICE_FLAG auto operator^(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_bit_xor_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} ^ U{});
+    return oc_array<ret_type, N>{(lhs[i] ^ rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator^(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} ^ U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] ^ rhs;
-    }
-    return ret;
+    return array_bit_xor_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -781,13 +874,16 @@ OC_DEVICE_FLAG auto operator^(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs ^ rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_bit_xor_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} ^ U{});
+    return oc_array<ret_type, N>{(lhs ^ rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator^(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} ^ U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs ^ rhs[i];
-    }
-    return ret;
+    return array_bit_xor_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -795,11 +891,11 @@ OC_DEVICE_FLAG auto operator^(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] ^ rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_lshift_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} << U{});
-    return oc_array<ret_type, N>{(lhs[size] << rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] << rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -814,13 +910,16 @@ OC_DEVICE_FLAG auto operator<<(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_lshift_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} << U{});
+    return oc_array<ret_type, N>{(lhs[i] << rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator<<(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} << U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] << rhs;
-    }
-    return ret;
+    return array_lshift_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -828,13 +927,16 @@ OC_DEVICE_FLAG auto operator<<(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs << rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_lshift_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} << U{});
+    return oc_array<ret_type, N>{(lhs << rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator<<(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} << U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs << rhs[i];
-    }
-    return ret;
+    return array_lshift_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -842,11 +944,11 @@ OC_DEVICE_FLAG auto operator<<(oc_array<T, 1> lhs, oc_array<U, N> rhs) {
     return lhs[0] << rhs;
 }
 
-template<typename T, typename U, size_t N, size_t ...size>
+template<typename T, typename U, size_t N, size_t ...i>
 OC_DEVICE_FLAG auto array_rshift_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {
+                                   ocarina::index_sequence<i...>) {
     using ret_type = decltype(T{} >> U{});
-    return oc_array<ret_type, N>{(lhs[size] >> rhs[size])...};
+    return oc_array<ret_type, N>{(lhs[i] >> rhs[i])...};
 }
         
 template<typename T,typename U, size_t N>
@@ -861,13 +963,16 @@ OC_DEVICE_FLAG auto operator>>(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {
     return ret;
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_rshift_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} >> U{});
+    return oc_array<ret_type, N>{(lhs[i] >> rhs)...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator>>(oc_array<T, N> lhs, U rhs) {
-    oc_array<decltype(T{} >> U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs[i] >> rhs;
-    }
-    return ret;
+    return array_rshift_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -875,13 +980,16 @@ OC_DEVICE_FLAG auto operator>>(oc_array<T, N> lhs, oc_array<U, 1> rhs) {
     return lhs >> rhs[0];
 }
 
+template<typename T, typename U, size_t N, size_t ...i>
+OC_DEVICE_FLAG auto array_rshift_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {
+    using ret_type = decltype(T{} >> U{});
+    return oc_array<ret_type, N>{(lhs >> rhs[i])...};
+}
+
 template<typename T,typename U, size_t N>
 OC_DEVICE_FLAG auto operator>>(T lhs, oc_array<U, N> rhs) {
-    oc_array<decltype(T{} >> U{}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {
-        ret[i] = lhs >> rhs[i];
-    }
-    return ret;
+    return array_rshift_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 template<typename T,typename U, size_t N>
@@ -897,30 +1005,6 @@ OC_DEVICE_FLAG oc_bool oc_all(oc_bool4 vec) { return vec.x && vec.y && vec.z && 
 OC_DEVICE_FLAG oc_bool oc_none(oc_bool2 vec) { return !oc_any(vec); }
 OC_DEVICE_FLAG oc_bool oc_none(oc_bool3 vec) { return !oc_any(vec); }
 OC_DEVICE_FLAG oc_bool oc_none(oc_bool4 vec) { return !oc_any(vec); }
-
-template<size_t N>
-[[nodiscard]] oc_bool oc_any(oc_array<oc_bool, N> arg) {
-    oc_bool ret = arg[0];
-    for(size_t i = 1u; i < N; ++i) {
-        ret = ret || arg[i];
-    }
-    return ret;
-}
-
-template<size_t N>
-[[nodiscard]] oc_bool oc_all(oc_array<oc_bool, N> arg) {
-    oc_bool ret = arg[0];
-    for(size_t i = 1u; i < N; ++i) {
-        ret = ret && arg[i];
-    }
-    return ret;
-}
-
-template<size_t N>
-[[nodiscard]] oc_bool oc_none(oc_array<oc_bool, N> arg) {
-    return !oc_any(arg);
-}
-
 
 OC_DEVICE_FLAG oc_int oc_select(oc_bool pred, oc_int t, oc_int f) { return pred ? t : f; }
 OC_DEVICE_FLAG oc_int2 oc_select(oc_bool2 pred, oc_int2 t, oc_int2 f) {

@@ -174,11 +174,11 @@ def define_array_binary(cal_binary, cmp_binary, bit_binary):
     for op in binary:
         name = name_dict[op]
         func = f"""
-template<typename T, typename U, size_t N, size_t ...size>
-OC_DEVICE_FLAG auto array_{name}_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
-                                   ocarina::index_sequence<size...>) {{
+template<typename T, typename U, size_t N, size_t ...i>
+{device_flag} auto array_{name}_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {{
     using ret_type = decltype(T{{}} {op} U{{}});
-    return oc_array<ret_type, N>{{(lhs[size] {op} rhs[size])...}};
+    return oc_array<ret_type, N>{{(lhs[i] {op} rhs[i])...}};
 }}
         
 template<typename T,typename U, size_t N>
@@ -193,13 +193,16 @@ template<typename T,typename U>
     return ret;
 }}
 
+template<typename T, typename U, size_t N, size_t ...i>
+{device_flag} auto array_{name}_impl(const oc_array<T, N> &lhs, const U &rhs,
+                                   ocarina::index_sequence<i...>) {{
+    using ret_type = decltype(T{{}} {op} U{{}});
+    return oc_array<ret_type, N>{{(lhs[i] {op} rhs)...}};
+}}
+
 template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(oc_array<T, N> lhs, U rhs) {{
-    oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs[i] {op} rhs;
-    }}
-    return ret;
+    return array_{name}_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }}
 
 template<typename T,typename U, size_t N>
@@ -207,13 +210,16 @@ template<typename T,typename U, size_t N>
     return lhs {op} rhs[0];
 }}
 
+template<typename T, typename U, size_t N, size_t ...i>
+{device_flag} auto array_{name}_impl(const T &lhs, const oc_array<U, N> &rhs,
+                                   ocarina::index_sequence<i...>) {{
+    using ret_type = decltype(T{{}} {op} U{{}});
+    return oc_array<ret_type, N>{{(lhs {op} rhs[i])...}};
+}}
+
 template<typename T,typename U, size_t N>
 {device_flag} auto operator{op}(T lhs, oc_array<U, N> rhs) {{
-    oc_array<decltype(T{{}} {op} U{{}}), N> ret;
-    for(size_t i = 0u; i < N; ++i) {{
-        ret[i] = lhs {op} rhs[i];
-    }}
-    return ret;
+    return array_{name}_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }}
 
 template<typename T,typename U, size_t N>
@@ -280,7 +286,7 @@ template<size_t N>
 }}
 
 """
-    content += fun
+    # content += fun
     content += "\n"
 
 
