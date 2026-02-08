@@ -227,7 +227,7 @@ template<typename T,typename U, size_t N>
     return lhs[0] {op} rhs;
 }}
 """
-        content += func
+        # content += func
 
 
 def define_operator():

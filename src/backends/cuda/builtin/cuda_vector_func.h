@@ -254,3 +254,78 @@ OC_MAKE_FUNCTION_GLOBAL(distance)
 OC_MAKE_FUNCTION_GLOBAL(distance_squared)
 OC_MAKE_FUNCTION_GLOBAL(normalize)
 OC_MAKE_FUNCTION_GLOBAL(cross)
+
+#define OC_MAKE_ARRAY_BINARY_OPERATOR(op, name)                                    \
+    template<typename T, typename U, size_t N, size_t... i>                        \
+    auto array_##name##_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs, \
+                             ocarina::index_sequence<i...>) {                      \
+        using ret_type = decltype(T {} op U{});                                    \
+        return oc_array<ret_type, N>{(lhs[i] op rhs[i])...};                       \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, N> lhs, oc_array<U, N> rhs) {                     \
+        return array_##name##_impl(lhs, rhs, ocarina::make_index_sequence<N>());   \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U>                                               \
+    auto operator op(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {                     \
+        oc_array<decltype(T {} op U{}), 1> ret;                                    \
+        ret[0] = lhs[0] op rhs[0];                                                 \
+        return ret;                                                                \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N, size_t... i>                        \
+    auto array_##name##_impl(const oc_array<T, N> &lhs, const U &rhs,              \
+                             ocarina::index_sequence<i...>) {                      \
+        using ret_type = decltype(T {} op U{});                                    \
+        return oc_array<ret_type, N>{(lhs[i] op rhs)...};                          \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, N> lhs, U rhs) {                                  \
+        return array_##name##_impl(lhs, rhs, ocarina::make_index_sequence<N>());   \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, N> lhs, oc_array<U, 1> rhs) {                     \
+        return lhs op rhs[0];                                                      \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N, size_t... i>                        \
+    auto array_##name##_impl(const T &lhs, const oc_array<U, N> &rhs,              \
+                             ocarina::index_sequence<i...>) {                      \
+        using ret_type = decltype(T {} op U{});                                    \
+        return oc_array<ret_type, N>{(lhs op rhs[i])...};                          \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(T lhs, oc_array<U, N> rhs) {                                  \
+        return array_##name##_impl(lhs, rhs, ocarina::make_index_sequence<N>());   \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, 1> lhs, oc_array<U, N> rhs) {                     \
+        return lhs[0] op rhs;                                                      \
+    }
+
+OC_MAKE_ARRAY_BINARY_OPERATOR(+, add)
+OC_MAKE_ARRAY_BINARY_OPERATOR(-, sub)
+OC_MAKE_ARRAY_BINARY_OPERATOR(*, mul)
+OC_MAKE_ARRAY_BINARY_OPERATOR(/, div)
+OC_MAKE_ARRAY_BINARY_OPERATOR(%, mod)
+OC_MAKE_ARRAY_BINARY_OPERATOR(==, eq)
+OC_MAKE_ARRAY_BINARY_OPERATOR(!=, ne)
+OC_MAKE_ARRAY_BINARY_OPERATOR(>, gt)
+OC_MAKE_ARRAY_BINARY_OPERATOR(<, lt)
+OC_MAKE_ARRAY_BINARY_OPERATOR(>=, ge)
+OC_MAKE_ARRAY_BINARY_OPERATOR(<=, le)
+OC_MAKE_ARRAY_BINARY_OPERATOR(&&, logical_and)
+OC_MAKE_ARRAY_BINARY_OPERATOR(||, logical_or)
+OC_MAKE_ARRAY_BINARY_OPERATOR(&, bit_and)
+OC_MAKE_ARRAY_BINARY_OPERATOR(|, bit_or)
+OC_MAKE_ARRAY_BINARY_OPERATOR(^, bit_xor)
+OC_MAKE_ARRAY_BINARY_OPERATOR(<<, lshift)
+OC_MAKE_ARRAY_BINARY_OPERATOR(>>, rshift)
+
+#undef OC_MAKE_ARRAY_BINARY_OPERATOR
