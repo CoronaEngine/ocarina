@@ -197,6 +197,10 @@ using is_boolean = detail::is_boolean_impl<remove_cvref_t<T>>;
 OC_DEFINE_TEMPLATE_VALUE(is_boolean)
 
 template<typename T>
+struct is_number : disjunction<is_integral<T>, is_floating_point<T>> {};
+OC_DEFINE_TEMPLATE_VALUE(is_number)
+
+template<typename T>
 struct is_scalar : disjunction<is_integral<T>, is_floating_point<T>, is_boolean<T>> {};
 OC_DEFINE_TEMPLATE_VALUE(is_scalar)
 
@@ -212,6 +216,7 @@ OC_DEFINE_TEMPLATE_VALUE(is_scalar)
     OC_DEFINE_TEMPLATE_VALUE_MULTI(is_none_##type)
 
 MAKE_TYPE_TRAITS(scalar)
+MAKE_TYPE_TRAITS(number)
 MAKE_TYPE_TRAITS(integral)
 MAKE_TYPE_TRAITS(floating_point)
 MAKE_TYPE_TRAITS(boolean)
