@@ -158,6 +158,41 @@ OC_MAKE_FUNCTION_GLOBAL(inverse_lerp)
 namespace ocarina {
 
 namespace detail {
+template<size_t N, template<typename, size_t> typename Container, size_t... i>
+static constexpr auto any_helper(Container<bool, N> v) {
+    return ((v[i]) || ...);
+}
+}// namespace detail
+template<template<typename, size_t> typename Container, size_t N>
+static constexpr auto any(Container<bool, N> v) {
+    return detail::any_helper(v, ocarina::make_index_sequence<N>());
+}
+
+namespace detail {
+template<size_t N, template<typename, size_t> typename Container, size_t... i>
+static constexpr auto all_helper(Container<bool, N> v) {
+    return ((v[i]) && ...);
+}
+}// namespace detail
+
+template<template<typename, size_t> typename Container, size_t N>
+static constexpr auto all(Container<bool, N> v) {
+    return detail::all_helper(v, ocarina::make_index_sequence<N>());
+}
+
+template<template<typename, size_t> typename Container, size_t N>
+static constexpr auto none(Container<bool, N> v) {
+    return !any(v);
+}
+}// namespace ocarina
+
+OC_MAKE_FUNCTION_GLOBAL(any)
+OC_MAKE_FUNCTION_GLOBAL(all)
+OC_MAKE_FUNCTION_GLOBAL(none)
+
+namespace ocarina {
+
+namespace detail {
 
 template<template<typename, size_t> typename Container, size_t N,
          typename T, typename U, size_t... index>

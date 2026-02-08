@@ -260,33 +260,6 @@ def define_operator():
                 f"{device_flag} {ret_type} {func}({arg_type} vec) {{ return {ret}; }}"
             )
             content += string + "\n"
-
-    fun = f"""
-template<size_t N>
-[[nodiscard]] oc_bool oc_any(oc_array<oc_bool, N> arg) {{
-    oc_bool ret = arg[0];
-    for(size_t i = 1u; i < N; ++i) {{
-        ret = ret || arg[i];
-    }}
-    return ret;
-}}
-
-template<size_t N>
-[[nodiscard]] oc_bool oc_all(oc_array<oc_bool, N> arg) {{
-    oc_bool ret = arg[0];
-    for(size_t i = 1u; i < N; ++i) {{
-        ret = ret && arg[i];
-    }}
-    return ret;
-}}
-
-template<size_t N>
-[[nodiscard]] oc_bool oc_none(oc_array<oc_bool, N> arg) {{
-    return !oc_any(arg);
-}}
-
-"""
-    content += fun
     content += "\n"
 
 
