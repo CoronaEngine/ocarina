@@ -863,14 +863,18 @@ def define_triple_func(tab):
                 )
             vec_func = f"OC_DEVICE_FLAG {vec_ret_type} {prefix}_{func_name}({arg_type}{dim} v0, {arg_type}{dim} v1, {arg_type}{dim} v2) {{ {vec_body} }}\n"
             content += vec_func
-        string = f"""template<size_t N>
+        string = f"""template<size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto {prefix}_{func_name}_array_impl(const oc_array<{prefix}_{scalar}, N> &v0, 
+                                                 const oc_array<{prefix}_{scalar}, N> &v1, 
+                                                 const oc_array<{prefix}_{scalar}, N> &v2,
+                                                 ocarina::index_sequence<i...>) {{
+    return oc_array<{prefix}_{scalar}, N>{{({prefix}_{func_name}(v0[i], v1[i], v2[i]))...}};
+}}
+template<size_t N>
 oc_array<{prefix}_{scalar}, N> {prefix}_{func_name}(oc_array<{prefix}_{scalar}, N> v0, oc_array<{prefix}_{scalar}, N> v1, oc_array<{prefix}_{scalar}, N> v2) {{
-    oc_array<{prefix}_{scalar}, N> ret;
-    for(size_t i = 0; i < N; ++i) {{
-        ret[i] = {prefix}_{func_name}(v0[i], v1[i], v2[i]);
-    }}
-    return ret;
-}}\n
+    return {prefix}_{func_name}_array_impl(v0, v1, v2, ocarina::make_index_sequence<N>());
+}}
+
 """
         content += string
     content += "\n"
