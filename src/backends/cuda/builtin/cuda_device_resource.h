@@ -1,4 +1,7 @@
 
+#pragma once
+
+#include "cuda_matrix_func.h"
 
 template<class To, class From>
 [[nodiscard]] OC_DEVICE_FLAG To bit_cast(const From &src) noexcept {

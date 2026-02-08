@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "cuda_device_vector.h"
+#include "cuda_vector_func.h"
 
 namespace ocarina {
 

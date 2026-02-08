@@ -14,18 +14,33 @@ namespace ocarina {
 
 namespace detail {
 
-template<size_t N, typename T, typename U, size_t... index>
-static constexpr auto dot_helper(Vector<T, N> a, Vector<U, N> b, ocarina::index_sequence<index...>) {
-    return ((a[index] * b[index]) + ...);
+template<size_t N, template<typename, size_t> typename Container,
+         typename P, typename T, typename F, size_t... i>
+[[nodiscard]] constexpr auto select_helper(Container<P, N> pred, Container<T, N> t,
+                                           Container<F, N> f, ocarina::index_sequence<i...>) {
+    using scalar_type = decltype(ocarina::select(bool{}, T{}, F{}));
+    return Container<scalar_type, N>{ocarina::select(pred[i], t[i], f[i])...};
 }
+
 }// namespace detail
 
-template<size_t N, typename T, typename U>
-static constexpr auto dot(Vector<T, N> lhs, Vector<U, N> rhs) {
-    return detail::dot_helper(lhs, rhs, ocarina::make_index_sequence<N>());
+template<size_t N, template<typename, size_t> typename Container,
+         typename P, typename T, typename F>
+[[nodiscard]] constexpr auto select(Container<P, N> pred, Container<T, N> t,
+                                    Container<F, N> f) {
+    return detail::select_helper(pred, t, f, ocarina::make_index_sequence<N>());
+}
+
+template<size_t N, template<typename, size_t> typename Container,
+         typename P, typename T, typename F>
+[[nodiscard]] constexpr auto select(P pred, Container<T, N> t,
+                                    Container<F, N> f) {
+    return select(Container<P, N>(pred), t, f);
 }
 
 }// namespace ocarina
+
+OC_MAKE_FUNCTION_GLOBAL(select)
 
 namespace ocarina {
 
@@ -145,3 +160,178 @@ static constexpr auto inverse_lerp(Container<T, N> v0, Container<U, N> v1, Conta
 }// namespace ocarina
 
 OC_MAKE_FUNCTION_GLOBAL(inverse_lerp)
+
+namespace ocarina {
+
+namespace detail {
+template<size_t N, template<typename, size_t> typename Container, size_t... i>
+static constexpr auto any_helper(Container<bool, N> v) {
+    return ((v[i]) || ...);
+}
+}// namespace detail
+template<template<typename, size_t> typename Container, size_t N>
+static constexpr auto any(Container<bool, N> v) {
+    return detail::any_helper(v, ocarina::make_index_sequence<N>());
+}
+
+namespace detail {
+template<size_t N, template<typename, size_t> typename Container, size_t... i>
+static constexpr auto all_helper(Container<bool, N> v) {
+    return ((v[i]) && ...);
+}
+}// namespace detail
+
+template<template<typename, size_t> typename Container, size_t N>
+static constexpr auto all(Container<bool, N> v) {
+    return detail::all_helper(v, ocarina::make_index_sequence<N>());
+}
+
+template<template<typename, size_t> typename Container, size_t N>
+static constexpr auto none(Container<bool, N> v) {
+    return !any(v);
+}
+}// namespace ocarina
+
+OC_MAKE_FUNCTION_GLOBAL(any)
+OC_MAKE_FUNCTION_GLOBAL(all)
+OC_MAKE_FUNCTION_GLOBAL(none)
+
+namespace ocarina {
+
+namespace detail {
+
+template<template<typename, size_t> typename Container, size_t N,
+         typename T, typename U, size_t... index>
+static constexpr auto dot_helper(Container<T, N> a, Container<U, N> b,
+                                 ocarina::index_sequence<index...>) {
+    return ((a[index] * b[index]) + ...);
+}
+}// namespace detail
+
+template<template<typename, size_t> typename Container,
+         size_t N, typename T, typename U>
+static constexpr auto dot(Container<T, N> lhs, Container<U, N> rhs) {
+    return detail::dot_helper(lhs, rhs, ocarina::make_index_sequence<N>());
+}
+
+template<template<typename, size_t> typename Container,
+         size_t N, typename T>
+static constexpr auto length_squared(Container<T, N> v) {
+    return dot(v, v);
+}
+
+template<template<typename, size_t> typename Container,
+         size_t N, typename T>
+static constexpr auto length(Container<T, N> v) {
+    return oc_sqrt(length_squared(v));
+}
+
+template<template<typename, size_t> typename Container,
+         size_t N, typename T, typename U>
+static constexpr auto distance(Container<T, N> a, Container<U, N> b) {
+    return length(a - b);
+}
+
+template<template<typename, size_t> typename Container,
+         size_t N, typename T, typename U>
+static constexpr auto distance_squared(Container<T, N> a, Container<U, N> b) {
+    return length_squared(a - b);
+}
+
+template<template<typename, size_t> typename Container, size_t N, typename T>
+static constexpr auto normalize(Container<T, N> v) {
+    return v * oc_rsqrt(dot(v, v));
+}
+
+template<template<typename, size_t> typename Container, typename T, typename U>
+static constexpr auto cross(Container<T, 3> a, Container<U, 3> b) {
+    using scalar_type = decltype(a.x * b.x);
+    return Container<scalar_type, 3>{a.y * b.z - a.z * b.y,
+                                     a.z * b.x - a.x * b.z,
+                                     a.x * b.y - a.y * b.x};
+}
+
+}// namespace ocarina
+
+OC_MAKE_FUNCTION_GLOBAL(dot)
+OC_MAKE_FUNCTION_GLOBAL(length_squared)
+OC_MAKE_FUNCTION_GLOBAL(length)
+OC_MAKE_FUNCTION_GLOBAL(distance)
+OC_MAKE_FUNCTION_GLOBAL(distance_squared)
+OC_MAKE_FUNCTION_GLOBAL(normalize)
+OC_MAKE_FUNCTION_GLOBAL(cross)
+
+#define OC_MAKE_ARRAY_BINARY_OPERATOR(op, name)                                    \
+    template<typename T, typename U, size_t N, size_t... i>                        \
+    auto array_##name##_impl(const oc_array<T, N> &lhs, const oc_array<U, N> &rhs, \
+                             ocarina::index_sequence<i...>) {                      \
+        using ret_type = decltype(T {} op U{});                                    \
+        return oc_array<ret_type, N>{(lhs[i] op rhs[i])...};                       \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, N> lhs, oc_array<U, N> rhs) {                     \
+        return array_##name##_impl(lhs, rhs, ocarina::make_index_sequence<N>());   \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U>                                               \
+    auto operator op(oc_array<T, 1> lhs, oc_array<U, 1> rhs) {                     \
+        oc_array<decltype(T {} op U{}), 1> ret;                                    \
+        ret[0] = lhs[0] op rhs[0];                                                 \
+        return ret;                                                                \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N, size_t... i>                        \
+    auto array_##name##_impl(const oc_array<T, N> &lhs, const U &rhs,              \
+                             ocarina::index_sequence<i...>) {                      \
+        using ret_type = decltype(T {} op U{});                                    \
+        return oc_array<ret_type, N>{(lhs[i] op rhs)...};                          \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, N> lhs, U rhs) {                                  \
+        return array_##name##_impl(lhs, rhs, ocarina::make_index_sequence<N>());   \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, N> lhs, oc_array<U, 1> rhs) {                     \
+        return lhs op rhs[0];                                                      \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N, size_t... i>                        \
+    auto array_##name##_impl(const T &lhs, const oc_array<U, N> &rhs,              \
+                             ocarina::index_sequence<i...>) {                      \
+        using ret_type = decltype(T {} op U{});                                    \
+        return oc_array<ret_type, N>{(lhs op rhs[i])...};                          \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(T lhs, oc_array<U, N> rhs) {                                  \
+        return array_##name##_impl(lhs, rhs, ocarina::make_index_sequence<N>());   \
+    }                                                                              \
+                                                                                   \
+    template<typename T, typename U, size_t N>                                     \
+    auto operator op(oc_array<T, 1> lhs, oc_array<U, N> rhs) {                     \
+        return lhs[0] op rhs;                                                      \
+    }
+
+OC_MAKE_ARRAY_BINARY_OPERATOR(+, add)
+OC_MAKE_ARRAY_BINARY_OPERATOR(-, sub)
+OC_MAKE_ARRAY_BINARY_OPERATOR(*, mul)
+OC_MAKE_ARRAY_BINARY_OPERATOR(/, div)
+OC_MAKE_ARRAY_BINARY_OPERATOR(%, mod)
+OC_MAKE_ARRAY_BINARY_OPERATOR(==, eq)
+OC_MAKE_ARRAY_BINARY_OPERATOR(!=, ne)
+OC_MAKE_ARRAY_BINARY_OPERATOR(>, gt)
+OC_MAKE_ARRAY_BINARY_OPERATOR(<, lt)
+OC_MAKE_ARRAY_BINARY_OPERATOR(>=, ge)
+OC_MAKE_ARRAY_BINARY_OPERATOR(<=, le)
+OC_MAKE_ARRAY_BINARY_OPERATOR(&&, logical_and)
+OC_MAKE_ARRAY_BINARY_OPERATOR(||, logical_or)
+OC_MAKE_ARRAY_BINARY_OPERATOR(&, bit_and)
+OC_MAKE_ARRAY_BINARY_OPERATOR(|, bit_or)
+OC_MAKE_ARRAY_BINARY_OPERATOR(^, bit_xor)
+OC_MAKE_ARRAY_BINARY_OPERATOR(<<, lshift)
+OC_MAKE_ARRAY_BINARY_OPERATOR(>>, rshift)
+
+#undef OC_MAKE_ARRAY_BINARY_OPERATOR
