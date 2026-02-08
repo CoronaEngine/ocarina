@@ -113,6 +113,12 @@ def emit_functions(scalar_name, dim):
 
 def define_array_unary(unary):
     global content
+    name_dict = {
+        "+": "positive",
+        "-": "negative",
+        "!": "logical_not",
+        "~": "bit_not",
+    }
     for op in unary:
         func = f"""
 template<typename T, size_t N>
@@ -127,30 +133,31 @@ template<typename T, size_t N>
         content += func
 
 
-name_dict = {
-    "+": "add",
-    "-": "sub",
-    "*": "mul",
-    "/": "div",
-    "%": "mod",
-    "==": "eq",
-    "!=": "ne",
-    ">": "gt",
-    "<": "lt",
-    ">=": "ge",
-    "<=": "le",
-    "&&": "logical_and",
-    "||": "logical_or",
-    "&": "bit_and",
-    "|": "bit_or",
-    "^": "bit_xor",
-    "<<": "lshift",
-    ">>": "rshift"
-}
-
 def define_array_binary(cal_binary, cmp_binary, bit_binary):
     global content
     binary = cal_binary + cmp_binary + bit_binary
+
+    name_dict = {
+        "+": "add",
+        "-": "sub",
+        "*": "mul",
+        "/": "div",
+        "%": "mod",
+        "==": "eq",
+        "!=": "ne",
+        ">": "gt",
+        "<": "lt",
+        ">=": "ge",
+        "<=": "le",
+        "&&": "logical_and",
+        "||": "logical_or",
+        "&": "bit_and",
+        "|": "bit_or",
+        "^": "bit_xor",
+        "<<": "lshift",
+        ">>": "rshift",
+    }
+
     for op in cal_binary:
         func = f"""
 template<typename T,typename U, size_t N>
