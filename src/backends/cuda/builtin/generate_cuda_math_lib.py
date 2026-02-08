@@ -395,19 +395,20 @@ def define_select():
             func += get_indent(1) + args
             content += func
             content += "\n"
-        content += "\n"
+            string = f"""template<size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto {prefix}_select_array_impl(const oc_array<oc_bool, N> &v0, 
+                                                    const oc_array<{prefix}_{scalar}, N> &v1, 
+                                                    const oc_array<{prefix}_{scalar}, N> &v2,
+                                                    ocarina::index_sequence<i...>) {{
+    return oc_array<{prefix}_{scalar}, N>{{({prefix}_select(v0[i], v1[i], v2[i]))...}};
+}}
+template<size_t N>
+oc_array<{prefix}_{scalar}, N> {prefix}_select(oc_array<oc_bool, N> v0, oc_array<{prefix}_{scalar}, N> v1, oc_array<{prefix}_{scalar}, N> v2) {{
+    return {prefix}_select_array_impl(v0, v1, v2, ocarina::make_index_sequence<N>());
+}}
 
-    content += """
-template<typename P, typename T, size_t N>
-[[nodiscard]] OC_DEVICE_FLAG oc_array<T, N> oc_select(const oc_array<P, N> &pred, const oc_array<T, N> &t, const oc_array<T, N> &f) noexcept {
-    oc_array<T, N> ret{};
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_select(static_cast<oc_bool>(pred[i]), t[i], f[i]);
-    }
-    return ret;
-}
-
-"""
+"""     
+        content += string
 
 
 def define_unary_func(func_name, need_array, param):
@@ -433,13 +434,11 @@ def define_unary_func(func_name, need_array, param):
             content += func
 
     if need_array:
-        t_body = f"""
-template<typename T, size_t N, size_t ...i>
+        t_body = f"""template<typename T, size_t N, size_t ...i>
 OC_DEVICE_FLAG constexpr auto {prefix}_{func_name}_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {{
     using decltype_t = decltype({prefix}_{func_name}(arr[0]));
     return oc_array<decltype_t, N>{{({prefix}_{func_name}(arr[i]))...}};
 }}
-
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> {prefix}_{func_name}(oc_array<T, N> x) {{
     return {prefix}_{func_name}_array_impl(x, ocarina::make_index_sequence<N>());
