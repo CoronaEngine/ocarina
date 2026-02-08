@@ -111,45 +111,6 @@ def emit_functions(scalar_name, dim):
     return ret
 
 
-def define_vector():
-    global content
-    content += "\n"
-    for j, scalar in enumerate(scalar_types):
-        for dim in range(2, 5):
-            alignment = vector_alignments[dim]
-            scalar_name = f"{prefix}_{scalar}"
-            struct_name = f"struct alignas({alignment}) {scalar_name}{dim}" + "{"
-            content += struct_name
-            body = emit_member(scalar_name, dim)
-            body += emit_functions(scalar_name, dim)
-            content += body
-            content += "};\n\n"
-
-
-def define_array():
-    global content
-    content += "\n"
-    string = """
-template<typename T, size_t N>
-class oc_array {
-private:
-    T _data[N];
-
-public:
-    template<typename... Elem>
-    OC_DEVICE_FLAG constexpr oc_array(Elem... elem) noexcept : _data{elem...} {}
-    OC_DEVICE_FLAG constexpr oc_array(oc_array &&) noexcept = default;
-    OC_DEVICE_FLAG constexpr oc_array(const oc_array &) noexcept = default;
-    OC_DEVICE_FLAG constexpr oc_array &operator=(oc_array &&) noexcept = default;
-    OC_DEVICE_FLAG constexpr oc_array &operator=(const oc_array &) noexcept = default;
-    [[nodiscard]] OC_DEVICE_FLAG T &operator[](size_t i) noexcept { return _data[i]; }
-    [[nodiscard]] OC_DEVICE_FLAG T operator[](size_t i) const noexcept { return _data[i]; }
-};
-"""
-
-    content += string
-
-
 def define_array_unary(unary):
     global content
     for op in unary:
@@ -1099,7 +1060,6 @@ def main():
     define_binary_funcs()
     define_triple_funcs()
     define_vec_func()
-    # define_make_vecs()
 
     content += "\n "
     content += "\n "
