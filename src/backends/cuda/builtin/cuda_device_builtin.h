@@ -168,14 +168,14 @@ OC_DEVICE_FLAG oc_half3 oc_rcp(oc_half3 v) { return oc_half3(oc_rcp(v.x), oc_rcp
 OC_DEVICE_FLAG oc_half4 oc_rcp(oc_half4 v) { return oc_half4(oc_rcp(v.x), oc_rcp(v.y), oc_rcp(v.z), oc_rcp(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto rcp_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_rcp_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_rcp(arr[0]));
     return oc_array<decltype_t, N>{(oc_rcp(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_rcp(oc_array<T, N> x) {
-    return rcp_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_rcp_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_int oc_sign(oc_int v) { return v >= 0 ? 1: -1; }
@@ -188,14 +188,14 @@ OC_DEVICE_FLAG oc_float3 oc_sign(oc_float3 v) { return oc_float3(oc_sign(v.x), o
 OC_DEVICE_FLAG oc_float4 oc_sign(oc_float4 v) { return oc_float4(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z), oc_sign(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto sign_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_sign_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_sign(arr[0]));
     return oc_array<decltype_t, N>{(oc_sign(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sign(oc_array<T, N> x) {
-    return sign_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_sign_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_uint oc_popcount(oc_uint v) { return __popc(v); }
@@ -226,14 +226,14 @@ OC_DEVICE_FLAG oc_int3 oc_abs(oc_int3 v) { return oc_int3(oc_abs(v.x), oc_abs(v.
 OC_DEVICE_FLAG oc_int4 oc_abs(oc_int4 v) { return oc_int4(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z), oc_abs(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto abs_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_abs_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_abs(arr[0]));
     return oc_array<decltype_t, N>{(oc_abs(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_abs(oc_array<T, N> x) {
-    return abs_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_abs_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_ceil(oc_float v) { return ceilf(v); }
@@ -246,14 +246,14 @@ OC_DEVICE_FLAG oc_half3 oc_ceil(oc_half3 v) { return oc_half3(oc_ceil(v.x), oc_c
 OC_DEVICE_FLAG oc_half4 oc_ceil(oc_half4 v) { return oc_half4(oc_ceil(v.x), oc_ceil(v.y), oc_ceil(v.z), oc_ceil(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto ceil_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_ceil_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_ceil(arr[0]));
     return oc_array<decltype_t, N>{(oc_ceil(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_ceil(oc_array<T, N> x) {
-    return ceil_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_ceil_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_floor(oc_float v) { return floorf(v); }
@@ -266,14 +266,14 @@ OC_DEVICE_FLAG oc_half3 oc_floor(oc_half3 v) { return oc_half3(oc_floor(v.x), oc
 OC_DEVICE_FLAG oc_half4 oc_floor(oc_half4 v) { return oc_half4(oc_floor(v.x), oc_floor(v.y), oc_floor(v.z), oc_floor(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto floor_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_floor_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_floor(arr[0]));
     return oc_array<decltype_t, N>{(oc_floor(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_floor(oc_array<T, N> x) {
-    return floor_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_floor_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_fract(oc_float v) { return v - oc_floor(v); }
@@ -286,14 +286,14 @@ OC_DEVICE_FLAG oc_half3 oc_fract(oc_half3 v) { return oc_half3(oc_fract(v.x), oc
 OC_DEVICE_FLAG oc_half4 oc_fract(oc_half4 v) { return oc_half4(oc_fract(v.x), oc_fract(v.y), oc_fract(v.z), oc_fract(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto fract_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_fract_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_fract(arr[0]));
     return oc_array<decltype_t, N>{(oc_fract(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_fract(oc_array<T, N> x) {
-    return fract_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_fract_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_round(oc_float v) { return roundf(v); }
@@ -306,14 +306,14 @@ OC_DEVICE_FLAG oc_half3 oc_round(oc_half3 v) { return oc_half3(oc_round(v.x), oc
 OC_DEVICE_FLAG oc_half4 oc_round(oc_half4 v) { return oc_half4(oc_round(v.x), oc_round(v.y), oc_round(v.z), oc_round(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto round_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_round_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_round(arr[0]));
     return oc_array<decltype_t, N>{(oc_round(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_round(oc_array<T, N> x) {
-    return round_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_round_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_sin(oc_float v) { return sinf(v); }
@@ -326,14 +326,14 @@ OC_DEVICE_FLAG oc_half3 oc_sin(oc_half3 v) { return oc_half3(oc_sin(v.x), oc_sin
 OC_DEVICE_FLAG oc_half4 oc_sin(oc_half4 v) { return oc_half4(oc_sin(v.x), oc_sin(v.y), oc_sin(v.z), oc_sin(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto sin_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_sin_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_sin(arr[0]));
     return oc_array<decltype_t, N>{(oc_sin(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sin(oc_array<T, N> x) {
-    return sin_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_sin_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_cos(oc_float v) { return cosf(v); }
@@ -342,14 +342,14 @@ OC_DEVICE_FLAG oc_float3 oc_cos(oc_float3 v) { return oc_float3(oc_cos(v.x), oc_
 OC_DEVICE_FLAG oc_float4 oc_cos(oc_float4 v) { return oc_float4(oc_cos(v.x), oc_cos(v.y), oc_cos(v.z), oc_cos(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto cos_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_cos_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_cos(arr[0]));
     return oc_array<decltype_t, N>{(oc_cos(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_cos(oc_array<T, N> x) {
-    return cos_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_cos_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_tan(oc_float v) { return tanf(v); }
@@ -358,14 +358,14 @@ OC_DEVICE_FLAG oc_float3 oc_tan(oc_float3 v) { return oc_float3(oc_tan(v.x), oc_
 OC_DEVICE_FLAG oc_float4 oc_tan(oc_float4 v) { return oc_float4(oc_tan(v.x), oc_tan(v.y), oc_tan(v.z), oc_tan(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto tan_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_tan_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_tan(arr[0]));
     return oc_array<decltype_t, N>{(oc_tan(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_tan(oc_array<T, N> x) {
-    return tan_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_tan_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_sinh(oc_float v) { return sinhf(v); }
@@ -374,14 +374,14 @@ OC_DEVICE_FLAG oc_float3 oc_sinh(oc_float3 v) { return oc_float3(oc_sinh(v.x), o
 OC_DEVICE_FLAG oc_float4 oc_sinh(oc_float4 v) { return oc_float4(oc_sinh(v.x), oc_sinh(v.y), oc_sinh(v.z), oc_sinh(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto sinh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_sinh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_sinh(arr[0]));
     return oc_array<decltype_t, N>{(oc_sinh(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sinh(oc_array<T, N> x) {
-    return sinh_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_sinh_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_cosh(oc_float v) { return coshf(v); }
@@ -390,14 +390,14 @@ OC_DEVICE_FLAG oc_float3 oc_cosh(oc_float3 v) { return oc_float3(oc_cosh(v.x), o
 OC_DEVICE_FLAG oc_float4 oc_cosh(oc_float4 v) { return oc_float4(oc_cosh(v.x), oc_cosh(v.y), oc_cosh(v.z), oc_cosh(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto cosh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_cosh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_cosh(arr[0]));
     return oc_array<decltype_t, N>{(oc_cosh(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_cosh(oc_array<T, N> x) {
-    return cosh_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_cosh_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_tanh(oc_float v) { return tanhf(v); }
@@ -406,14 +406,14 @@ OC_DEVICE_FLAG oc_float3 oc_tanh(oc_float3 v) { return oc_float3(oc_tanh(v.x), o
 OC_DEVICE_FLAG oc_float4 oc_tanh(oc_float4 v) { return oc_float4(oc_tanh(v.x), oc_tanh(v.y), oc_tanh(v.z), oc_tanh(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto tanh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_tanh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_tanh(arr[0]));
     return oc_array<decltype_t, N>{(oc_tanh(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_tanh(oc_array<T, N> x) {
-    return tanh_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_tanh_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_asin(oc_float v) { return asinf(v); }
@@ -422,14 +422,14 @@ OC_DEVICE_FLAG oc_float3 oc_asin(oc_float3 v) { return oc_float3(oc_asin(v.x), o
 OC_DEVICE_FLAG oc_float4 oc_asin(oc_float4 v) { return oc_float4(oc_asin(v.x), oc_asin(v.y), oc_asin(v.z), oc_asin(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto asin_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_asin_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_asin(arr[0]));
     return oc_array<decltype_t, N>{(oc_asin(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_asin(oc_array<T, N> x) {
-    return asin_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_asin_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_acos(oc_float v) { return acosf(v); }
@@ -438,14 +438,14 @@ OC_DEVICE_FLAG oc_float3 oc_acos(oc_float3 v) { return oc_float3(oc_acos(v.x), o
 OC_DEVICE_FLAG oc_float4 oc_acos(oc_float4 v) { return oc_float4(oc_acos(v.x), oc_acos(v.y), oc_acos(v.z), oc_acos(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto acos_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_acos_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_acos(arr[0]));
     return oc_array<decltype_t, N>{(oc_acos(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_acos(oc_array<T, N> x) {
-    return acos_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_acos_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_atan(oc_float v) { return atanf(v); }
@@ -454,14 +454,14 @@ OC_DEVICE_FLAG oc_float3 oc_atan(oc_float3 v) { return oc_float3(oc_atan(v.x), o
 OC_DEVICE_FLAG oc_float4 oc_atan(oc_float4 v) { return oc_float4(oc_atan(v.x), oc_atan(v.y), oc_atan(v.z), oc_atan(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto atan_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_atan_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_atan(arr[0]));
     return oc_array<decltype_t, N>{(oc_atan(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_atan(oc_array<T, N> x) {
-    return atan_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_atan_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_asinh(oc_float v) { return asinhf(v); }
@@ -470,14 +470,14 @@ OC_DEVICE_FLAG oc_float3 oc_asinh(oc_float3 v) { return oc_float3(oc_asinh(v.x),
 OC_DEVICE_FLAG oc_float4 oc_asinh(oc_float4 v) { return oc_float4(oc_asinh(v.x), oc_asinh(v.y), oc_asinh(v.z), oc_asinh(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto asinh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_asinh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_asinh(arr[0]));
     return oc_array<decltype_t, N>{(oc_asinh(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_asinh(oc_array<T, N> x) {
-    return asinh_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_asinh_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_acosh(oc_float v) { return acoshf(v); }
@@ -486,14 +486,14 @@ OC_DEVICE_FLAG oc_float3 oc_acosh(oc_float3 v) { return oc_float3(oc_acosh(v.x),
 OC_DEVICE_FLAG oc_float4 oc_acosh(oc_float4 v) { return oc_float4(oc_acosh(v.x), oc_acosh(v.y), oc_acosh(v.z), oc_acosh(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto acosh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_acosh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_acosh(arr[0]));
     return oc_array<decltype_t, N>{(oc_acosh(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_acosh(oc_array<T, N> x) {
-    return acosh_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_acosh_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_atanh(oc_float v) { return atanhf(v); }
@@ -502,14 +502,14 @@ OC_DEVICE_FLAG oc_float3 oc_atanh(oc_float3 v) { return oc_float3(oc_atanh(v.x),
 OC_DEVICE_FLAG oc_float4 oc_atanh(oc_float4 v) { return oc_float4(oc_atanh(v.x), oc_atanh(v.y), oc_atanh(v.z), oc_atanh(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto atanh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_atanh_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_atanh(arr[0]));
     return oc_array<decltype_t, N>{(oc_atanh(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_atanh(oc_array<T, N> x) {
-    return atanh_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_atanh_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_bool oc_is_inf(oc_float v) { return isinf(v); }
@@ -530,14 +530,14 @@ OC_DEVICE_FLAG oc_bool3 oc_is_inf(oc_uint3 v) { return oc_bool3(oc_is_inf(v.x), 
 OC_DEVICE_FLAG oc_bool4 oc_is_inf(oc_uint4 v) { return oc_bool4(oc_is_inf(v.x), oc_is_inf(v.y), oc_is_inf(v.z), oc_is_inf(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto is_inf_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_is_inf_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_is_inf(arr[0]));
     return oc_array<decltype_t, N>{(oc_is_inf(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_is_inf(oc_array<T, N> x) {
-    return is_inf_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_is_inf_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_bool oc_is_nan(oc_float v) { return isnan(v); }
@@ -558,14 +558,14 @@ OC_DEVICE_FLAG oc_bool3 oc_is_nan(oc_uint3 v) { return oc_bool3(oc_is_nan(v.x), 
 OC_DEVICE_FLAG oc_bool4 oc_is_nan(oc_uint4 v) { return oc_bool4(oc_is_nan(v.x), oc_is_nan(v.y), oc_is_nan(v.z), oc_is_nan(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto is_nan_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_is_nan_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_is_nan(arr[0]));
     return oc_array<decltype_t, N>{(oc_is_nan(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_is_nan(oc_array<T, N> x) {
-    return is_nan_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_is_nan_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_exp(oc_float v) { return expf(v); }
@@ -578,14 +578,14 @@ OC_DEVICE_FLAG oc_half3 oc_exp(oc_half3 v) { return oc_half3(oc_exp(v.x), oc_exp
 OC_DEVICE_FLAG oc_half4 oc_exp(oc_half4 v) { return oc_half4(oc_exp(v.x), oc_exp(v.y), oc_exp(v.z), oc_exp(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto exp_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_exp_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_exp(arr[0]));
     return oc_array<decltype_t, N>{(oc_exp(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_exp(oc_array<T, N> x) {
-    return exp_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_exp_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_exp2(oc_float v) { return exp2f(v); }
@@ -598,14 +598,14 @@ OC_DEVICE_FLAG oc_half3 oc_exp2(oc_half3 v) { return oc_half3(oc_exp2(v.x), oc_e
 OC_DEVICE_FLAG oc_half4 oc_exp2(oc_half4 v) { return oc_half4(oc_exp2(v.x), oc_exp2(v.y), oc_exp2(v.z), oc_exp2(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto exp2_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_exp2_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_exp2(arr[0]));
     return oc_array<decltype_t, N>{(oc_exp2(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_exp2(oc_array<T, N> x) {
-    return exp2_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_exp2_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_exp10(oc_float v) { return exp10f(v); }
@@ -618,14 +618,14 @@ OC_DEVICE_FLAG oc_half3 oc_exp10(oc_half3 v) { return oc_half3(oc_exp10(v.x), oc
 OC_DEVICE_FLAG oc_half4 oc_exp10(oc_half4 v) { return oc_half4(oc_exp10(v.x), oc_exp10(v.y), oc_exp10(v.z), oc_exp10(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto exp10_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_exp10_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_exp10(arr[0]));
     return oc_array<decltype_t, N>{(oc_exp10(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_exp10(oc_array<T, N> x) {
-    return exp10_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_exp10_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_log(oc_float v) { return logf(v); }
@@ -638,14 +638,14 @@ OC_DEVICE_FLAG oc_half3 oc_log(oc_half3 v) { return oc_half3(oc_log(v.x), oc_log
 OC_DEVICE_FLAG oc_half4 oc_log(oc_half4 v) { return oc_half4(oc_log(v.x), oc_log(v.y), oc_log(v.z), oc_log(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto log_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_log_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_log(arr[0]));
     return oc_array<decltype_t, N>{(oc_log(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_log(oc_array<T, N> x) {
-    return log_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_log_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_log2(oc_float v) { return log2f(v); }
@@ -658,14 +658,14 @@ OC_DEVICE_FLAG oc_half3 oc_log2(oc_half3 v) { return oc_half3(oc_log2(v.x), oc_l
 OC_DEVICE_FLAG oc_half4 oc_log2(oc_half4 v) { return oc_half4(oc_log2(v.x), oc_log2(v.y), oc_log2(v.z), oc_log2(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto log2_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_log2_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_log2(arr[0]));
     return oc_array<decltype_t, N>{(oc_log2(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_log2(oc_array<T, N> x) {
-    return log2_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_log2_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_log10(oc_float v) { return log10f(v); }
@@ -678,14 +678,14 @@ OC_DEVICE_FLAG oc_half3 oc_log10(oc_half3 v) { return oc_half3(oc_log10(v.x), oc
 OC_DEVICE_FLAG oc_half4 oc_log10(oc_half4 v) { return oc_half4(oc_log10(v.x), oc_log10(v.y), oc_log10(v.z), oc_log10(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto log10_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_log10_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_log10(arr[0]));
     return oc_array<decltype_t, N>{(oc_log10(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_log10(oc_array<T, N> x) {
-    return log10_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_log10_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_int oc_sqr(oc_int v) { return v * v; }
@@ -706,14 +706,14 @@ OC_DEVICE_FLAG oc_half3 oc_sqr(oc_half3 v) { return oc_half3(oc_sqr(v.x), oc_sqr
 OC_DEVICE_FLAG oc_half4 oc_sqr(oc_half4 v) { return oc_half4(oc_sqr(v.x), oc_sqr(v.y), oc_sqr(v.z), oc_sqr(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto sqr_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_sqr_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_sqr(arr[0]));
     return oc_array<decltype_t, N>{(oc_sqr(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sqr(oc_array<T, N> x) {
-    return sqr_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_sqr_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_sqrt(oc_float v) { return sqrtf(v); }
@@ -726,14 +726,14 @@ OC_DEVICE_FLAG oc_half3 oc_sqrt(oc_half3 v) { return oc_half3(oc_sqrt(v.x), oc_s
 OC_DEVICE_FLAG oc_half4 oc_sqrt(oc_half4 v) { return oc_half4(oc_sqrt(v.x), oc_sqrt(v.y), oc_sqrt(v.z), oc_sqrt(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto sqrt_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_sqrt_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_sqrt(arr[0]));
     return oc_array<decltype_t, N>{(oc_sqrt(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_sqrt(oc_array<T, N> x) {
-    return sqrt_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_sqrt_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_rsqrt(oc_float v) { return rsqrtf(v); }
@@ -746,14 +746,14 @@ OC_DEVICE_FLAG oc_half3 oc_rsqrt(oc_half3 v) { return oc_half3(oc_rsqrt(v.x), oc
 OC_DEVICE_FLAG oc_half4 oc_rsqrt(oc_half4 v) { return oc_half4(oc_rsqrt(v.x), oc_rsqrt(v.y), oc_rsqrt(v.z), oc_rsqrt(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto rsqrt_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_rsqrt_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_rsqrt(arr[0]));
     return oc_array<decltype_t, N>{(oc_rsqrt(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_rsqrt(oc_array<T, N> x) {
-    return rsqrt_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_rsqrt_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_degrees(oc_float v) { return v * (180.f / 3.1415926535f); }
@@ -766,14 +766,14 @@ OC_DEVICE_FLAG oc_half3 oc_degrees(oc_half3 v) { return oc_half3(oc_degrees(v.x)
 OC_DEVICE_FLAG oc_half4 oc_degrees(oc_half4 v) { return oc_half4(oc_degrees(v.x), oc_degrees(v.y), oc_degrees(v.z), oc_degrees(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto degrees_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_degrees_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_degrees(arr[0]));
     return oc_array<decltype_t, N>{(oc_degrees(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_degrees(oc_array<T, N> x) {
-    return degrees_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_degrees_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_radians(oc_float v) { return v * (3.1415926535f / 180.f); }
@@ -786,14 +786,14 @@ OC_DEVICE_FLAG oc_half3 oc_radians(oc_half3 v) { return oc_half3(oc_radians(v.x)
 OC_DEVICE_FLAG oc_half4 oc_radians(oc_half4 v) { return oc_half4(oc_radians(v.x), oc_radians(v.y), oc_radians(v.z), oc_radians(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto radians_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_radians_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_radians(arr[0]));
     return oc_array<decltype_t, N>{(oc_radians(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_radians(oc_array<T, N> x) {
-    return radians_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_radians_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_saturate(oc_float v) { return fminf(1.f, fmaxf(0.f, v)); }
@@ -806,14 +806,14 @@ OC_DEVICE_FLAG oc_half3 oc_saturate(oc_half3 v) { return oc_half3(oc_saturate(v.
 OC_DEVICE_FLAG oc_half4 oc_saturate(oc_half4 v) { return oc_half4(oc_saturate(v.x), oc_saturate(v.y), oc_saturate(v.z), oc_saturate(v.w)); }
 
 template<typename T, size_t N, size_t ...i>
-OC_DEVICE_FLAG constexpr auto saturate_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
+OC_DEVICE_FLAG constexpr auto oc_saturate_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_saturate(arr[0]));
     return oc_array<decltype_t, N>{(oc_saturate(arr[i]))...};
 }
 
 template<typename T, size_t N>
 OC_DEVICE_FLAG oc_array<T, N> oc_saturate(oc_array<T, N> x) {
-    return saturate_array_impl(x, ocarina::make_index_sequence<N>());
+    return oc_saturate_array_impl(x, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_pow(oc_float lhs, oc_float rhs) { return powf(lhs, rhs); }
@@ -824,13 +824,16 @@ OC_DEVICE_FLAG oc_half oc_pow(oc_half lhs, oc_half rhs) { return powf(lhs, rhs);
 OC_DEVICE_FLAG oc_half2 oc_pow(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y)); }
 OC_DEVICE_FLAG oc_half3 oc_pow(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y), oc_pow(lhs.z, rhs.z)); }
 OC_DEVICE_FLAG oc_half4 oc_pow(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_pow(lhs.x, rhs.x), oc_pow(lhs.y, rhs.y), oc_pow(lhs.z, rhs.z), oc_pow(lhs.w, rhs.w)); }
+
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto oc_pow_array_impl(const oc_array<T, N> &lhs, const oc_array<T, N> &rhs, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(oc_pow(lhs[0], rhs[0]));
+    return oc_array<decltype_t, N>{(oc_pow(lhs[i], rhs[i]))...};
+}
+
 template<typename T, size_t N>
 oc_array<decltype(oc_pow(T{}, T{})), N> oc_pow(oc_array<T, N> lhs, oc_array<T, N> rhs) {
-    oc_array<decltype(oc_pow(T{}, T{})), N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_pow(lhs[i], rhs[i]);
-    }
-    return ret;
+    return oc_pow_array_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_fmod(oc_float lhs, oc_float rhs) { return fmodf(lhs, rhs); }
@@ -841,13 +844,16 @@ OC_DEVICE_FLAG oc_half oc_fmod(oc_half lhs, oc_half rhs) { return fmodf(lhs, rhs
 OC_DEVICE_FLAG oc_half2 oc_fmod(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y)); }
 OC_DEVICE_FLAG oc_half3 oc_fmod(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y), oc_fmod(lhs.z, rhs.z)); }
 OC_DEVICE_FLAG oc_half4 oc_fmod(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_fmod(lhs.x, rhs.x), oc_fmod(lhs.y, rhs.y), oc_fmod(lhs.z, rhs.z), oc_fmod(lhs.w, rhs.w)); }
+
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto oc_fmod_array_impl(const oc_array<T, N> &lhs, const oc_array<T, N> &rhs, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(oc_fmod(lhs[0], rhs[0]));
+    return oc_array<decltype_t, N>{(oc_fmod(lhs[i], rhs[i]))...};
+}
+
 template<typename T, size_t N>
 oc_array<decltype(oc_fmod(T{}, T{})), N> oc_fmod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
-    oc_array<decltype(oc_fmod(T{}, T{})), N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_fmod(lhs[i], rhs[i]);
-    }
-    return ret;
+    return oc_fmod_array_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_mod(oc_float lhs, oc_float rhs) { return lhs - rhs * oc_floor(lhs / rhs); }
@@ -858,13 +864,16 @@ OC_DEVICE_FLAG oc_half oc_mod(oc_half lhs, oc_half rhs) { return lhs - rhs * oc_
 OC_DEVICE_FLAG oc_half2 oc_mod(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y)); }
 OC_DEVICE_FLAG oc_half3 oc_mod(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z)); }
 OC_DEVICE_FLAG oc_half4 oc_mod(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_mod(lhs.x, rhs.x), oc_mod(lhs.y, rhs.y), oc_mod(lhs.z, rhs.z), oc_mod(lhs.w, rhs.w)); }
+
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto oc_mod_array_impl(const oc_array<T, N> &lhs, const oc_array<T, N> &rhs, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(oc_mod(lhs[0], rhs[0]));
+    return oc_array<decltype_t, N>{(oc_mod(lhs[i], rhs[i]))...};
+}
+
 template<typename T, size_t N>
 oc_array<decltype(oc_mod(T{}, T{})), N> oc_mod(oc_array<T, N> lhs, oc_array<T, N> rhs) {
-    oc_array<decltype(oc_mod(T{}, T{})), N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_mod(lhs[i], rhs[i]);
-    }
-    return ret;
+    return oc_mod_array_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_int oc_min(oc_int lhs, oc_int rhs) { return min(lhs, rhs); }
@@ -883,13 +892,16 @@ OC_DEVICE_FLAG oc_half oc_min(oc_half lhs, oc_half rhs) { return __hmin(lhs, rhs
 OC_DEVICE_FLAG oc_half2 oc_min(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y)); }
 OC_DEVICE_FLAG oc_half3 oc_min(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y), oc_min(lhs.z, rhs.z)); }
 OC_DEVICE_FLAG oc_half4 oc_min(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_min(lhs.x, rhs.x), oc_min(lhs.y, rhs.y), oc_min(lhs.z, rhs.z), oc_min(lhs.w, rhs.w)); }
+
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto oc_min_array_impl(const oc_array<T, N> &lhs, const oc_array<T, N> &rhs, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(oc_min(lhs[0], rhs[0]));
+    return oc_array<decltype_t, N>{(oc_min(lhs[i], rhs[i]))...};
+}
+
 template<typename T, size_t N>
 oc_array<decltype(oc_min(T{}, T{})), N> oc_min(oc_array<T, N> lhs, oc_array<T, N> rhs) {
-    oc_array<decltype(oc_min(T{}, T{})), N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_min(lhs[i], rhs[i]);
-    }
-    return ret;
+    return oc_min_array_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_int oc_max(oc_int lhs, oc_int rhs) { return max(lhs, rhs); }
@@ -908,13 +920,16 @@ OC_DEVICE_FLAG oc_half oc_max(oc_half lhs, oc_half rhs) { return __hmax(lhs, rhs
 OC_DEVICE_FLAG oc_half2 oc_max(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y)); }
 OC_DEVICE_FLAG oc_half3 oc_max(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y), oc_max(lhs.z, rhs.z)); }
 OC_DEVICE_FLAG oc_half4 oc_max(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_max(lhs.x, rhs.x), oc_max(lhs.y, rhs.y), oc_max(lhs.z, rhs.z), oc_max(lhs.w, rhs.w)); }
+
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto oc_max_array_impl(const oc_array<T, N> &lhs, const oc_array<T, N> &rhs, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(oc_max(lhs[0], rhs[0]));
+    return oc_array<decltype_t, N>{(oc_max(lhs[i], rhs[i]))...};
+}
+
 template<typename T, size_t N>
 oc_array<decltype(oc_max(T{}, T{})), N> oc_max(oc_array<T, N> lhs, oc_array<T, N> rhs) {
-    oc_array<decltype(oc_max(T{}, T{})), N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_max(lhs[i], rhs[i]);
-    }
-    return ret;
+    return oc_max_array_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_atan2(oc_float lhs, oc_float rhs) { return atan2f(lhs, rhs); }
@@ -925,13 +940,16 @@ OC_DEVICE_FLAG oc_half oc_atan2(oc_half lhs, oc_half rhs) { return atan2f(lhs, r
 OC_DEVICE_FLAG oc_half2 oc_atan2(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y)); }
 OC_DEVICE_FLAG oc_half3 oc_atan2(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y), oc_atan2(lhs.z, rhs.z)); }
 OC_DEVICE_FLAG oc_half4 oc_atan2(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_atan2(lhs.x, rhs.x), oc_atan2(lhs.y, rhs.y), oc_atan2(lhs.z, rhs.z), oc_atan2(lhs.w, rhs.w)); }
+
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto oc_atan2_array_impl(const oc_array<T, N> &lhs, const oc_array<T, N> &rhs, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(oc_atan2(lhs[0], rhs[0]));
+    return oc_array<decltype_t, N>{(oc_atan2(lhs[i], rhs[i]))...};
+}
+
 template<typename T, size_t N>
 oc_array<decltype(oc_atan2(T{}, T{})), N> oc_atan2(oc_array<T, N> lhs, oc_array<T, N> rhs) {
-    oc_array<decltype(oc_atan2(T{}, T{})), N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_atan2(lhs[i], rhs[i]);
-    }
-    return ret;
+    return oc_atan2_array_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_copysign(oc_float lhs, oc_float rhs) { return ::copysignf(lhs, rhs); }
@@ -942,13 +960,16 @@ OC_DEVICE_FLAG oc_half oc_copysign(oc_half lhs, oc_half rhs) { return ::copysign
 OC_DEVICE_FLAG oc_half2 oc_copysign(oc_half2 lhs, oc_half2 rhs) { return oc_half2(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y)); }
 OC_DEVICE_FLAG oc_half3 oc_copysign(oc_half3 lhs, oc_half3 rhs) { return oc_half3(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z)); }
 OC_DEVICE_FLAG oc_half4 oc_copysign(oc_half4 lhs, oc_half4 rhs) { return oc_half4(oc_copysign(lhs.x, rhs.x), oc_copysign(lhs.y, rhs.y), oc_copysign(lhs.z, rhs.z), oc_copysign(lhs.w, rhs.w)); }
+
+template<typename T, size_t N, size_t ...i>
+OC_DEVICE_FLAG constexpr auto oc_copysign_array_impl(const oc_array<T, N> &lhs, const oc_array<T, N> &rhs, ocarina::index_sequence<i...>) {
+    using decltype_t = decltype(oc_copysign(lhs[0], rhs[0]));
+    return oc_array<decltype_t, N>{(oc_copysign(lhs[i], rhs[i]))...};
+}
+
 template<typename T, size_t N>
 oc_array<decltype(oc_copysign(T{}, T{})), N> oc_copysign(oc_array<T, N> lhs, oc_array<T, N> rhs) {
-    oc_array<decltype(oc_copysign(T{}, T{})), N> ret;
-    for(size_t i = 0; i < N; ++i) {
-        ret[i] = oc_copysign(lhs[i], rhs[i]);
-    }
-    return ret;
+    return oc_copysign_array_impl(lhs, rhs, ocarina::make_index_sequence<N>());
 }
 
 OC_DEVICE_FLAG oc_float oc_lerp(oc_float v0, oc_float v1, oc_float v2) { return v1 + v0 * (v2 - v1); }
