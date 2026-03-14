@@ -58,7 +58,7 @@ using element_t = typename detail::element_impl<std::remove_cvref_t<T>>::type;
 namespace detail {
 template<typename T>
 struct ptr_impl {
-//    static_assert(always_false_v<T>);
+    static_assert(always_false_v<T>);
     using type = T;
 };
 
@@ -69,6 +69,11 @@ struct ptr_impl<T *> {
 
 template<typename T>
 struct ptr_impl<unique_ptr<T>> {
+    using type = T;
+};
+
+template<typename T, typename U>
+struct ptr_impl<unique_ptr<T, U>> {
     using type = T;
 };
 
@@ -116,5 +121,35 @@ requires is_ptr_v<std::remove_cvref_t<Arg>>
         return arg.get();
     }
 }
+
+enum class PointerCategory {
+    Raw,
+    Shared,
+    Unique,
+    NotAPointer
+};
+
+namespace detail {
+template<typename T>
+struct pointer_category_impl {
+    static constexpr PointerCategory value = std::is_pointer_v<T> ?
+                                                 PointerCategory::Raw :
+                                                 PointerCategory::NotAPointer;
+};
+
+template<typename... Ts>
+struct pointer_category_impl<std::unique_ptr<Ts...>> {
+    static constexpr PointerCategory value = PointerCategory::Unique;
+};
+
+template<typename T>
+struct pointer_category_impl<std::shared_ptr<T>> {
+    static constexpr PointerCategory value = PointerCategory::Shared;
+};
+}// namespace detail
+
+template<typename T>
+using pointer_category = detail::pointer_category_impl<std::remove_cvref_t<T>>;
+OC_DEFINE_TEMPLATE_VALUE(pointer_category)
 
 }// namespace ocarina
