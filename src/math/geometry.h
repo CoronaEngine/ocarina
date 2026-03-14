@@ -263,7 +263,6 @@ OC_STRUCT(ocarina, LineSegment, p0, p1){};
 //clang-format on
 
 namespace ocarina {
-using namespace ocarina;
 using array_float3 = std::array<float, 3>;
 using array_float2 = std::array<float, 2>;
 using array_float4 = std::array<float, 4>;
