@@ -326,7 +326,7 @@ public:
             for (int i = 0; i < type_data.objects.size(); ++i) {
                 ptr_type *obj = type_data.objects[i];
                 if (obj == ptr) {
-                    type_data.objects[i] = new_obj.get();
+                    type_data.objects[i] = raw_ptr(new_obj);
                     Super::at(index) = std::move(new_obj);
                     return true;
                 }
