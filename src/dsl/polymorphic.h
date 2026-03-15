@@ -392,7 +392,7 @@ public:
      * update data to managed memory
      * tips: Called on the host side code
      */
-    void update() noexcept {
+    void upload_immediately() noexcept {
         group_mgr_.for_each_group([&](GroupData &group_data) {
             if (group_data.data_set.empty()) {
                 return;
