@@ -404,6 +404,20 @@ public:
         });
     }
 
+    [[nodiscard]] CommandList upload(bool async = true) noexcept {
+        CommandList ret;
+        group_mgr_.for_each_group([&](GroupData &group_data) {
+            if (group_data.data_set.empty()) {
+                return;
+            }
+            for (ptr_type *object : group_data.objects) {
+                object->encode(group_data.data_set);
+            }
+            ret << group_data.data_set.upload(async);
+        });
+        return ret;
+    }
+
     void set_datas(const ptr_type *object, datas_type &&datas) noexcept {
         group_mgr_.group_map.at(object->topology_hash()).data_set = ocarina::move(datas);
     }
