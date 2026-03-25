@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <new>
 #include <utility>
 
 #include "math/basic_types.h"
@@ -36,33 +37,30 @@ static constexpr bool is_valid_buffer_storage_v = detail::is_valid_buffer_storag
 template<typename T>
 requires is_valid_buffer_storage_v<T>
 struct BufferStorage {
-public:
-    using Storage = std::aligned_storage_t<sizeof(T), alignof(T)>;
-
 private:
-    Storage storage_{};
+    alignas(alignof(T)) std::byte storage_[sizeof(T)]{};
 
 public:
     BufferStorage() = default;
     explicit BufferStorage(const T &buffer) {
-        oc_memcpy(addressof(storage_), addressof(buffer), sizeof(T));
+        oc_memcpy(storage_, addressof(buffer), sizeof(T));
     }
 
     BufferStorage(const BufferStorage<T> &other) {
-        oc_memcpy(addressof(storage_), addressof(other.storage_), sizeof(T));
+        oc_memcpy(storage_, other.storage_, sizeof(T));
     }
 
     BufferStorage &operator=(const BufferStorage<T> &other) {
-        oc_memcpy(addressof(storage_), addressof(other.storage_), sizeof(T));
+        oc_memcpy(storage_, other.storage_, sizeof(T));
         return *this;
     }
 
     [[nodiscard]] T *get() noexcept {
-        return reinterpret_cast<T *>(addressof(storage_));
+        return std::launder(reinterpret_cast<T *>(storage_));
     }
 
     [[nodiscard]] const T *get() const noexcept {
-        return reinterpret_cast<const T *>(addressof(storage_));
+        return std::launder(reinterpret_cast<const T *>(storage_));
     }
 
     [[nodiscard]] T *operator->() noexcept { return get(); }
