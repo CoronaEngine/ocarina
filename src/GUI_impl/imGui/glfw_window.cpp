@@ -50,9 +50,13 @@ void GLWindow::init(const char *name, uint2 initial_size, bool resizable) noexce
 
     monitor_ = glfwGetPrimaryMonitor();
     const GLFWvidmode *mode = glfwGetVideoMode(monitor_);
+    if (is_zero(initial_size)) {
+        initial_size.x = static_cast<uint>(mode->width);
+        initial_size.y = static_cast<uint>(mode->height);
+    }
     handle_ = glfwCreateWindow(
-        static_cast<int>(mode->width),
-        static_cast<int>(mode->height),
+        static_cast<int>(initial_size.x),
+        static_cast<int>(initial_size.y),
         name, nullptr, nullptr);
 
     if (handle_ == nullptr) {
