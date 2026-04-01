@@ -30,6 +30,8 @@ public:
         CHECK_GL(glGenTextures(1, &tex_handle_));
     }
 
+    [[nodiscard]] bool valid() const noexcept { return tex_handle_ != InvalidUI32; }
+
     void update(uint2 size) noexcept {
         clear();
         size_ = size;
