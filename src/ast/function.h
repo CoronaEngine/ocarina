@@ -69,7 +69,7 @@ private:
 private:
     mutable string description_{};
     const Type *ret_{nullptr};
-    const CallExpr *_call_expr{nullptr};
+    vector<const CallExpr *> all_call_expr_;
 
     ocarina::map<const Expression *, uint> expr_to_argument_index_;
 
@@ -192,8 +192,8 @@ private:
 public:
     static void push(stack_type::value_type f);
     static void pop(stack_type::value_type f);
-    void set_call_expression(const CallExpr *call_expr) noexcept { _call_expr = call_expr; }
-    [[nodiscard]] const CallExpr *call_expr() const noexcept { return _call_expr; }
+    void record_call_expression(const CallExpr *call_expr) noexcept;
+    [[nodiscard]] const CallExpr *current_call_expr() const noexcept;
     void set_description(string desc) const noexcept { description_ = ocarina::move(desc); }
     [[nodiscard]] string &description() const noexcept { return description_; }
     template<typename Visitor>

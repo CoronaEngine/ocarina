@@ -192,6 +192,14 @@ void Function::pop(stack_type::value_type f) {
     _function_stack().pop();
 }
 
+void Function::record_call_expression(const CallExpr *call_expr) noexcept {
+    all_call_expr_.push_back(call_expr);
+}
+
+const CallExpr *Function::current_call_expr() const noexcept {
+    return all_call_expr_.back();
+}
+
 const RefExpr *Function::_ref(const ocarina::Variable &variable) noexcept {
     return create_expression<RefExpr>(variable);
 }

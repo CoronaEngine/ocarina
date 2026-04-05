@@ -83,7 +83,7 @@ void FunctionCorrector::capture_from_invoker(const Expression *&expression, Func
     if (contain) {
         return;
     }
-    CallExpr *call_expr = const_cast<CallExpr *>(cur_func->call_expr());
+    CallExpr *call_expr = const_cast<CallExpr *>(cur_func->current_call_expr());
     visit_expr(old_expr, const_cast<Function *>(call_expr->context()));
     call_expr->append_argument(old_expr);
 }
@@ -139,7 +139,7 @@ void FunctionCorrector::output_from_invoked(const Expression *&expression, Funct
 
     /// foreach invoke path,output target variable layer by layer to the kernel (top-level function)
     while (true) {
-        CallExpr *call_expr = const_cast<CallExpr *>(invoked->call_expr());
+        CallExpr *call_expr = const_cast<CallExpr *>(invoked->current_call_expr());
         invoker = const_cast<Function *>(call_expr->context());
         if (invoked == cur_func || invoker == cur_func) {
             in_path = true;

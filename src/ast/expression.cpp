@@ -78,7 +78,7 @@ CallExpr::CallExpr(const Type *type, const Function *func,
     : Expression(Tag::CALL, type),
       function_(func),
       arguments_(std::move(args)) {
-    const_cast<Function *>(function_)->set_call_expression(this);
+    const_cast<Function *>(function_)->record_call_expression(this);
 }
 
 vector<const Function *> CallExpr::call_chain() const noexcept {
@@ -86,7 +86,7 @@ vector<const Function *> CallExpr::call_chain() const noexcept {
     const Function *func = context();
     while (func) {
         ret.push_back(func);
-        const CallExpr *call_expr = func->call_expr();
+        const CallExpr *call_expr = func->current_call_expr();
         func = call_expr ? call_expr->context() : nullptr;
     }
     return ret;
