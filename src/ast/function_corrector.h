@@ -10,8 +10,18 @@ namespace ocarina {
 
 class FunctionCorrector : public ExprVisitor, public StmtVisitor {
 private:
+    /// Function call stack: from kernel (bottom) to the innermost function being corrected (top).
     ocarina::deque<Function *> function_stack_;
+    /// CallExpr stack corresponding to function_stack_ with an offset of -1:
+    /// call_expr_stack_[i-1] is the CallExpr that invokes function_stack_[i].
     ocarina::deque<CallExpr *> call_expr_stack_;
+    /// Records the original outer expressions captured during first correction of each function.
+    /// Used for multi-callsite scenarios: when the same Function is invoked by a second CallExpr,
+    /// traverse won't rediscover already-processed captures, so these recorded original expressions
+    /// are replayed via visit_expr in the current invoker's context to re-run the capture chain.
+    /// This is critical for Lambda scenarios — each Lambda invocation creates a different wrapper
+    /// Function, and Expression pointers are bound to their respective contexts and cannot be
+    /// copied across wrappers.
     ocarina::map<const Function *, ocarina::vector<const Expression *>> captured_outer_exprs_;
     enum Stage {
         /// process capture variable

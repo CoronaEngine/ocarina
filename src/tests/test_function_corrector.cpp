@@ -639,6 +639,10 @@ void test_bug_output_multi_callsite() {
         };
         producer();
         producer();
+        $outline{
+        producer();
+            producer();
+        };
         [[maybe_unused]] Var<int> y = *leaked + 1;
         delete leaked;
     };
