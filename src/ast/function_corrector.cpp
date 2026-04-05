@@ -15,6 +15,17 @@ void FunctionCorrector::traverse(Function &function) noexcept {
     }
 }
 
+CallExpr *FunctionCorrector::find_call_expr_for(const Function *func) const noexcept {
+    for (int i = function_stack_.size() - 1; i >= 0; --i) {
+        if (function_stack_.at(i) == func) {
+            return call_expr_stack_.at(i - 1);
+        }
+    }
+    OC_ERROR("Cannot find call expr for function");
+    return nullptr;
+}
+
+
 void FunctionCorrector::apply(Function *function, int counter) noexcept {
     function_stack_.push_back(function);
     traverse(*current_function());
@@ -83,7 +94,8 @@ void FunctionCorrector::capture_from_invoker(const Expression *&expression, Func
     if (contain) {
         return;
     }
-    CallExpr *call_expr = const_cast<CallExpr *>(cur_func->current_call_expr());
+    captured_outer_exprs_[cur_func].push_back(old_expr);
+    CallExpr *call_expr = find_call_expr_for(cur_func);
     visit_expr(old_expr, const_cast<Function *>(call_expr->context()));
     call_expr->append_argument(old_expr);
 }
@@ -125,7 +137,24 @@ void FunctionCorrector::visit(const CallExpr *const_expr) {
     if (!expr->function_) {
         return;
     }
+    call_expr_stack_.push_back(expr);
     apply(const_cast<Function *>(expr->function_));
+    call_expr_stack_.pop_back();
+    // When a function was already corrected from a previous call site,
+    // its body is patched and traverse won't re-discover captures.
+    // Propagate the missing captured args to this CallExpr.
+    const Function *func = expr->function_;
+    size_t expected = func->all_arguments().size();
+    if (expr->arguments().size() < expected) {
+        auto it = captured_outer_exprs_.find(func);
+        if (it != captured_outer_exprs_.end()) {
+            for (const Expression *original_outer : it->second) {
+                const Expression *propagated = original_outer;
+                visit_expr(propagated);
+                expr->append_argument(propagated);
+            }
+        }
+    }
     detail::correct_usage(expr);
 }
 

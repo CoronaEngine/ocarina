@@ -668,11 +668,11 @@ int main() {
     // Bug regression tests (previously crashed at function_corrector.cpp:95)
     std::cout << "\n=== Bug regression tests ===" << std::endl;
     std::cout << "running bug1: Lambda + shared Callable multi-call" << std::endl;
-    // test_bug_lambda_shared_callable_multi_call();
+    test_bug_lambda_shared_callable_multi_call();
     std::cout << "running bug2: Callable multi-callsite capture" << std::endl;
     test_bug_callable_multi_callsite_capture();
     std::cout << "running bug3: nested Lambda + shared Callable" << std::endl;
-    // test_bug_nested_lambda_shared_callable();
+    test_bug_nested_lambda_shared_callable();
 
     std::cout << "test_function_corrector passed" << std::endl;
     return 0;

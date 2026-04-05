@@ -172,7 +172,7 @@ public:
     static uint64_t compute_hash(uint64_t hash) {
         return hash64(typeid(std::remove_cvref_t<T>).name(), hash);
     }
-    ~Hashable() = default;
+    virtual ~Hashable() = default;
 };
 
 }// namespace ocarina

@@ -11,6 +11,8 @@ namespace ocarina {
 class FunctionCorrector : public ExprVisitor, public StmtVisitor {
 private:
     ocarina::deque<Function *> function_stack_;
+    ocarina::deque<CallExpr *> call_expr_stack_;
+    ocarina::map<const Function *, ocarina::vector<const Expression *>> captured_outer_exprs_;
     enum Stage {
         /// process capture variable
         ProcessCapture,
@@ -45,10 +47,12 @@ private:
     void visit(const SubscriptExpr *expr) override;
     void visit(const UnaryExpr *expr) override;
 
-    [[nodiscard]] Function *current_function() noexcept { return function_stack_.back(); }
-    [[nodiscard]] Function *kernel() noexcept { return function_stack_.front(); }
+    [[nodiscard]] Function *current_function() const noexcept { return function_stack_.back(); }
+    [[nodiscard]] CallExpr *current_call_expr() const noexcept { return call_expr_stack_.back(); }
+    [[nodiscard]] Function *kernel() const noexcept { return function_stack_.front(); }
 
     void traverse(Function &function) noexcept;
+    [[nodiscard]] CallExpr *find_call_expr_for(const Function *func) const noexcept;
     void process_capture(const Expression *&expression, Function *cur_func) noexcept;
     void visit_expr(const Expression *const &expression, Function *cur_func = nullptr) noexcept;
 

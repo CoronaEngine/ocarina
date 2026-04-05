@@ -220,8 +220,8 @@ public:
     void add_used_structure(const Type *type) noexcept { used_struct_.add(type); }
     [[nodiscard]] const Usage &variable_usage(uint uid) const noexcept;
     [[nodiscard]] Usage &variable_usage(uint uid) noexcept;
-    [[nodiscard]] const Variable::Data& variable_data(uint uid) const noexcept;
-    [[nodiscard]] Variable::Data& variable_data(uint uid) noexcept;
+    [[nodiscard]] const Variable::Data &variable_data(uint uid) const noexcept;
+    [[nodiscard]] Variable::Data &variable_data(uint uid) noexcept;
     const CapturedResource &get_captured_resource(const Type *type, Variable::Tag tag, MemoryBlock block) noexcept;
     const CapturedResource &add_captured_resource(const Type *type, Variable::Tag tag, MemoryBlock block) noexcept;
     [[nodiscard]] bool has_captured_resource(const void *handle) const noexcept;
