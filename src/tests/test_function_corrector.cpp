@@ -625,6 +625,33 @@ void test_bug_nested_lambda_shared_callable() {
     std::cout << "  bug3 passed (nested lambda shared callable)" << std::endl;
 }
 
+// Bug pattern 4: output_from_invoked multi-callsite.
+// Same Callable called twice, kernel uses variable produced inside it.
+// output_from_invoked uses current_call_expr() which only returns the last
+// CallExpr, so the first callsite may not get the output argument appended.
+void test_bug_output_multi_callsite() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> *leaked = nullptr;
+        Callable<void()> producer = [&]() {
+            leaked = new Var<int>(77);
+        };
+        producer();
+        producer();
+        [[maybe_unused]] Var<int> y = *leaked + 1;
+        delete leaked;
+    };
+    kernel_function = kernel.function();
+
+    auto custom = collect_custom_functions(kernel_function);
+    require(custom.size() >= 1, "bug4: expected at least 1 custom function");
+    const Function *producer_func = custom.front();
+    require_eq(producer_func->appended_arguments().size(), static_cast<size_t>(1), "bug4: producer appended");
+    require_eq(producer_func->all_arguments().size(), static_cast<size_t>(1), "bug4: producer all_arguments");
+    std::cout << "  bug4 passed (output multi-callsite)" << std::endl;
+}
+
 }// namespace
 
 int main() {
@@ -673,6 +700,8 @@ int main() {
     test_bug_callable_multi_callsite_capture();
     std::cout << "running bug3: nested Lambda + shared Callable" << std::endl;
     test_bug_nested_lambda_shared_callable();
+    std::cout << "running bug4: output multi-callsite" << std::endl;
+    test_bug_output_multi_callsite();
 
     std::cout << "test_function_corrector passed" << std::endl;
     return 0;
