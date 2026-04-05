@@ -43,6 +43,10 @@ void Function::mark_variable_usage(ocarina::uint uid, ocarina::Usage usage) noex
 }
 
 const RefExpr *Function::mapping_captured_argument(const Expression *outer_expr, bool *contain) noexcept {
+    OC_ERROR_IF(!allow_dsl_capture_,
+                "Callable '{}' must not capture any variables. "
+                "If you need captures, use Lambda instead.",
+                description_);
     *contain = expr_to_argument_index_.contains(outer_expr);
     if (!*contain) {
         uint arg_index = static_cast<uint>(appended_arguments_.size());

@@ -99,6 +99,7 @@ private:
     Tag tag_{Tag::CALLABLE};
     ocarina::vector<SP<const Function>> used_custom_func_;
     StructureSet used_struct_;
+    bool allow_dsl_capture_{false};
     mutable bool raytracing_{true};
     mutable uint3 block_dim_{make_uint3(0)};
     mutable uint3 grid_dim_{make_uint3(0)};
@@ -197,6 +198,8 @@ public:
     OC_MAKE_MEMBER_GETTER(all_call_expr, &)
     void set_description(string desc) const noexcept { description_ = ocarina::move(desc); }
     [[nodiscard]] string &description() const noexcept { return description_; }
+    void set_allow_dsl_capture(bool v) noexcept { allow_dsl_capture_ = v; }
+    [[nodiscard]] bool allow_dsl_capture() const noexcept { return allow_dsl_capture_; }
     template<typename Visitor>
     void for_each_custom_func(Visitor &&visitor) const noexcept {
         for (const auto &f : used_custom_func_) {

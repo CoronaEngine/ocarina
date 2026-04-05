@@ -95,25 +95,25 @@ int main(int argc, char *argv[]) {
         print("{}, {}---",a, 1.f);
         return a;
     };
-
-    Callable c1 = [&](Var<int> a, Var<int> b) {
-        $for(v, 9) {
-            a = a + v;
-        };
-        Var<TriangleHit> hit;
-        $if(hit->is_miss()){
-            $comment(miss)
-
-        };
-        Var<float4x4> m4;
-        Var<ocarina::tuple<int, float>> tp;
-        Var vec = m4.get<3>();
-        m4.get<3>() = vec;
-        Var<int[6]> arr;
-        arr[3] = 0;
-
-        return add(a, a + 7, 1);
-    };
+    //
+    // Callable c1 = [](Var<int> a, Var<int> b) {
+    //     $for(v, 9) {
+    //         a = a + v;
+    //     };
+    //     Var<TriangleHit> hit;
+    //     $if(hit->is_miss()){
+    //         $comment(miss)
+    //
+    //     };
+    //     Var<float4x4> m4;
+    //     Var<ocarina::tuple<int, float>> tp;
+    //     Var vec = m4.get<3>();
+    //     m4.get<3>() = vec;
+    //     Var<int[6]> arr;
+    //     arr[3] = 0;
+    //
+    //     return add(a, a + 7, 1);
+    // };
 
     fs::path path(argv[0]);
     RHIContext &context = RHIContext::instance();

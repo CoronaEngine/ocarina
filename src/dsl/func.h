@@ -165,6 +165,9 @@ struct dsl_function<Callable<T>> {
 template<typename T>
 using dsl_function_t = typename dsl_function<std::remove_cvref_t<T>>::type;
 
+struct allow_capture_tag_t {};
+inline constexpr allow_capture_tag_t allow_capture_tag{};
+
 }// namespace detail
 
 template<typename Ret, typename... Args>
@@ -174,18 +177,32 @@ class Callable<Ret(Args...)> : public FuncWrapper {
 public:
     using signature = canonical_signature_t<Ret(Args...)>;
 
+private:
+    template<typename Func>
+    void _init(Func &&func) noexcept {
+        function_ = Function::define_callable([&] {
+            if constexpr (std::is_same_v<void, Ret>) {
+                detail::create<Args...>(OC_FORWARD(func), ocarina::index_sequence_for<Args...>());
+            } else {
+                decltype(auto) ret = detail::create<Args...>(OC_FORWARD(func), ocarina::index_sequence_for<Args...>());
+                Function::current()->return_(ret.expression());
+            }
+        });
+    }
+
 public:
     Callable() = default;
     template<typename Func>
-    Callable(Func &&func) noexcept
-        : FuncWrapper(std::move(Function::define_callable([&] {
-              if constexpr (std::is_same_v<void, Ret>) {
-                  detail::create<Args...>(OC_FORWARD(func), ocarina::index_sequence_for<Args...>());
-              } else {
-                  decltype(auto) ret = detail::create<Args...>(OC_FORWARD(func), ocarina::index_sequence_for<Args...>());
-                  Function::current()->return_(ret.expression());
-              }
-          }))) {}
+    Callable(Func &&func) noexcept {
+        static_assert(!std::is_class_v<std::decay_t<Func>> || std::is_empty_v<std::decay_t<Func>>,
+                      "Callable must not capture any variables. "
+                      "If you need captures, use Lambda instead.");
+        _init(OC_FORWARD(func));
+    }
+    template<typename Func>
+    Callable(Func &&func, detail::allow_capture_tag_t) noexcept {
+        _init(OC_FORWARD(func));
+    }
 
     auto operator()(prototype_to_callable_invocation_t<Args>... args) const noexcept {
         Function::current()->update_captured_resources(function_.get());
@@ -209,11 +226,15 @@ public:
 template<typename T>
 Callable(T &&) -> Callable<detail::dsl_function_t<T>>;
 
+template<typename T>
+Callable(T &&, detail::allow_capture_tag_t) -> Callable<detail::dsl_function_t<T>>;
+
 namespace detail {
 template<typename Func>
 auto callable_wrap(Func &&func, const string &desc = "") {
-    Callable callable = OC_FORWARD(func);
+    Callable callable{OC_FORWARD(func), allow_capture_tag};
     callable.function()->set_description(desc);
+    callable.function()->set_allow_dsl_capture(true);
     return callable();
 }
 }// namespace detail

@@ -251,72 +251,14 @@ void test_capture_3level_lambda() {
 }
 
 void test_capture_3level_callable() {
-    shared_ptr<Function> kernel_function;
-
-    [[maybe_unused]] Kernel kernel = [&] {
-        Var<int> outer = 1;
-        Callable C1 = [&](Var<int> a) {
-            Callable C2 = [&](Var<int> b) {
-                Callable C3 = [&](Var<int> c) {
-                    return c + outer;
-                };
-                return C3(b);
-            };
-            return C2(a);
-        };
-        [[maybe_unused]] Var<int> result = C1(10);
-    };
-    kernel_function = kernel.function();
-
-    const Function *C1_func = require_single_custom_function(kernel_function, "3level C1");
-    require_eq(C1_func->arguments().size(), static_cast<size_t>(1), "3level C1 explicit");
-    require_eq(C1_func->appended_arguments().size(), static_cast<size_t>(1), "3level C1 appended");
-    require_eq(C1_func->current_call_expr()->arguments().size(), static_cast<size_t>(2), "3level C1 callsite");
-
-    std::vector<const Function *> C1_children;
-    C1_func->for_each_custom_func([&](const Function *f) { C1_children.push_back(f); });
-    require_eq(C1_children.size(), static_cast<size_t>(1), "3level C2 count");
-    const Function *C2_func = C1_children.front();
-    require_eq(C2_func->arguments().size(), static_cast<size_t>(1), "3level C2 explicit");
-    require_eq(C2_func->appended_arguments().size(), static_cast<size_t>(1), "3level C2 appended");
-    require_eq(C2_func->current_call_expr()->arguments().size(), static_cast<size_t>(2), "3level C2 callsite");
-
-    std::vector<const Function *> C2_children;
-    C2_func->for_each_custom_func([&](const Function *f) { C2_children.push_back(f); });
-    require_eq(C2_children.size(), static_cast<size_t>(1), "3level C3 count");
-    const Function *C3_func = C2_children.front();
-    require_eq(C3_func->arguments().size(), static_cast<size_t>(1), "3level C3 explicit");
-    require_eq(C3_func->appended_arguments().size(), static_cast<size_t>(1), "3level C3 appended");
-    require_eq(C3_func->current_call_expr()->arguments().size(), static_cast<size_t>(2), "3level C3 callsite");
+    // This test is removed: Callable capture is now forbidden at compile time.
+    // The equivalent Lambda version is test_capture_3level_lambda.
+    std::cout << "  (skipped, Callable capture now forbidden)" << std::endl;
 }
 
 void test_capture_mixed_callable_lambda() {
-    shared_ptr<Function> kernel_function;
-
-    [[maybe_unused]] Kernel kernel = [&] {
-        Var<int> outer = 1;
-        Callable outer_callable = [&](Var<int> a) {
-            Lambda inner_lambda = [&](Var<int> b) {
-                return b + outer;
-            };
-            return inner_lambda(a);
-        };
-        [[maybe_unused]] Var<int> result = outer_callable(10);
-    };
-    kernel_function = kernel.function();
-
-    const Function *outer_func = require_single_custom_function(kernel_function, "mixed outer");
-    require_eq(outer_func->arguments().size(), static_cast<size_t>(1), "mixed outer explicit");
-    require_eq(outer_func->appended_arguments().size(), static_cast<size_t>(2), "mixed outer appended");
-    require_eq(outer_func->current_call_expr()->arguments().size(), static_cast<size_t>(3), "mixed outer callsite");
-
-    std::vector<const Function *> outer_children;
-    outer_func->for_each_custom_func([&](const Function *f) { outer_children.push_back(f); });
-    require_eq(outer_children.size(), static_cast<size_t>(1), "mixed inner count");
-    const Function *inner_func = outer_children.front();
-    require_eq(inner_func->arguments().size(), static_cast<size_t>(0), "mixed inner explicit");
-    require_eq(inner_func->appended_arguments().size(), static_cast<size_t>(3), "mixed inner appended");
-    require_eq(inner_func->current_call_expr()->arguments().size(), static_cast<size_t>(3), "mixed inner callsite");
+    // This test is removed: Callable capture is now forbidden at compile time.
+    std::cout << "  (skipped, Callable capture now forbidden)" << std::endl;
 }
 
 // ========== output_from_invoked tests ==========
@@ -326,7 +268,7 @@ void test_output_basic() {
 
     [[maybe_unused]] Kernel kernel = [&] {
         Var<int> *leaked = nullptr;
-        Callable<void()> inner = [&]() {
+        Lambda inner = [&]() {
             leaked = new Var<int>(42);
         };
         inner();
@@ -346,8 +288,8 @@ void test_output_2level() {
 
     [[maybe_unused]] Kernel kernel = [&] {
         Var<int> *leaked = nullptr;
-        Callable<void()> C1 = [&]() {
-            Callable<void()> C2 = [&]() {
+        Lambda C1 = [&]() {
+            Lambda C2 = [&]() {
                 leaked = new Var<int>(99);
             };
             C2();
@@ -377,12 +319,12 @@ void test_output_sibling_callable() {
 
     [[maybe_unused]] Kernel kernel = [&] {
         Var<int> *leaked = nullptr;
-        Callable<void()> producer = [&]() {
+        Lambda producer = [&]() {
             leaked = new Var<int>(77);
         };
         producer();
 
-        Callable consumer = [&](Var<int> value) {
+        Lambda consumer = [&](Var<int> value) {
             return value + *leaked;
         };
         [[maybe_unused]] Var<int> result = consumer(5);
@@ -400,108 +342,21 @@ void test_output_sibling_callable() {
     require_eq(producer_func->appended_arguments().size(), static_cast<size_t>(1), "output sibling producer appended");
     require_eq(producer_func->current_call_expr()->arguments().size(), static_cast<size_t>(1), "output sibling producer callsite");
 
-    // consumer: 1 explicit + 1 appended (kernel local receiving producer's output, captured into consumer)
-    require_eq(consumer_func->arguments().size(), static_cast<size_t>(1), "output sibling consumer explicit");
-    require_eq(consumer_func->appended_arguments().size(), static_cast<size_t>(1), "output sibling consumer appended");
+    // consumer: Lambda wrapper → 0 explicit args, appended = value + producer's output
+    require_eq(consumer_func->arguments().size(), static_cast<size_t>(0), "output sibling consumer explicit");
+    require_eq(consumer_func->appended_arguments().size(), static_cast<size_t>(2), "output sibling consumer appended");
     require_eq(consumer_func->current_call_expr()->arguments().size(), static_cast<size_t>(2), "output sibling consumer callsite");
 }
 
-// ========== Callable-based capture tests ==========
-
-void test_callable_single_capture() {
-    shared_ptr<Function> kernel_function;
-
-    [[maybe_unused]] Kernel kernel = [&] {
-        Var<int> outer = 42;
-        Callable callable = [&](Var<int> value) {
-            return value + outer;
-        };
-        [[maybe_unused]] Var<int> result = callable(10);
-    };
-    kernel_function = kernel.function();
-
-    const Function *callable_function = require_single_custom_function(kernel_function, "callable single capture");
-    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable single capture explicit arg count mismatch");
-    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable single capture appended arg count mismatch");
-    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable single capture all arg count mismatch");
-
-    const CallExpr *call_expr = callable_function->current_call_expr();
-    require(call_expr != nullptr, "callable single capture call expression is null");
-    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable single capture callsite arg count mismatch");
-}
-
-void test_callable_multi_capture() {
-    shared_ptr<Function> kernel_function;
-
-    [[maybe_unused]] Kernel kernel = [&] {
-        Var<int> outer_a = 10;
-        Var<int> outer_b = 20;
-        Callable callable = [&](Var<int> value) {
-            return value + outer_a + outer_b;
-        };
-        [[maybe_unused]] Var<int> result = callable(5);
-    };
-    kernel_function = kernel.function();
-
-    const Function *callable_function = require_single_custom_function(kernel_function, "callable multi capture");
-    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable multi capture explicit arg count mismatch");
-    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(2), "callable multi capture appended arg count mismatch");
-    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(3), "callable multi capture all arg count mismatch");
-
-    const CallExpr *call_expr = callable_function->current_call_expr();
-    require(call_expr != nullptr, "callable multi capture call expression is null");
-    require_eq(call_expr->arguments().size(), static_cast<size_t>(3), "callable multi capture callsite arg count mismatch");
-}
-
-void test_callable_member_capture() {
-    shared_ptr<Function> kernel_function;
-
-    [[maybe_unused]] Kernel kernel = [&] {
-        Var<int2> pair = make_int2(7, 8);
-        Callable callable = [&](Var<int> value) {
-            return value + pair.x;
-        };
-        [[maybe_unused]] Var<int> result = callable(1);
-    };
-    kernel_function = kernel.function();
-
-    const Function *callable_function = require_single_custom_function(kernel_function, "callable member capture");
-    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable member capture explicit arg count mismatch");
-    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable member capture appended arg count mismatch");
-    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable member capture all arg count mismatch");
-
-    const CallExpr *call_expr = callable_function->current_call_expr();
-    require(call_expr != nullptr, "callable member capture call expression is null");
-    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable member capture callsite arg count mismatch");
-}
-
-void test_callable_subscript_capture() {
-    shared_ptr<Function> kernel_function;
-
-    [[maybe_unused]] Kernel kernel = [&] {
-        Var<int[4]> arr;
-        Callable callable = [&](Var<int> value) {
-            return value + arr[2];
-        };
-        [[maybe_unused]] Var<int> result = callable(3);
-    };
-    kernel_function = kernel.function();
-
-    const Function *callable_function = require_single_custom_function(kernel_function, "callable subscript capture");
-    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable subscript capture explicit arg count mismatch");
-    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable subscript capture appended arg count mismatch");
-    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable subscript capture all arg count mismatch");
-
-    const CallExpr *call_expr = callable_function->current_call_expr();
-    require(call_expr != nullptr, "callable subscript capture call expression is null");
-    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable subscript capture callsite arg count mismatch");
-}
+// ========== Callable no-capture test ==========
+// Callable capture tests removed: Callable capture is now forbidden at compile time.
+// The Lambda versions above cover the same capture scenarios.
 
 void test_callable_no_capture() {
     shared_ptr<Function> kernel_function;
 
     [[maybe_unused]] Kernel kernel = [&] {
-        Callable callable = [&](Var<int> a, Var<int> b) {
+        Callable callable = [](Var<int> a, Var<int> b) {
             return a + b;
         };
         [[maybe_unused]] Var<int> result = callable(3, 4);
@@ -518,27 +373,7 @@ void test_callable_no_capture() {
     require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable no capture callsite arg count mismatch");
 }
 
-void test_callable_dedup_same_variable() {
-    shared_ptr<Function> kernel_function;
-
-    [[maybe_unused]] Kernel kernel = [&] {
-        Var<int> outer = 99;
-        Callable callable = [&](Var<int> value) {
-            return value + outer + outer;
-        };
-        [[maybe_unused]] Var<int> result = callable(1);
-    };
-    kernel_function = kernel.function();
-
-    const Function *callable_function = require_single_custom_function(kernel_function, "callable dedup");
-    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable dedup explicit arg count mismatch");
-    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable dedup appended arg count mismatch");
-    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable dedup all arg count mismatch");
-
-    const CallExpr *call_expr = callable_function->current_call_expr();
-    require(call_expr != nullptr, "callable dedup call expression is null");
-    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable dedup callsite arg count mismatch");
-}
+// test_callable_dedup_same_variable removed: Callable capture now forbidden.
 
 // ========== Tests exposing _call_expr overwrite bug ==========
 // Root cause: CallExpr constructor does set_call_expression(this) on the callee
@@ -555,7 +390,7 @@ void test_bug_lambda_shared_callable_multi_call() {
 
     [[maybe_unused]] Kernel kernel = [&] {
         Var<int> x = 1;
-        Callable shared = [&](Var<int> a) {
+        Lambda shared = [&](Var<int> a) {
             return a + x;
         };
         Lambda L = [&](Var<int> n) {
@@ -573,15 +408,14 @@ void test_bug_lambda_shared_callable_multi_call() {
     std::cout << "  bug1 passed (lambda shared callable multi-call)" << std::endl;
 }
 
-// Bug pattern 2 (fixed): Same Callable directly called twice.
-// Previously, second C(20) would overwrite C.function_->_call_expr,
-// causing arguments size mismatch in correct_usage.
+// Bug pattern 2 (fixed): Same Lambda called twice.
+// Lambda creates a new internal callable per invocation, so no multi-callsite issue.
 void test_bug_callable_multi_callsite_capture() {
     shared_ptr<Function> kernel_function;
 
     [[maybe_unused]] Kernel kernel = [&] {
         Float x = 1;
-        Callable C = [&](Var<int> a) {
+        Lambda C = [&](Var<int> a) {
             return a + x;
         };
         [[maybe_unused]] auto r1 = C(10);
@@ -590,13 +424,9 @@ void test_bug_callable_multi_callsite_capture() {
     kernel_function = kernel.function();
 
     auto custom = collect_custom_functions(kernel_function);
-    require(custom.size() >= 1, "bug2: expected at least 1 custom function");
-    const Function *C_func = custom.front();
-    // C captures x → 1 appended arg
-    require_eq(C_func->appended_arguments().size(), static_cast<size_t>(1), "bug2: C appended");
-    // both callsites should have 2 args (explicit a + captured x)
-    require_eq(C_func->all_arguments().size(), static_cast<size_t>(2), "bug2: C all_arguments");
-    std::cout << "  bug2 passed (callable multi-callsite capture)" << std::endl;
+    // Lambda creates a new wrapper each call, so at least 2
+    require(custom.size() >= 2, "bug2: expected at least 2 custom functions, got " + std::to_string(custom.size()));
+    std::cout << "  bug2 passed (lambda multi-callsite capture)" << std::endl;
 }
 
 // Bug pattern 3 (fixed): Multi-level Lambda chain where an intermediate Callable
@@ -606,7 +436,7 @@ void test_bug_nested_lambda_shared_callable() {
 
     [[maybe_unused]] Kernel kernel = [&] {
         Var<int> x = 1;
-        Callable mid = [&](Var<int> a) {
+        Lambda mid = [&](Var<int> a) {
             return a + x;
         };
         Lambda outer = [&](Var<int> n) {
@@ -626,21 +456,21 @@ void test_bug_nested_lambda_shared_callable() {
 }
 
 // Bug pattern 4: output_from_invoked multi-callsite.
-// Same Callable called twice, kernel uses variable produced inside it.
-// output_from_invoked uses current_call_expr() which only returns the last
-// CallExpr, so the first callsite may not get the output argument appended.
+// Originally tested Callable called twice with output. Now Callable can't capture,
+// so we use Lambda. Lambda creates a new Function per call, avoiding the original bug.
+// This test just verifies that the pattern doesn't crash.
 void test_bug_output_multi_callsite() {
     shared_ptr<Function> kernel_function;
 
     [[maybe_unused]] Kernel kernel = [&] {
         Var<int> *leaked = nullptr;
-        Callable<void()> producer = [&]() {
+        Lambda producer = [&]() {
             leaked = new Var<int>(77);
         };
         producer();
         producer();
         $outline{
-        producer();
+            producer();
             producer();
         };
         [[maybe_unused]] Var<int> y = *leaked + 1;
@@ -649,11 +479,9 @@ void test_bug_output_multi_callsite() {
     kernel_function = kernel.function();
 
     auto custom = collect_custom_functions(kernel_function);
+    // Lambda creates a new wrapper per call, so multiple functions
     require(custom.size() >= 1, "bug4: expected at least 1 custom function");
-    const Function *producer_func = custom.front();
-    require_eq(producer_func->appended_arguments().size(), static_cast<size_t>(1), "bug4: producer appended");
-    require_eq(producer_func->all_arguments().size(), static_cast<size_t>(1), "bug4: producer all_arguments");
-    std::cout << "  bug4 passed (output multi-callsite)" << std::endl;
+    std::cout << "  bug4 passed (output multi-callsite with Lambda)" << std::endl;
 }
 
 }// namespace
@@ -673,9 +501,9 @@ int main() {
     test_same_capture_is_reused_across_multiple_callsites();
     std::cout << "running 3-level Lambda capture" << std::endl;
     test_capture_3level_lambda();
-    std::cout << "running 3-level Callable capture" << std::endl;
+    std::cout << "running 3-level Callable capture (skipped)" << std::endl;
     test_capture_3level_callable();
-    std::cout << "running mixed Callable+Lambda capture" << std::endl;
+    std::cout << "running mixed Callable+Lambda capture (skipped)" << std::endl;
     test_capture_mixed_callable_lambda();
     std::cout << "running output basic" << std::endl;
     test_output_basic();
@@ -683,18 +511,8 @@ int main() {
     test_output_2level();
     std::cout << "running output sibling" << std::endl;
     test_output_sibling_callable();
-    std::cout << "running callable single capture" << std::endl;
-    test_callable_single_capture();
-    std::cout << "running callable multi capture" << std::endl;
-    test_callable_multi_capture();
-    std::cout << "running callable member capture" << std::endl;
-    test_callable_member_capture();
-    std::cout << "running callable subscript capture" << std::endl;
-    test_callable_subscript_capture();
     std::cout << "running callable no capture" << std::endl;
     test_callable_no_capture();
-    std::cout << "running callable dedup" << std::endl;
-    test_callable_dedup_same_variable();
 
     // Bug regression tests (previously crashed at function_corrector.cpp:95)
     std::cout << "\n=== Bug regression tests ===" << std::endl;
