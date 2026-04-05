@@ -208,6 +208,140 @@ void test_same_capture_is_reused_across_multiple_callsites() {
     }
 }
 
+// ========== Callable-based capture tests ==========
+
+void test_callable_single_capture() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> outer = 42;
+        Callable callable = [&](Var<int> value) {
+            return value + outer;
+        };
+        [[maybe_unused]] Var<int> result = callable(10);
+    };
+    kernel_function = kernel.function();
+
+    const Function *callable_function = require_single_custom_function(kernel_function, "callable single capture");
+    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable single capture explicit arg count mismatch");
+    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable single capture appended arg count mismatch");
+    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable single capture all arg count mismatch");
+
+    const CallExpr *call_expr = callable_function->call_expr();
+    require(call_expr != nullptr, "callable single capture call expression is null");
+    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable single capture callsite arg count mismatch");
+}
+
+void test_callable_multi_capture() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> outer_a = 10;
+        Var<int> outer_b = 20;
+        Callable callable = [&](Var<int> value) {
+            return value + outer_a + outer_b;
+        };
+        [[maybe_unused]] Var<int> result = callable(5);
+    };
+    kernel_function = kernel.function();
+
+    const Function *callable_function = require_single_custom_function(kernel_function, "callable multi capture");
+    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable multi capture explicit arg count mismatch");
+    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(2), "callable multi capture appended arg count mismatch");
+    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(3), "callable multi capture all arg count mismatch");
+
+    const CallExpr *call_expr = callable_function->call_expr();
+    require(call_expr != nullptr, "callable multi capture call expression is null");
+    require_eq(call_expr->arguments().size(), static_cast<size_t>(3), "callable multi capture callsite arg count mismatch");
+}
+
+void test_callable_member_capture() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int2> pair = make_int2(7, 8);
+        Callable callable = [&](Var<int> value) {
+            return value + pair.x;
+        };
+        [[maybe_unused]] Var<int> result = callable(1);
+    };
+    kernel_function = kernel.function();
+
+    const Function *callable_function = require_single_custom_function(kernel_function, "callable member capture");
+    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable member capture explicit arg count mismatch");
+    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable member capture appended arg count mismatch");
+    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable member capture all arg count mismatch");
+
+    const CallExpr *call_expr = callable_function->call_expr();
+    require(call_expr != nullptr, "callable member capture call expression is null");
+    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable member capture callsite arg count mismatch");
+}
+
+void test_callable_subscript_capture() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int[4]> arr;
+        Callable callable = [&](Var<int> value) {
+            return value + arr[2];
+        };
+        [[maybe_unused]] Var<int> result = callable(3);
+    };
+    kernel_function = kernel.function();
+
+    const Function *callable_function = require_single_custom_function(kernel_function, "callable subscript capture");
+    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable subscript capture explicit arg count mismatch");
+    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable subscript capture appended arg count mismatch");
+    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable subscript capture all arg count mismatch");
+
+    const CallExpr *call_expr = callable_function->call_expr();
+    require(call_expr != nullptr, "callable subscript capture call expression is null");
+    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable subscript capture callsite arg count mismatch");
+}
+
+void test_callable_no_capture() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Callable callable = [&](Var<int> a, Var<int> b) {
+            return a + b;
+        };
+        [[maybe_unused]] Var<int> result = callable(3, 4);
+    };
+    kernel_function = kernel.function();
+
+    const Function *callable_function = require_single_custom_function(kernel_function, "callable no capture");
+    require_eq(callable_function->arguments().size(), static_cast<size_t>(2), "callable no capture explicit arg count mismatch");
+    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(0), "callable no capture appended arg count mismatch");
+    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable no capture all arg count mismatch");
+
+    const CallExpr *call_expr = callable_function->call_expr();
+    require(call_expr != nullptr, "callable no capture call expression is null");
+    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable no capture callsite arg count mismatch");
+}
+
+void test_callable_dedup_same_variable() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> outer = 99;
+        Callable callable = [&](Var<int> value) {
+            return value + outer + outer;
+        };
+        [[maybe_unused]] Var<int> result = callable(1);
+    };
+    kernel_function = kernel.function();
+
+    const Function *callable_function = require_single_custom_function(kernel_function, "callable dedup");
+    require_eq(callable_function->arguments().size(), static_cast<size_t>(1), "callable dedup explicit arg count mismatch");
+    require_eq(callable_function->appended_arguments().size(), static_cast<size_t>(1), "callable dedup appended arg count mismatch");
+    require_eq(callable_function->all_arguments().size(), static_cast<size_t>(2), "callable dedup all arg count mismatch");
+
+    const CallExpr *call_expr = callable_function->call_expr();
+    require(call_expr != nullptr, "callable dedup call expression is null");
+    require_eq(call_expr->arguments().size(), static_cast<size_t>(2), "callable dedup callsite arg count mismatch");
+}
+
 }// namespace
 
 int main() {
@@ -223,6 +357,18 @@ int main() {
     test_nested_capture_propagates_through_intermediate_callable();
     std::cout << "running multi callsite capture" << std::endl;
     test_same_capture_is_reused_across_multiple_callsites();
+    std::cout << "running callable single capture" << std::endl;
+    test_callable_single_capture();
+    std::cout << "running callable multi capture" << std::endl;
+    test_callable_multi_capture();
+    std::cout << "running callable member capture" << std::endl;
+    test_callable_member_capture();
+    std::cout << "running callable subscript capture" << std::endl;
+    test_callable_subscript_capture();
+    std::cout << "running callable no capture" << std::endl;
+    test_callable_no_capture();
+    std::cout << "running callable dedup" << std::endl;
+    test_callable_dedup_same_variable();
     std::cout << "test_function_corrector passed" << std::endl;
     return 0;
 }
