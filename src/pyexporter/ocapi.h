@@ -11,10 +11,9 @@
 #include "rhi/common.h"
 #include "ast/type_desc.h"
 #include "numpy.h"
+#include "base/using.h"
 
 namespace py = pybind11;
-using namespace ocarina;
-
 #define OC_EXPORT_ENUM_VALUE(v, enum_type) \
     .value(#v, enum_type::v)
 

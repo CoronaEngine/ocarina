@@ -326,7 +326,7 @@ public:
             for (int i = 0; i < type_data.objects.size(); ++i) {
                 ptr_type *obj = type_data.objects[i];
                 if (obj == ptr) {
-                    type_data.objects[i] = new_obj.get();
+                    type_data.objects[i] = raw_ptr(new_obj);
                     Super::at(index) = std::move(new_obj);
                     return true;
                 }
@@ -392,7 +392,7 @@ public:
      * update data to managed memory
      * tips: Called on the host side code
      */
-    void update() noexcept {
+    void upload_immediately() noexcept {
         group_mgr_.for_each_group([&](GroupData &group_data) {
             if (group_data.data_set.empty()) {
                 return;
@@ -402,6 +402,20 @@ public:
             }
             group_data.data_set.upload_immediately();
         });
+    }
+
+    [[nodiscard]] CommandList upload(bool async = true) noexcept {
+        CommandList ret;
+        group_mgr_.for_each_group([&](GroupData &group_data) {
+            if (group_data.data_set.empty()) {
+                return;
+            }
+            for (ptr_type *object : group_data.objects) {
+                object->encode(group_data.data_set);
+            }
+            ret << group_data.data_set.upload(async);
+        });
+        return ret;
     }
 
     void set_datas(const ptr_type *object, datas_type &&datas) noexcept {

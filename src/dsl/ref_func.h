@@ -145,19 +145,23 @@ struct EnableReadAndWrite {
     }
 
     template<typename Index, typename Val>
-    requires concepts::integral<expr_value_t<Index>> && concepts::static_convertible<element_type, expr_value_t<Val>>
+    requires concepts::integral<expr_value_t<Index>> && concepts::static_convertible<element_type, remove_device_t<Val>>
     void write(Index &&index, Val &&elm, bool check_boundary = true) {
-        Var<expr_value_t<Index>> new_index = OC_FORWARD(index);
-        if (check_boundary) {
-            Var<expr_value_t<Index>> size = static_cast<const T *>(this)->template size<expr_value_t<Index>>();
-            new_index = correct_index(new_index, size, typeid(T).name(), traceback_string(1));
+        if constexpr (is_swizzle_v<std::remove_cvref_t<Val>>) {
+            write(OC_FORWARD(index), elm.decay(), check_boundary);
+        } else {
+            Var<expr_value_t<Index>> new_index = OC_FORWARD(index);
+            if (check_boundary) {
+                Var<expr_value_t<Index>> size = static_cast<const T *>(this)->template size<expr_value_t<Index>>();
+                new_index = correct_index(new_index, size, typeid(T).name(), traceback_string(1));
+            }
+            auto f = self()->expression()->context();
+            const SubscriptExpr *expr = f->subscript(Type::of<element_type>(),
+                                                     self()->expression(),
+                                                     OC_EXPR(new_index));
+            expr->mark(Usage::WRITE);
+            assign(expr, OC_FORWARD(elm));
         }
-        auto f = self()->expression()->context();
-        const SubscriptExpr *expr = f->subscript(Type::of<element_type>(),
-                                                 self()->expression(),
-                                                 OC_EXPR(new_index));
-        expr->mark(Usage::WRITE);
-        assign(expr, OC_FORWARD(elm));
     }
 
     template<typename Index, typename Val>

@@ -7,10 +7,9 @@
 #include "rhi/resources/buffer.h"
 #include "pyexporter/ocapi.h"
 #include "rhi/common.h"
+#include "base/using.h"
 
 namespace py = pybind11;
-using namespace ocarina;
-
 template<typename T, size_t N, typename M>
 void export_vector_op(M &m) {
     if constexpr (ocarina::is_number_v<T>) {

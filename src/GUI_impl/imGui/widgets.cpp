@@ -34,6 +34,7 @@ GLTexture *ImGuiWidgets::obtain_texture(const ocarina::ImageView &image) noexcep
     }
     if (unbinding_index == texture_vec.size()) {
         texture_vec.emplace_back(make_unique<GLTexture>());
+        texture_vec.back()->generate();
     }
     return texture_vec[unbinding_index].get();
 }

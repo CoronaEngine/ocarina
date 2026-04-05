@@ -65,7 +65,7 @@ int main() {
 
     Kernel kernel = [&](Float f) {
 //        $info("{} ", f);
-        sqrt(Half{});
+        ocarina::sqrt(Half{});
 //        Uint3 a = make_uint3(3);
 //        Int3 b ;
 //        b = a;
