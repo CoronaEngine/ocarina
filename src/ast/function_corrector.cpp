@@ -141,17 +141,32 @@ void FunctionCorrector::visit(const CallExpr *const_expr) {
     apply(const_cast<Function *>(expr->function_));
     call_expr_stack_.pop_back();
     // When a function was already corrected from a previous call site,
-    // its body is patched and traverse won't re-discover captures.
-    // Propagate the missing captured args to this CallExpr.
+    // its body is patched and traverse won't re-discover captures/outputs.
+    // Propagate missing appended args to this CallExpr.
     const Function *func = expr->function_;
     size_t expected = func->all_arguments().size();
-    if (expr->arguments().size() < expected) {
+    size_t actual = expr->arguments().size();
+    if (actual < expected) {
+        // First try: re-run capture propagation with original outer expressions
         auto it = captured_outer_exprs_.find(func);
         if (it != captured_outer_exprs_.end()) {
             for (const Expression *original_outer : it->second) {
                 const Expression *propagated = original_outer;
                 visit_expr(propagated);
                 expr->append_argument(propagated);
+            }
+        }
+        // Then: copy any remaining missing args (output args) from the
+        // first fully-corrected CallExpr of the same function
+        actual = expr->arguments().size();
+        if (actual < expected) {
+            for (const CallExpr *first_ce : func->all_call_expr()) {
+                if (first_ce != expr && first_ce->arguments().size() == expected) {
+                    for (size_t i = actual; i < expected; ++i) {
+                        expr->append_argument(first_ce->argument(static_cast<uint>(i)));
+                    }
+                    break;
+                }
             }
         }
     }
