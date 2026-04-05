@@ -194,6 +194,7 @@ public:
     static void pop(stack_type::value_type f);
     void record_call_expression(const CallExpr *call_expr) noexcept;
     [[nodiscard]] const CallExpr *current_call_expr() const noexcept;
+    OC_MAKE_MEMBER_GETTER(all_call_expr, &)
     void set_description(string desc) const noexcept { description_ = ocarina::move(desc); }
     [[nodiscard]] string &description() const noexcept { return description_; }
     template<typename Visitor>
