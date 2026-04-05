@@ -208,6 +208,204 @@ void test_same_capture_is_reused_across_multiple_callsites() {
     }
 }
 
+// ========== capture_from_invoker multi-level tests ==========
+
+void test_capture_3level_lambda() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> outer = 1;
+        Lambda L1 = [&](Var<int> a) {
+            Lambda L2 = [&](Var<int> b) {
+                Lambda L3 = [&](Var<int> c) {
+                    return c + outer;
+                };
+                return L3(b);
+            };
+            return L2(a);
+        };
+        [[maybe_unused]] Var<int> result = L1(10);
+    };
+    kernel_function = kernel.function();
+
+    const Function *L1_func = require_single_custom_function(kernel_function, "3level L1");
+    require_eq(L1_func->arguments().size(), static_cast<size_t>(0), "3level L1 explicit");
+    require_eq(L1_func->appended_arguments().size(), static_cast<size_t>(4), "3level L1 appended");
+    require_eq(L1_func->call_expr()->arguments().size(), static_cast<size_t>(4), "3level L1 callsite");
+
+    std::vector<const Function *> L1_children;
+    L1_func->for_each_custom_func([&](const Function *f) { L1_children.push_back(f); });
+    require_eq(L1_children.size(), static_cast<size_t>(1), "3level L2 count");
+    const Function *L2_func = L1_children.front();
+    require_eq(L2_func->arguments().size(), static_cast<size_t>(0), "3level L2 explicit");
+    require_eq(L2_func->appended_arguments().size(), static_cast<size_t>(4), "3level L2 appended");
+    require_eq(L2_func->call_expr()->arguments().size(), static_cast<size_t>(4), "3level L2 callsite");
+
+    std::vector<const Function *> L2_children;
+    L2_func->for_each_custom_func([&](const Function *f) { L2_children.push_back(f); });
+    require_eq(L2_children.size(), static_cast<size_t>(1), "3level L3 count");
+    const Function *L3_func = L2_children.front();
+    require_eq(L3_func->arguments().size(), static_cast<size_t>(0), "3level L3 explicit");
+    require_eq(L3_func->appended_arguments().size(), static_cast<size_t>(3), "3level L3 appended");
+    require_eq(L3_func->call_expr()->arguments().size(), static_cast<size_t>(3), "3level L3 callsite");
+}
+
+void test_capture_3level_callable() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> outer = 1;
+        Callable C1 = [&](Var<int> a) {
+            Callable C2 = [&](Var<int> b) {
+                Callable C3 = [&](Var<int> c) {
+                    return c + outer;
+                };
+                return C3(b);
+            };
+            return C2(a);
+        };
+        [[maybe_unused]] Var<int> result = C1(10);
+    };
+    kernel_function = kernel.function();
+
+    const Function *C1_func = require_single_custom_function(kernel_function, "3level C1");
+    require_eq(C1_func->arguments().size(), static_cast<size_t>(1), "3level C1 explicit");
+    require_eq(C1_func->appended_arguments().size(), static_cast<size_t>(1), "3level C1 appended");
+    require_eq(C1_func->call_expr()->arguments().size(), static_cast<size_t>(2), "3level C1 callsite");
+
+    std::vector<const Function *> C1_children;
+    C1_func->for_each_custom_func([&](const Function *f) { C1_children.push_back(f); });
+    require_eq(C1_children.size(), static_cast<size_t>(1), "3level C2 count");
+    const Function *C2_func = C1_children.front();
+    require_eq(C2_func->arguments().size(), static_cast<size_t>(1), "3level C2 explicit");
+    require_eq(C2_func->appended_arguments().size(), static_cast<size_t>(1), "3level C2 appended");
+    require_eq(C2_func->call_expr()->arguments().size(), static_cast<size_t>(2), "3level C2 callsite");
+
+    std::vector<const Function *> C2_children;
+    C2_func->for_each_custom_func([&](const Function *f) { C2_children.push_back(f); });
+    require_eq(C2_children.size(), static_cast<size_t>(1), "3level C3 count");
+    const Function *C3_func = C2_children.front();
+    require_eq(C3_func->arguments().size(), static_cast<size_t>(1), "3level C3 explicit");
+    require_eq(C3_func->appended_arguments().size(), static_cast<size_t>(1), "3level C3 appended");
+    require_eq(C3_func->call_expr()->arguments().size(), static_cast<size_t>(2), "3level C3 callsite");
+}
+
+void test_capture_mixed_callable_lambda() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> outer = 1;
+        Callable outer_callable = [&](Var<int> a) {
+            Lambda inner_lambda = [&](Var<int> b) {
+                return b + outer;
+            };
+            return inner_lambda(a);
+        };
+        [[maybe_unused]] Var<int> result = outer_callable(10);
+    };
+    kernel_function = kernel.function();
+
+    const Function *outer_func = require_single_custom_function(kernel_function, "mixed outer");
+    require_eq(outer_func->arguments().size(), static_cast<size_t>(1), "mixed outer explicit");
+    require_eq(outer_func->appended_arguments().size(), static_cast<size_t>(2), "mixed outer appended");
+    require_eq(outer_func->call_expr()->arguments().size(), static_cast<size_t>(3), "mixed outer callsite");
+
+    std::vector<const Function *> outer_children;
+    outer_func->for_each_custom_func([&](const Function *f) { outer_children.push_back(f); });
+    require_eq(outer_children.size(), static_cast<size_t>(1), "mixed inner count");
+    const Function *inner_func = outer_children.front();
+    require_eq(inner_func->arguments().size(), static_cast<size_t>(0), "mixed inner explicit");
+    require_eq(inner_func->appended_arguments().size(), static_cast<size_t>(3), "mixed inner appended");
+    require_eq(inner_func->call_expr()->arguments().size(), static_cast<size_t>(3), "mixed inner callsite");
+}
+
+// ========== output_from_invoked tests ==========
+
+void test_output_basic() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> *leaked = nullptr;
+        Callable<void()> inner = [&]() {
+            leaked = new Var<int>(42);
+        };
+        inner();
+        [[maybe_unused]] Var<int> y = *leaked + 1;
+        delete leaked;
+    };
+    kernel_function = kernel.function();
+
+    const Function *inner_func = require_single_custom_function(kernel_function, "output basic inner");
+    require_eq(inner_func->arguments().size(), static_cast<size_t>(0), "output basic explicit");
+    require_eq(inner_func->appended_arguments().size(), static_cast<size_t>(1), "output basic appended");
+    require_eq(inner_func->call_expr()->arguments().size(), static_cast<size_t>(1), "output basic callsite");
+}
+
+void test_output_2level() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> *leaked = nullptr;
+        Callable<void()> C1 = [&]() {
+            Callable<void()> C2 = [&]() {
+                leaked = new Var<int>(99);
+            };
+            C2();
+        };
+        C1();
+        [[maybe_unused]] Var<int> y = *leaked + 1;
+        delete leaked;
+    };
+    kernel_function = kernel.function();
+
+    const Function *C1_func = require_single_custom_function(kernel_function, "output 2level C1");
+    require_eq(C1_func->arguments().size(), static_cast<size_t>(0), "output 2level C1 explicit");
+    require_eq(C1_func->appended_arguments().size(), static_cast<size_t>(1), "output 2level C1 appended");
+    require_eq(C1_func->call_expr()->arguments().size(), static_cast<size_t>(1), "output 2level C1 callsite");
+
+    std::vector<const Function *> C1_children;
+    C1_func->for_each_custom_func([&](const Function *f) { C1_children.push_back(f); });
+    require_eq(C1_children.size(), static_cast<size_t>(1), "output 2level C2 count");
+    const Function *C2_func = C1_children.front();
+    require_eq(C2_func->arguments().size(), static_cast<size_t>(0), "output 2level C2 explicit");
+    require_eq(C2_func->appended_arguments().size(), static_cast<size_t>(1), "output 2level C2 appended");
+    require_eq(C2_func->call_expr()->arguments().size(), static_cast<size_t>(1), "output 2level C2 callsite");
+}
+
+void test_output_sibling_callable() {
+    shared_ptr<Function> kernel_function;
+
+    [[maybe_unused]] Kernel kernel = [&] {
+        Var<int> *leaked = nullptr;
+        Callable<void()> producer = [&]() {
+            leaked = new Var<int>(77);
+        };
+        producer();
+
+        Callable consumer = [&](Var<int> value) {
+            return value + *leaked;
+        };
+        [[maybe_unused]] Var<int> result = consumer(5);
+        delete leaked;
+    };
+    kernel_function = kernel.function();
+
+    std::vector<const Function *> custom_functions = collect_custom_functions(kernel_function);
+    require_eq(custom_functions.size(), static_cast<size_t>(2), "output sibling func count");
+    const Function *producer_func = custom_functions[0];
+    const Function *consumer_func = custom_functions[1];
+
+    // producer: output var propagated as appended reference arg
+    require_eq(producer_func->arguments().size(), static_cast<size_t>(0), "output sibling producer explicit");
+    require_eq(producer_func->appended_arguments().size(), static_cast<size_t>(1), "output sibling producer appended");
+    require_eq(producer_func->call_expr()->arguments().size(), static_cast<size_t>(1), "output sibling producer callsite");
+
+    // consumer: 1 explicit + 1 appended (kernel local receiving producer's output, captured into consumer)
+    require_eq(consumer_func->arguments().size(), static_cast<size_t>(1), "output sibling consumer explicit");
+    require_eq(consumer_func->appended_arguments().size(), static_cast<size_t>(1), "output sibling consumer appended");
+    require_eq(consumer_func->call_expr()->arguments().size(), static_cast<size_t>(2), "output sibling consumer callsite");
+}
+
 // ========== Callable-based capture tests ==========
 
 void test_callable_single_capture() {
@@ -357,6 +555,18 @@ int main() {
     test_nested_capture_propagates_through_intermediate_callable();
     std::cout << "running multi callsite capture" << std::endl;
     test_same_capture_is_reused_across_multiple_callsites();
+    std::cout << "running 3-level Lambda capture" << std::endl;
+    test_capture_3level_lambda();
+    std::cout << "running 3-level Callable capture" << std::endl;
+    test_capture_3level_callable();
+    std::cout << "running mixed Callable+Lambda capture" << std::endl;
+    test_capture_mixed_callable_lambda();
+    std::cout << "running output basic" << std::endl;
+    test_output_basic();
+    std::cout << "running output 2-level" << std::endl;
+    test_output_2level();
+    std::cout << "running output sibling" << std::endl;
+    test_output_sibling_callable();
     std::cout << "running callable single capture" << std::endl;
     test_callable_single_capture();
     std::cout << "running callable multi capture" << std::endl;
