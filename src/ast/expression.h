@@ -121,8 +121,8 @@ public:
 class OC_AST_API ConditionalExpr : public Expression {
 private:
     const Expression *pred_{};
-    const Expression *true__{};
-    const Expression *false__{};
+    const Expression *True_{};
+    const Expression *False_{};
 
 private:
     [[nodiscard]] uint64_t compute_hash() const noexcept override;
@@ -131,15 +131,15 @@ public:
     ConditionalExpr(const Type *type, const Expression *pred,
                     const Expression *t, const Expression *f)
         : Expression(Tag::CONDITIONAL, type),
-          pred_(pred), true__(t), false__(f) {
+          pred_(pred), True_(t), False_(f) {
         pred_->mark(Usage::READ);
-        true__->mark(Usage::READ);
-        false__->mark(Usage::READ);
+        True_->mark(Usage::READ);
+        False_->mark(Usage::READ);
     }
-    OC_MAKE_CHECK_CONTEXT(Expression, pred_, true__, false__)
+    OC_MAKE_CHECK_CONTEXT(Expression, pred_, True_, False_)
     [[nodiscard]] const Expression *pred() const noexcept { return pred_; }
-    [[nodiscard]] const Expression *true_() const noexcept { return true__; }
-    [[nodiscard]] const Expression *false_() const noexcept { return false__; }
+    [[nodiscard]] const Expression *true_() const noexcept { return True_; }
+    [[nodiscard]] const Expression *false_() const noexcept { return False_; }
     OC_MAKE_EXPRESSION_COMMON
 };
 

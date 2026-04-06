@@ -49,8 +49,8 @@ uint64_t BinaryExpr::compute_hash() const noexcept {
 
 uint64_t ConditionalExpr::compute_hash() const noexcept {
     auto ret = pred_->hash();
-    ret = hash64(true__, ret);
-    ret = hash64(ret, false__->hash());
+    ret = hash64(True_, ret);
+    ret = hash64(ret, False_->hash());
     return ret;
 }
 

@@ -372,8 +372,8 @@ void FunctionCorrector::visit(const CastExpr *expr) {
 
 void FunctionCorrector::visit(const ConditionalExpr *expr) {
     visit_expr(expr->pred_);
-    visit_expr(expr->true__);
-    visit_expr(expr->false__);
+    visit_expr(expr->True_);
+    visit_expr(expr->False_);
 }
 
 void FunctionCorrector::visit(const MemberExpr *expr) {

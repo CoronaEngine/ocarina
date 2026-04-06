@@ -19,6 +19,7 @@ protected:
     Function *context_{};
 
 public:
+    virtual ~ASTNode() = default;
     OC_MAKE_MEMBER_GETTER_SETTER(context, )
     virtual bool check_context(const Function *ctx) const noexcept {
         if (ctx != context_) {
