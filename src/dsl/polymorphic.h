@@ -274,6 +274,7 @@ public:
     void push_back(T arg) noexcept {
         group_mgr_.add_object(arg);
         Super::push_back(arg);
+        OC_ERROR_IF(topology_num() >= 256, "topology num must be less than 256");
     }
 
     Super::iterator erase(Super::iterator iter) noexcept {
