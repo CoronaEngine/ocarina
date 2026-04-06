@@ -78,6 +78,15 @@ template<typename U, typename V>
 }
 
 template<typename T>
+[[nodiscard]] auto abs(const T &t) noexcept {
+    if constexpr (is_half_v<T>) {
+        return select(t < 0, -t, t);
+    } else {
+        return std::abs(t);
+    }
+}
+
+template<typename T>
 void Swap(T &a, T &b) noexcept {
     T tmp = a;
     a = b;
