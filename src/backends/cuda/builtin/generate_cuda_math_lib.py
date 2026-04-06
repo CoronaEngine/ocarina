@@ -496,7 +496,17 @@ def define_unary_funcs():
             True,
             [
                 "return fabsf(v);",
-                [{"arg_type": "float"}, {"arg_type": "int", "body": "return abs(v);"}],
+                [
+                    {
+                        "arg_type": "float"
+                    },
+                    {
+                        "arg_type": "int", "body": "return abs(v);"
+                    },
+                    {
+                        "arg_type": "half", "body": "return __habs(v);"
+                    }
+                ],
             ],
         ],
         [

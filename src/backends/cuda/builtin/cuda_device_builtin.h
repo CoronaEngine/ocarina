@@ -298,6 +298,10 @@ OC_DEVICE_FLAG oc_int oc_abs(oc_int v) { return abs(v); }
 OC_DEVICE_FLAG oc_int2 oc_abs(oc_int2 v) { return oc_int2(oc_abs(v.x), oc_abs(v.y)); }
 OC_DEVICE_FLAG oc_int3 oc_abs(oc_int3 v) { return oc_int3(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z)); }
 OC_DEVICE_FLAG oc_int4 oc_abs(oc_int4 v) { return oc_int4(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z), oc_abs(v.w)); }
+OC_DEVICE_FLAG oc_half oc_abs(oc_half v) { return __habs(v); }
+OC_DEVICE_FLAG oc_half2 oc_abs(oc_half2 v) { return oc_half2(oc_abs(v.x), oc_abs(v.y)); }
+OC_DEVICE_FLAG oc_half3 oc_abs(oc_half3 v) { return oc_half3(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z)); }
+OC_DEVICE_FLAG oc_half4 oc_abs(oc_half4 v) { return oc_half4(oc_abs(v.x), oc_abs(v.y), oc_abs(v.z), oc_abs(v.w)); }
 template<typename T, size_t N, size_t ...i>
 OC_DEVICE_FLAG constexpr auto oc_abs_array_impl(const oc_array<T, N> &arr, ocarina::index_sequence<i...>) {
     using decltype_t = decltype(oc_abs(arr[0]));
