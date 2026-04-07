@@ -109,7 +109,7 @@ void VulkanDevice::destroy_texture(handle_ty handle) noexcept {
 void VulkanDevice::destroy_stream(handle_ty handle) noexcept {
 
 }
-handle_ty VulkanDevice::create_accel() noexcept {
+handle_ty VulkanDevice::create_accel(AccelUsageTag usage_tag) noexcept {
     return 0;
 }
 void VulkanDevice::destroy_accel(handle_ty handle) noexcept {

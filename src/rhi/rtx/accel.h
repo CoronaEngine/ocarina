@@ -18,14 +18,20 @@ private:
 public:
     class Impl {
     protected:
+        AccelUsageTag usage_tag_{FAST_TRACE};
         vector<RHIMesh> meshes_;
         vector<float4x4> transforms_;
 
     public:
+        explicit Impl(AccelUsageTag usage_tag = FAST_TRACE) noexcept : usage_tag_(usage_tag) {}
         virtual void add_instance(RHIMesh mesh, float4x4 transform) noexcept {
             meshes_.push_back(ocarina::move(mesh));
             transforms_.push_back(transform);
         }
+        virtual void set_transform(size_t index, float4x4 transform) noexcept {
+            transforms_[index] = transform;
+        }
+        [[nodiscard]] AccelUsageTag usage_tag() const noexcept { return usage_tag_; }
         [[nodiscard]] virtual handle_ty handle() const noexcept = 0;
         [[nodiscard]] virtual const void *handle_ptr() const noexcept = 0;
         [[nodiscard]] size_t mesh_num() const noexcept { return meshes_.size(); }
@@ -39,8 +45,8 @@ public:
 
 public:
     Accel() = default;
-    explicit Accel(Device::Impl *device)
-        : RHIResource(device, Tag::ACCEL, device->create_accel()) {}
+    explicit Accel(Device::Impl *device, AccelUsageTag usage_tag = FAST_TRACE)
+        : RHIResource(device, Tag::ACCEL, device->create_accel(usage_tag)) {}
     [[nodiscard]] uint triangle_num() const noexcept { return triangle_num_; }
     [[nodiscard]] uint vertex_num() const noexcept { return vertex_num_; }
     [[nodiscard]] Impl *impl() noexcept { return reinterpret_cast<Impl *>(handle_); }
@@ -52,7 +58,12 @@ public:
         impl()->add_instance(ocarina::move(mesh), transform);
     }
 
+    void set_transform(size_t index, float4x4 transform) noexcept {
+        impl()->set_transform(index, transform);
+    }
+
     [[nodiscard]] size_t mesh_num() const noexcept { return impl()->mesh_num(); }
+    [[nodiscard]] AccelUsageTag usage_tag() const noexcept { return impl()->usage_tag(); }
 
     void clear() noexcept {
         if (impl()) {
@@ -83,6 +94,9 @@ public:
     [[nodiscard]] const void *handle_ptr() const noexcept override { return impl()->handle_ptr(); }
     [[nodiscard]] TLASBuildCommand *build_bvh() noexcept {
         return TLASBuildCommand::create(handle_);
+    }
+    [[nodiscard]] TLASUpdateCommand *update_bvh() noexcept {
+        return TLASUpdateCommand::create(handle_);
     }
 };
 }// namespace ocarina

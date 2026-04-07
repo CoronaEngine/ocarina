@@ -57,8 +57,11 @@ auto export_mesh(PythonExporter &exporter) {
 
 auto export_accel(PythonExporter &exporter) {
     auto mt = py::class_<Accel, RHIResource>(exporter.module, "Accel");
-    mt.def(py::init([]() { return Context::instance().device->create_accel(); }), ret_policy::move);
+    mt.def(py::init([](AccelUsageTag usage_tag) { return Context::instance().device->create_accel(usage_tag); }),
+           py::arg("usage_tag") = AccelUsageTag::FAST_TRACE,
+           ret_policy::move);
     mt.def("build_bvh", [](Accel &self) { return self.build_bvh(); }, ret_policy::reference);
+    mt.def("update_bvh", [](Accel &self) { return self.update_bvh(); }, ret_policy::reference);
     mt.def("mesh_num", &Accel::mesh_num);
     mt.def("vertex_num", &Accel::vertex_num);
     mt.def("triangle_num", &Accel::triangle_num);

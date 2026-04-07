@@ -21,8 +21,8 @@ Stream Device::create_stream() noexcept {
     return create<Stream>();
 }
 
-Accel Device::create_accel() const noexcept {
-    return create<Accel>();
+Accel Device::create_accel(AccelUsageTag usage_tag) const noexcept {
+    return create<Accel>(usage_tag);
 }
 
 BindlessArray Device::create_bindless_array() const noexcept {

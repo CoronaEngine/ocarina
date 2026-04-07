@@ -26,6 +26,7 @@ auto export_command(PythonExporter &exporter) {
     OC_EXPORT_COMMAND(SynchronizeCommand, Command)
     OC_EXPORT_COMMAND(BLASBuildCommand, Command)
     OC_EXPORT_COMMAND(TLASBuildCommand, Command)
+    OC_EXPORT_COMMAND(TLASUpdateCommand, Command)
     OC_EXPORT_COMMAND(ShaderDispatchCommand, Command)
 }
 

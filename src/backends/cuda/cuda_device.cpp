@@ -389,9 +389,9 @@ void CUDADevice::destroy_texture2d(ocarina::handle_ty handle) noexcept {
 void CUDADevice::destroy_stream(handle_ty handle) noexcept {
     ocarina::delete_with_allocator(reinterpret_cast<CUDAStream *>(handle));
 }
-handle_ty CUDADevice::create_accel() noexcept {
+handle_ty CUDADevice::create_accel(AccelUsageTag usage_tag) noexcept {
     return use_context([&] {
-        auto accel = new_with_allocator<OptixAccel>(this);
+        auto accel = new_with_allocator<OptixAccel>(this, usage_tag);
         return reinterpret_cast<handle_ty>(accel);
     });
 }

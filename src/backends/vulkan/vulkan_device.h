@@ -48,7 +48,7 @@ public:
     [[nodiscard]] handle_ty create_shader(const Function &function) noexcept override;
     [[nodiscard]] handle_ty create_shader_from_file(const std::string &file_name, ShaderType shader_type, const std::set<string>& options) noexcept override;
     void destroy_shader(handle_ty handle) noexcept override;
-    [[nodiscard]] handle_ty create_accel() noexcept override;
+    [[nodiscard]] handle_ty create_accel(AccelUsageTag usage_tag) noexcept override;
     void destroy_accel(handle_ty handle) noexcept override;
     [[nodiscard]] handle_ty create_stream() noexcept override;
     void destroy_stream(handle_ty handle) noexcept override;

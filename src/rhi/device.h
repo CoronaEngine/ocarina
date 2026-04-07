@@ -80,7 +80,7 @@ public:
         [[nodiscard]] virtual handle_ty create_shader(const Function &function) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_shader_from_file(const std::string &file_name, ShaderType shader_type, const std::set<string> &options) noexcept = 0;
         virtual void destroy_shader(handle_ty handle) noexcept = 0;
-        [[nodiscard]] virtual handle_ty create_accel() noexcept = 0;
+        [[nodiscard]] virtual handle_ty create_accel(AccelUsageTag usage_tag) noexcept = 0;
         virtual void destroy_accel(handle_ty handle) noexcept = 0;
         [[nodiscard]] virtual handle_ty create_stream() noexcept = 0;
         virtual void destroy_stream(handle_ty handle) noexcept = 0;
@@ -188,7 +188,7 @@ public:
                                       AccelUsageTag usage_tag = AccelUsageTag::FAST_TRACE,
                                       AccelGeomTag geom_tag = AccelGeomTag::DISABLE_ANYHIT) const noexcept;// implement in mesh.h
     [[nodiscard]] Stream create_stream() noexcept;
-    [[nodiscard]] Accel create_accel() const noexcept;
+    [[nodiscard]] Accel create_accel(AccelUsageTag usage_tag = AccelUsageTag::FAST_TRACE) const noexcept;
     [[nodiscard]] BindlessArray create_bindless_array() const noexcept;
     void init_rtx() noexcept { impl_->init_rtx(); }
     [[nodiscard]] Texture3D create_texture3d(uint3 res, PixelStorage storage, const string &desc = "") const noexcept;
