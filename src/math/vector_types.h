@@ -198,7 +198,26 @@ namespace ocarina {
 namespace detail {
 template<typename T, size_t N>
 struct VectorStorage {
-    static_assert(always_false_v<T>, "Invalid vector storage");
+    static_assert(valid_vector_v<T>, "Invalid vector type");
+
+public:
+    array<T, N> data_{};
+
+public:
+    VectorStorage() = default;
+    explicit constexpr VectorStorage(T s) noexcept {
+        data_.fill(s);
+    }
+    explicit constexpr VectorStorage(const T *ptr) noexcept {
+        for (size_t i = 0; i < N; ++i) {
+            data_[i] = ptr[i];
+        }
+    }
+    template<typename... Args>
+    requires(sizeof...(Args) == N)
+    constexpr VectorStorage(Args... args) noexcept : data_{static_cast<T>(args)...} {}
+    [[nodiscard]] constexpr T *data() noexcept { return data_.data(); }
+    [[nodiscard]] constexpr const T *data() const noexcept { return data_.data(); }
 };
 
 template<typename T>
@@ -215,6 +234,8 @@ public:
     explicit constexpr VectorStorage(T s) noexcept : x{s}, y{s} {}
     explicit constexpr VectorStorage(const T *ptr) noexcept : x{ptr[0]}, y{ptr[1]} {}
     constexpr VectorStorage(T x, T y) noexcept : x{x}, y{y} {}
+    [[nodiscard]] constexpr T *data() noexcept { return &x; }
+    [[nodiscard]] constexpr const T *data() const noexcept { return &x; }
 #include "swizzle_inl/swizzle2.inl.h"
 };
 
@@ -234,6 +255,8 @@ public:
     explicit constexpr VectorStorage(T s) noexcept : x{s}, y{s}, z{s} {}
     explicit constexpr VectorStorage(const T *ptr) noexcept : x{ptr[0]}, y{ptr[1]}, z{ptr[2]} {}
     constexpr VectorStorage(T x, T y, T z) noexcept : x{x}, y{y}, z{z} {}
+    [[nodiscard]] constexpr T *data() noexcept { return &x; }
+    [[nodiscard]] constexpr const T *data() const noexcept { return &x; }
 #include "swizzle_inl/swizzle3.inl.h"
 };
 
@@ -251,6 +274,8 @@ public:
     explicit constexpr VectorStorage(T s) noexcept : x{s}, y{s}, z{s}, w{s} {}
     explicit constexpr VectorStorage(const T *ptr) noexcept : x{ptr[0]}, y{ptr[1]}, z{ptr[2]}, w{ptr[3]} {}
     constexpr VectorStorage(T x, T y, T z, T w) noexcept : x{x}, y{y}, z{z}, w{w} {}
+    [[nodiscard]] constexpr T *data() noexcept { return &x; }
+    [[nodiscard]] constexpr const T *data() const noexcept { return &x; }
 #include "swizzle_inl/swizzle4.inl.h"
 };
 }// namespace detail
@@ -294,10 +319,10 @@ struct Vector : public detail::VectorStorage<T, N> {
     constexpr this_type &operator=(Swizzle<U, NN, Indices...> other) noexcept {
         return *this = other.decay();
     }
-    [[nodiscard]] constexpr T &operator[](size_t index) noexcept { return (&(this->x))[index]; }
-    [[nodiscard]] constexpr const T &operator[](size_t index) const noexcept { return (&(this->x))[index]; }
-    [[nodiscard]] constexpr T &at(size_t index) noexcept { return (&(this->x))[index]; }
-    [[nodiscard]] constexpr const T &at(size_t index) const noexcept { return (&(this->x))[index]; }
+    [[nodiscard]] constexpr T &operator[](size_t index) noexcept { return this->data()[index]; }
+    [[nodiscard]] constexpr const T &operator[](size_t index) const noexcept { return this->data()[index]; }
+    [[nodiscard]] constexpr T &at(size_t index) noexcept { return this->data()[index]; }
+    [[nodiscard]] constexpr const T &at(size_t index) const noexcept { return this->data()[index]; }
 
 #define OC_MAKE_UNARY_OP(op)                                                  \
     [[nodiscard]] friend constexpr auto operator op(this_type val) noexcept { \
@@ -420,7 +445,7 @@ struct Vector : public detail::VectorStorage<T, N> {
 
 #define OC_MAKE_VECTOR_UNARY_FUNC(func)                                                      \
     [[nodiscard]] static constexpr decltype(auto) call_##func(const this_type &v) noexcept { \
-        using ret_type = Vector<decltype(func(v.x)), this_type::dimension>;                  \
+        using ret_type = Vector<decltype(func(T{})), this_type::dimension>;                  \
         return [&]<size_t... index>(std::index_sequence<index...>) {                         \
             return ret_type{func(v.at(index))...};                                           \
         }(std::make_index_sequence<N>());                                                    \
@@ -482,7 +507,7 @@ private:
 #define OC_MAKE_VECTOR_BINARY_FUNC(func)                                                         \
     OC_NODISCARD static constexpr decltype(auto) call_##func(const this_type &v,                 \
                                                              const this_type &u) noexcept {      \
-        using ret_type = Vector<std::remove_cvref_t<decltype(func(v.x, u.x))>,                   \
+        using ret_type = Vector<std::remove_cvref_t<decltype(func(T{}, T{}))>,                   \
                                 this_type::dimension>;                                           \
         return [&]<size_t... index>(std::index_sequence<index...>) {                             \
             return ret_type{func(v[index], u[index])...};                                        \

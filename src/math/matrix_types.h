@@ -245,6 +245,64 @@ template<typename T, size_t M, size_t N>
     return func_n(std::make_index_sequence<M>());
 }
 
+namespace detail {
+
+template<typename T, size_t N>
+constexpr void swap_matrix_rows(Matrix<T, N, N> &mat, size_t lhs, size_t rhs) noexcept {
+    if (lhs == rhs) {
+        return;
+    }
+    for (size_t col = 0; col < N; ++col) {
+        auto temp = mat[col][lhs];
+        mat[col][lhs] = mat[col][rhs];
+        mat[col][rhs] = temp;
+    }
+}
+
+}// namespace detail
+
+template<typename T, size_t N>
+requires is_floating_point_v<T>
+[[nodiscard]] constexpr Matrix<T, N, N> inverse(Matrix<T, N, N> mat) noexcept {
+    Matrix<T, N, N> inv{static_cast<T>(1)};
+    for (size_t pivot_col = 0; pivot_col < N; ++pivot_col) {
+        size_t pivot_row = pivot_col;
+        auto pivot_abs = abs(mat[pivot_col][pivot_row]);
+        for (size_t row = pivot_col + 1; row < N; ++row) {
+            auto candidate_abs = abs(mat[pivot_col][row]);
+            if (candidate_abs > pivot_abs) {
+                pivot_abs = candidate_abs;
+                pivot_row = row;
+            }
+        }
+
+        detail::swap_matrix_rows(mat, pivot_col, pivot_row);
+        detail::swap_matrix_rows(inv, pivot_col, pivot_row);
+
+        auto pivot = mat[pivot_col][pivot_col];
+        auto inv_pivot = static_cast<T>(1) / pivot;
+        for (size_t col = 0; col < N; ++col) {
+            mat[col][pivot_col] *= inv_pivot;
+            inv[col][pivot_col] *= inv_pivot;
+        }
+
+        for (size_t row = 0; row < N; ++row) {
+            if (row == pivot_col) {
+                continue;
+            }
+            auto factor = mat[pivot_col][row];
+            if (factor == static_cast<T>(0)) {
+                continue;
+            }
+            for (size_t col = 0; col < N; ++col) {
+                mat[col][row] -= factor * mat[col][pivot_col];
+                inv[col][row] -= factor * inv[col][pivot_col];
+            }
+        }
+    }
+    return inv;
+}
+
 #define OC_MAKE_MATRIX_CONVERTERS(type)                                                    \
     [[nodiscard]] constexpr auto make_##type##3x3(type##2x2 m) noexcept {                  \
         return type##3x3 {                                                                 \
