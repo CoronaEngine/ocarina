@@ -181,6 +181,21 @@
     return octahedral_decode(p * float(2.f) - make_float2(float(1.f)));
 }
 
+[[nodiscard]]  inline auto oct32_encode(float3 n) noexcept {
+    const auto scale = float(65535.f);
+    const auto encoded = octahedral_encode01(n);
+    const auto x = static_cast<uint>(clamp(encoded.x * scale + float(0.5f), float(0.f), scale));
+    const auto y = static_cast<uint>(clamp(encoded.y * scale + float(0.5f), float(0.f), scale));
+    return x | (y << 16u);
+}
+
+[[nodiscard]]  inline auto oct32_decode(uint packed) noexcept {
+    const auto inv_scale = float(1.f / 65535.f);
+    const auto x = static_cast<float>(packed & uint(0xffffu)) * inv_scale;
+    const auto y = static_cast<float>(packed >> 16u) * inv_scale;
+    return octahedral_decode01(make_float2(x, y));
+}
+
 
 
 [[nodiscard]]  inline auto face_forward(half3 n, half3 i, half3 n_ref) noexcept { return dot(n_ref, i) < 0.0f ? n : -n; }

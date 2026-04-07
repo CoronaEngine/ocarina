@@ -181,6 +181,21 @@ __device__ inline void oc_make_normal_tangent(oc_float3 N, oc_float3 T, oc_float
     return oc_octahedral_decode(p * oc_float(2.f) - oc_make_float2(oc_float(1.f)));
 }
 
+[[nodiscard]] __device__ inline auto oc_oct32_encode(oc_float3 n) noexcept {
+    const auto scale = oc_float(65535.f);
+    const auto encoded = oc_octahedral_encode01(n);
+    const auto x = static_cast<oc_uint>(oc_clamp(encoded.x * scale + oc_float(0.5f), oc_float(0.f), scale));
+    const auto y = static_cast<oc_uint>(oc_clamp(encoded.y * scale + oc_float(0.5f), oc_float(0.f), scale));
+    return x | (y << 16u);
+}
+
+[[nodiscard]] __device__ inline auto oc_oct32_decode(oc_uint packed) noexcept {
+    const auto inv_scale = oc_float(1.f / 65535.f);
+    const auto x = static_cast<oc_float>(packed & oc_uint(0xffffu)) * inv_scale;
+    const auto y = static_cast<oc_float>(packed >> 16u) * inv_scale;
+    return oc_octahedral_decode01(oc_make_float2(x, y));
+}
+
 
 
 [[nodiscard]] __device__ inline auto oc_face_forward(oc_half3 n, oc_half3 i, oc_half3 n_ref) noexcept { return oc_dot(n_ref, i) < 0.0f ? n : -n; }

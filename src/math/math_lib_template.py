@@ -10,6 +10,7 @@ def get_type_content(type_name, prefix = "", device_flag = ""):
     mat2 = f"{scalar_type}2x2"
     mat3 = f"{scalar_type}3x3"
     mat4 = f"{scalar_type}4x4"
+    uint_type = f"{prefix}uint"
     make_vec2 = f"{prefix}make_{type_name}2"
     make_vec3 = f"{prefix}make_{type_name}3"
     make_mat2 = f"{prefix}make_{type_name}2x2"
@@ -56,6 +57,21 @@ def get_type_content(type_name, prefix = "", device_flag = ""):
 
 [[nodiscard]] {device_flag} inline auto {prefix}octahedral_decode01({vec2} p) noexcept {{
     return {prefix}octahedral_decode(p * {scalar_type}(2.f) - {make_vec2}({scalar_type}(1.f)));
+}}
+
+[[nodiscard]] {device_flag} inline auto {prefix}oct32_encode({vec3} n) noexcept {{
+    const auto scale = {scalar_type}(65535.f);
+    const auto encoded = {prefix}octahedral_encode01(n);
+    const auto x = static_cast<{uint_type}>({prefix}clamp(encoded.x * scale + {scalar_type}(0.5f), {scalar_type}(0.f), scale));
+    const auto y = static_cast<{uint_type}>({prefix}clamp(encoded.y * scale + {scalar_type}(0.5f), {scalar_type}(0.f), scale));
+    return x | (y << 16u);
+}}
+
+[[nodiscard]] {device_flag} inline auto {prefix}oct32_decode({uint_type} packed) noexcept {{
+    const auto inv_scale = {scalar_type}(1.f / 65535.f);
+    const auto x = static_cast<{scalar_type}>(packed & {uint_type}(0xffffu)) * inv_scale;
+    const auto y = static_cast<{scalar_type}>(packed >> 16u) * inv_scale;
+    return {prefix}octahedral_decode01({make_vec2}(x, y));
 }}
 """
     return f"""
