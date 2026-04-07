@@ -10,10 +10,54 @@ def get_type_content(type_name, prefix = "", device_flag = ""):
     mat2 = f"{scalar_type}2x2"
     mat3 = f"{scalar_type}3x3"
     mat4 = f"{scalar_type}4x4"
+    make_vec2 = f"{prefix}make_{type_name}2"
     make_vec3 = f"{prefix}make_{type_name}3"
     make_mat2 = f"{prefix}make_{type_name}2x2"
     make_mat3 = f"{prefix}make_{type_name}3x3"
     make_mat4 = f"{prefix}make_{type_name}4x4"
+    octahedral_content = ""
+    if type_name == "float":
+        octahedral_content = f"""
+
+[[nodiscard]] {device_flag} inline auto {prefix}octahedral_encode({vec3} n) noexcept {{
+    const auto one = {scalar_type}(1.f);
+    const auto zero = {scalar_type}(0.f);
+    const auto denom = {prefix}abs(n.x) + {prefix}abs(n.y) + {prefix}abs(n.z);
+    if (denom == zero) {{
+        return {make_vec2}(zero);
+    }}
+    auto p = {make_vec2}(n.x, n.y) / denom;
+    if (n.z < zero) {{
+        p = {make_vec2}(
+            (one - {prefix}abs(p.y)) * {prefix}sign(p.x),
+            (one - {prefix}abs(p.x)) * {prefix}sign(p.y));
+    }}
+    return p;
+}}
+
+[[nodiscard]] {device_flag} inline auto {prefix}octahedral_decode({vec2} p) noexcept {{
+    const auto one = {scalar_type}(1.f);
+    const auto zero = {scalar_type}(0.f);
+    auto n = {make_vec3}(p.x, p.y, one - {prefix}abs(p.x) - {prefix}abs(p.y));
+    if (n.z < zero) {{
+        const auto x = n.x;
+        const auto y = n.y;
+        n.x = (one - {prefix}abs(y)) * {prefix}sign(x);
+        n.y = (one - {prefix}abs(x)) * {prefix}sign(y);
+    }}
+    const auto len = {prefix}length(n);
+    return len == zero ? {make_vec3}(zero, zero, one) : n / len;
+}}
+
+[[nodiscard]] {device_flag} inline auto {prefix}octahedral_encode01({vec3} n) noexcept {{
+    const auto one = {scalar_type}(1.f);
+    return {prefix}octahedral_encode(n) * {scalar_type}(0.5f) + {make_vec2}(one * {scalar_type}(0.5f));
+}}
+
+[[nodiscard]] {device_flag} inline auto {prefix}octahedral_decode01({vec2} p) noexcept {{
+    return {prefix}octahedral_decode(p * {scalar_type}(2.f) - {make_vec2}({scalar_type}(1.f)));
+}}
+"""
     return f"""
 [[nodiscard]] {device_flag} inline auto {prefix}face_forward({vec3} n, {vec3} i, {vec3} n_ref) noexcept {{ return {prefix}dot(n_ref, i) < 0.0f ? n : -n; }}
 
@@ -153,6 +197,7 @@ def get_type_content(type_name, prefix = "", device_flag = ""):
     b = {prefix}normalize({prefix}cross(N, T));
     a = {prefix}cross(b, N);
 }}
+{octahedral_content}
 """
 
 

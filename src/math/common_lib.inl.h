@@ -142,6 +142,47 @@
 }
 
 
+[[nodiscard]]  inline auto octahedral_encode(float3 n) noexcept {
+    const auto one = float(1.f);
+    const auto zero = float(0.f);
+    const auto denom = abs(n.x) + abs(n.y) + abs(n.z);
+    if (denom == zero) {
+        return make_float2(zero);
+    }
+    auto p = make_float2(n.x, n.y) / denom;
+    if (n.z < zero) {
+        p = make_float2(
+            (one - abs(p.y)) * sign(p.x),
+            (one - abs(p.x)) * sign(p.y));
+    }
+    return p;
+}
+
+[[nodiscard]]  inline auto octahedral_decode(float2 p) noexcept {
+    const auto one = float(1.f);
+    const auto zero = float(0.f);
+    auto n = make_float3(p.x, p.y, one - abs(p.x) - abs(p.y));
+    if (n.z < zero) {
+        const auto x = n.x;
+        const auto y = n.y;
+        n.x = (one - abs(y)) * sign(x);
+        n.y = (one - abs(x)) * sign(y);
+    }
+    const auto len = length(n);
+    return len == zero ? make_float3(zero, zero, one) : n / len;
+}
+
+[[nodiscard]]  inline auto octahedral_encode01(float3 n) noexcept {
+    const auto one = float(1.f);
+    return octahedral_encode(n) * float(0.5f) + make_float2(one * float(0.5f));
+}
+
+[[nodiscard]]  inline auto octahedral_decode01(float2 p) noexcept {
+    return octahedral_decode(p * float(2.f) - make_float2(float(1.f)));
+}
+
+
+
 [[nodiscard]]  inline auto face_forward(half3 n, half3 i, half3 n_ref) noexcept { return dot(n_ref, i) < 0.0f ? n : -n; }
 
 [[nodiscard]]  inline auto face_forward(half3 v1, half3 v2) noexcept { return dot(v1, v2) > 0 ? v1 : -v1; }
@@ -280,4 +321,5 @@
     b = normalize(cross(N, T));
     a = cross(b, N);
 }
+
 

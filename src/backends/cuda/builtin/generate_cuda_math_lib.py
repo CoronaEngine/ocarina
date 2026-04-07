@@ -467,7 +467,14 @@ def define_unary_funcs():
         [
             "sign",
             True,
-            ["return v >= 0 ? 1: -1;", [{"arg_type": "int"}, {"arg_type": "float"}]],
+            [
+                "return v >= 0 ? 1: -1;",
+                [
+                    {"arg_type": "int"},
+                    {"arg_type": "half", "body": "return v >= oc_half(0.f) ? oc_half(1.f) : oc_half(-1.f);"},
+                    {"arg_type": "float"},
+                ],
+            ],
         ],
         [
             "popcount",

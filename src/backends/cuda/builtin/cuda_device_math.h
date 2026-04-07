@@ -142,6 +142,47 @@ __device__ inline void oc_make_normal_tangent(oc_float3 N, oc_float3 T, oc_float
 }
 
 
+[[nodiscard]] __device__ inline auto oc_octahedral_encode(oc_float3 n) noexcept {
+    const auto one = oc_float(1.f);
+    const auto zero = oc_float(0.f);
+    const auto denom = oc_abs(n.x) + oc_abs(n.y) + oc_abs(n.z);
+    if (denom == zero) {
+        return oc_make_float2(zero);
+    }
+    auto p = oc_make_float2(n.x, n.y) / denom;
+    if (n.z < zero) {
+        p = oc_make_float2(
+            (one - oc_abs(p.y)) * oc_sign(p.x),
+            (one - oc_abs(p.x)) * oc_sign(p.y));
+    }
+    return p;
+}
+
+[[nodiscard]] __device__ inline auto oc_octahedral_decode(oc_float2 p) noexcept {
+    const auto one = oc_float(1.f);
+    const auto zero = oc_float(0.f);
+    auto n = oc_make_float3(p.x, p.y, one - oc_abs(p.x) - oc_abs(p.y));
+    if (n.z < zero) {
+        const auto x = n.x;
+        const auto y = n.y;
+        n.x = (one - oc_abs(y)) * oc_sign(x);
+        n.y = (one - oc_abs(x)) * oc_sign(y);
+    }
+    const auto len = oc_length(n);
+    return len == zero ? oc_make_float3(zero, zero, one) : n / len;
+}
+
+[[nodiscard]] __device__ inline auto oc_octahedral_encode01(oc_float3 n) noexcept {
+    const auto one = oc_float(1.f);
+    return oc_octahedral_encode(n) * oc_float(0.5f) + oc_make_float2(one * oc_float(0.5f));
+}
+
+[[nodiscard]] __device__ inline auto oc_octahedral_decode01(oc_float2 p) noexcept {
+    return oc_octahedral_decode(p * oc_float(2.f) - oc_make_float2(oc_float(1.f)));
+}
+
+
+
 [[nodiscard]] __device__ inline auto oc_face_forward(oc_half3 n, oc_half3 i, oc_half3 n_ref) noexcept { return oc_dot(n_ref, i) < 0.0f ? n : -n; }
 
 [[nodiscard]] __device__ inline auto oc_face_forward(oc_half3 v1, oc_half3 v2) noexcept { return oc_dot(v1, v2) > 0 ? v1 : -v1; }
@@ -280,4 +321,5 @@ __device__ inline void oc_make_normal_tangent(oc_half3 N, oc_half3 T, oc_half3 &
     b = oc_normalize(oc_cross(N, T));
     a = oc_cross(b, N);
 }
+
 

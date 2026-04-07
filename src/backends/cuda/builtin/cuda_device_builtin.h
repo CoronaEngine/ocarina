@@ -258,6 +258,10 @@ OC_DEVICE_FLAG oc_int oc_sign(oc_int v) { return v >= 0 ? 1: -1; }
 OC_DEVICE_FLAG oc_int2 oc_sign(oc_int2 v) { return oc_int2(oc_sign(v.x), oc_sign(v.y)); }
 OC_DEVICE_FLAG oc_int3 oc_sign(oc_int3 v) { return oc_int3(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z)); }
 OC_DEVICE_FLAG oc_int4 oc_sign(oc_int4 v) { return oc_int4(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z), oc_sign(v.w)); }
+OC_DEVICE_FLAG oc_half oc_sign(oc_half v) { return v >= oc_half(0.f) ? oc_half(1.f) : oc_half(-1.f); }
+OC_DEVICE_FLAG oc_half2 oc_sign(oc_half2 v) { return oc_half2(oc_sign(v.x), oc_sign(v.y)); }
+OC_DEVICE_FLAG oc_half3 oc_sign(oc_half3 v) { return oc_half3(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z)); }
+OC_DEVICE_FLAG oc_half4 oc_sign(oc_half4 v) { return oc_half4(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z), oc_sign(v.w)); }
 OC_DEVICE_FLAG oc_float oc_sign(oc_float v) { return v >= 0 ? 1: -1; }
 OC_DEVICE_FLAG oc_float2 oc_sign(oc_float2 v) { return oc_float2(oc_sign(v.x), oc_sign(v.y)); }
 OC_DEVICE_FLAG oc_float3 oc_sign(oc_float3 v) { return oc_float3(oc_sign(v.x), oc_sign(v.y), oc_sign(v.z)); }
