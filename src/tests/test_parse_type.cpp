@@ -56,6 +56,38 @@ static bool check_impl(bool condition, string_view message) {
         }                                     \
     } while (false)
 
+static string_view invalid_case_desc(string_view case_name) {
+    if (case_name == "invalid-data-type") {
+        return "not_a_type";
+    }
+    if (case_name == "invalid-vector-element") {
+        return "vector<texture2d,4>";
+    }
+    if (case_name == "invalid-matrix-dimension") {
+        return "matrix<float,5,5>";
+    }
+    return {};
+}
+
+static int run_invalid_case(string_view case_name) {
+    string_view desc = invalid_case_desc(case_name);
+    if (desc.empty()) {
+        std::cerr << "unknown invalid case: " << case_name << std::endl;
+        return 2;
+    }
+    const Type *type = TypeRegistry::instance().parse_type(desc);
+    (void)type;
+    std::cerr << "invalid case unexpectedly succeeded: " << case_name << std::endl;
+    return 3;
+}
+
+static bool expect_invalid_parse_failure(const char *exe_path, string_view case_name) {
+    string command = ocarina::format("\"{}\" --invalid-case {} >nul 2>&1", exe_path, case_name);
+    int exit_code = std::system(command.c_str());
+    CHECK(exit_code != 0);
+    return true;
+}
+
 static bool test_void_and_scalar_types(TypeRegistry &registry) {
     CHECK(registry.parse_type(TypeDesc<void>::description()) == nullptr);
 
@@ -248,7 +280,18 @@ static bool test_tuple_and_struct_types(TypeRegistry &registry) {
     return true;
 }
 
-int main() {
+static bool test_invalid_descriptions(const char *exe_path) {
+    CHECK(expect_invalid_parse_failure(exe_path, "invalid-data-type"));
+    CHECK(expect_invalid_parse_failure(exe_path, "invalid-vector-element"));
+    CHECK(expect_invalid_parse_failure(exe_path, "invalid-matrix-dimension"));
+    return true;
+}
+
+int main(int argc, char **argv) {
+    if (argc == 3 && string_view(argv[1]) == "--invalid-case") {
+        return run_invalid_case(argv[2]);
+    }
+
     TypeRegistry &registry = TypeRegistry::instance();
 
     bool passed = true;
@@ -256,6 +299,7 @@ int main() {
     passed = test_vector_and_matrix_types(registry) && passed;
     passed = test_array_and_resource_types(registry) && passed;
     passed = test_tuple_and_struct_types(registry) && passed;
+    passed = test_invalid_descriptions(argv[0]) && passed;
 
     if (!passed) {
         std::cerr << "type parse test failed" << std::endl;
