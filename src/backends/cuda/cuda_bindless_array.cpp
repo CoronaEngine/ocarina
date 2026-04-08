@@ -74,7 +74,12 @@ size_t CUDABindlessArray::buffer_slot_size() const noexcept {
 }
 
 BufferUploadCommand *CUDABindlessArray::upload_buffer_handles(bool async) const noexcept {
-    return buffers_.upload(async);
+    static const ByteBufferDesc empty_desc{};
+    auto count = buffers_.host_buffer().size();
+    if (count == 0u) {
+        return buffers_.device_buffer().view(0u, 1u).upload(&empty_desc, async);
+    }
+    return buffers_.device_buffer().view(0u, count).upload(buffers_.host_buffer().data(), async);
 }
 
 size_t CUDABindlessArray::emplace_texture3d(handle_ty handle) noexcept {
@@ -113,7 +118,12 @@ size_t CUDABindlessArray::tex3d_slot_size() const noexcept {
 }
 
 BufferUploadCommand *CUDABindlessArray::upload_texture3d_handles(bool async) const noexcept {
-    return tex3ds_.upload(async);
+    static const CUtexObject empty_handle = 0u;
+    auto count = tex3ds_.host_buffer().size();
+    if (count == 0u) {
+        return tex3ds_.device_buffer().view(0u, 1u).upload(&empty_handle, async);
+    }
+    return tex3ds_.device_buffer().view(0u, count).upload(tex3ds_.host_buffer().data(), async);
 }
 
 size_t CUDABindlessArray::emplace_texture2d(handle_ty handle) noexcept {
@@ -152,7 +162,12 @@ size_t CUDABindlessArray::texture2d_num() const noexcept {
 }
 
 BufferUploadCommand *CUDABindlessArray::upload_texture2d_handles(bool async) const noexcept {
-    return tex2ds_.upload(async);
+    static const CUtexObject empty_handle = 0u;
+    auto count = tex2ds_.host_buffer().size();
+    if (count == 0u) {
+        return tex2ds_.device_buffer().view(0u, 1u).upload(&empty_handle, async);
+    }
+    return tex2ds_.device_buffer().view(0u, count).upload(tex2ds_.host_buffer().data(), async);
 }
 
 ByteBufferDesc CUDABindlessArray::buffer_view(ocarina::uint index) const noexcept {
