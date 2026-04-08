@@ -134,7 +134,7 @@ public:
 
 #undef OC_MAKE_LOG_FUNC
     void retrieve_immediately(const OutputFunc &func = nullptr) noexcept;
-    [[nodiscard]] CommandList retrieve(const OutputFunc &func = nullptr) noexcept;
+    [[nodiscard]] CommandBatch retrieve(const OutputFunc &func = nullptr) noexcept;
     void output_log(const OutputFunc &func = nullptr) noexcept;
 };
 

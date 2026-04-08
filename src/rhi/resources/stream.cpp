@@ -16,7 +16,7 @@ Stream &Stream::operator<<(Command *command) noexcept {
     return *this;
 }
 
-Stream &Stream::operator<<(const CommandList &commands) noexcept {
+Stream &Stream::operator<<(const CommandBatch &commands) noexcept {
     for (Command *cmd : commands) {
         (*this) << cmd;
     }

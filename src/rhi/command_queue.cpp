@@ -7,27 +7,27 @@
 
 namespace ocarina {
 
-CommandList &CommandList::operator<<(ocarina::Command *command) noexcept {
+CommandBatch &CommandBatch::operator<<(ocarina::Command *command) noexcept {
     push_back(command);
     return *this;
 }
 
-CommandList &CommandList::operator<<(const vector<Command *> &commands) noexcept {
+CommandBatch &CommandBatch::operator<<(const vector<Command *> &commands) noexcept {
     append(*this, commands);
     return *this;
 }
 
-CommandList &CommandList::operator<<(std::function<void()> func) noexcept {
+CommandBatch &CommandBatch::operator<<(std::function<void()> func) noexcept {
     return (*this) << HostFunctionCommand::create(true, ocarina::move(func));
 }
 
-void CommandList::accept(CommandVisitor &visitor) const noexcept {
+void CommandBatch::accept(CommandVisitor &visitor) const noexcept {
     for (const Command *command : (*this)) {
         command->accept(visitor);
     }
 }
 
-void CommandList::recycle() noexcept {
+void CommandBatch::recycle() noexcept {
     for (Command *command : (*this)) {
         command->recycle();
     }

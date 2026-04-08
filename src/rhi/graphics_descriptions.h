@@ -295,7 +295,7 @@ enum class DeviceMemoryUsage : uint8_t {
     //MEMORY_USAGE_MAX_ENUM = 0x7FFFFFFF
 };
 
-//enum CommandListType {
+//enum CommandBatchType {
 //    Graphics,///< Graphics command list
 //    Compute, ///< Compute command list
 //    Copy     ///< Copy command list

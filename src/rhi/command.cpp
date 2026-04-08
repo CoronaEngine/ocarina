@@ -10,7 +10,7 @@ namespace ocarina {
 
 OC_COMMAND_POOL_FUNCTIONS_IMPL
 
-ShaderDispatchCommand::ShaderDispatchCommand(handle_ty entry, SP<ArgumentList> argument_list, uint3 dim)
+ShaderDispatchCommand::ShaderDispatchCommand(handle_ty entry, SP<ShaderArgumentPack> argument_list, uint3 dim)
     : Command(true), entry_(entry),
       argument_list_(ocarina::move(argument_list)), dispatch_dim_(dim) {
 }

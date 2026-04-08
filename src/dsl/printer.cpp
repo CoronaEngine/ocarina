@@ -35,11 +35,11 @@ void Printer::output_log(const OutputFunc &func) noexcept {
     }
 }
 
-CommandList Printer::retrieve(const OutputFunc &func) noexcept {
+CommandBatch Printer::retrieve(const OutputFunc &func) noexcept {
     if (!enabled_) {
         return {};
     }
-    CommandList ret;
+    CommandBatch ret;
     ret << buffer_.download();
     ret << [&]() {
         output_log(func);

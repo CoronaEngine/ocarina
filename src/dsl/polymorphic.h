@@ -405,8 +405,8 @@ public:
         });
     }
 
-    [[nodiscard]] CommandList upload(bool async = true) noexcept {
-        CommandList ret;
+    [[nodiscard]] CommandBatch upload(bool async = true) noexcept {
+        CommandBatch ret;
         group_mgr_.for_each_group([&](GroupData &group_data) {
             if (group_data.data_set.empty()) {
                 return;

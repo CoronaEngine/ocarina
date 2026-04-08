@@ -49,7 +49,7 @@ public:
         return impl()->command_queue();
     }
     Stream &operator<<(Command *command) noexcept;
-    Stream &operator<<(const CommandList &commands) noexcept;
+    Stream &operator<<(const CommandBatch &commands) noexcept;
     template<typename... Ts>
     Stream &operator<<(tuple<Ts...> &&tp) noexcept {
         auto func = [this]<size_t... i>(tuple<Ts...> &&tp,

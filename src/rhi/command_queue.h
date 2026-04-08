@@ -11,13 +11,13 @@ namespace ocarina {
 class Command;
 class CommandVisitor;
 
-class OC_RHI_API CommandList : public ocarina::vector<Command *> {
+class OC_RHI_API CommandBatch : public ocarina::vector<Command *> {
 public:
     using Super = ocarina::vector<Command *>;
     using Super::Super;
-    CommandList &operator<<(Command *command) noexcept;
-    CommandList &operator<<(const vector<Command *> &commands) noexcept;
-    CommandList &operator<<(std::function<void()> func) noexcept;
+    CommandBatch &operator<<(Command *command) noexcept;
+    CommandBatch &operator<<(const vector<Command *> &commands) noexcept;
+    CommandBatch &operator<<(std::function<void()> func) noexcept;
     void accept(CommandVisitor &visitor) const noexcept;
     void recycle() noexcept;
 };
@@ -25,7 +25,7 @@ public:
 class OC_RHI_API CommandQueue {
 
 private:
-    CommandList commands_{};
+    CommandBatch commands_{};
     QueueType queueType_;
 
 public:

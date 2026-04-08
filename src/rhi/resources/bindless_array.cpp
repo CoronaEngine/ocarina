@@ -37,8 +37,8 @@ ByteBufferView BindlessArray::byte_buffer_view(ocarina::uint index) const noexce
     return {buffer_desc.head(), buffer_desc.size_in_byte()};
 }
 
-CommandList BindlessArray::upload_handles(bool async) noexcept {
-    CommandList ret;
+CommandBatch BindlessArray::upload_handles(bool async) noexcept {
+    CommandBatch ret;
     ret.push_back(impl()->upload_buffer_handles(async));
     ret.push_back(impl()->upload_texture3d_handles(async));
     ret.push_back(impl()->upload_texture2d_handles(async));

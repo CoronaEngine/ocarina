@@ -149,10 +149,10 @@ public:
 };
 
 template<typename T, AccessMode mode>
-class ManagedList : public List<T, mode, ByteBuffer>, public vector<T> {
+class ManagedList : public CountedBuffer<T, mode, ByteBuffer>, public vector<T> {
 public:
     using host_ty = ocarina::vector<T>;
-    using device_ty = List<T, mode, ByteBuffer>;
+    using device_ty = CountedBuffer<T, mode, ByteBuffer>;
     using element_ty = T;
 
 public:

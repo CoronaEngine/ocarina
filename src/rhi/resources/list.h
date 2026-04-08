@@ -16,7 +16,7 @@ template<typename T, typename TBuffer>
 struct AOSViewVar;
 
 template<typename T, AccessMode mode, typename TBuffer>
-class List {
+class CountedBuffer {
 private:
     template<typename U>
     struct buffer_impl {
@@ -40,11 +40,11 @@ private:
     buffer_t<TBuffer> buffer_;
 
 public:
-    List() = default;
-    explicit List(ByteBuffer &&buffer) : buffer_(std::move(buffer)) {}
+    CountedBuffer() = default;
+    explicit CountedBuffer(ByteBuffer &&buffer) : buffer_(std::move(buffer)) {}
 
     template<typename U>
-    explicit List(const U &u) : buffer_(u) {}
+    explicit CountedBuffer(const U &u) : buffer_(u) {}
 
     [[nodiscard]] auto &buffer() noexcept {
         if constexpr (is_host) {
@@ -169,14 +169,17 @@ public:
     /// for dsl end
 };
 
+template<typename T, AccessMode mode = AOS, typename TBuffer = ByteBuffer>
+using List = CountedBuffer<T, mode, TBuffer>;
+
 template<typename T, AccessMode mode = AOS, typename TBuffer>
-[[nodiscard]] List<T, mode, TBuffer> create_list(const TBuffer &buffer) noexcept {
-    return List<T, mode, TBuffer>(OC_FORWARD(buffer));
+[[nodiscard]] CountedBuffer<T, mode, TBuffer> create_list(const TBuffer &buffer) noexcept {
+    return CountedBuffer<T, mode, TBuffer>(OC_FORWARD(buffer));
 }
 
 template<typename T, AccessMode mode = AOS>
-[[nodiscard]] List<T, mode, ByteBuffer> create_list(ByteBuffer &&buffer) noexcept {
-    return List<T, mode, ByteBuffer>(OC_FORWARD(buffer));
+[[nodiscard]] CountedBuffer<T, mode, ByteBuffer> create_list(ByteBuffer &&buffer) noexcept {
+    return CountedBuffer<T, mode, ByteBuffer>(OC_FORWARD(buffer));
 }
 
 }// namespace ocarina

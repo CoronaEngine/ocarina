@@ -16,8 +16,8 @@ CUDABindlessArray::CUDABindlessArray(CUDADevice *device)
     slot_soa_.tex2d_slot = tex2ds_.handle();
 }
 
-CommandList CUDABindlessArray::update_slotSOA(bool async) noexcept {
-    CommandList ret;
+CommandBatch CUDABindlessArray::update_slotSOA(bool async) noexcept {
+    CommandBatch ret;
 #define OC_MAKE_REALLOCATE_CMD(arg)                                                            \
     if (buffers_.device_buffer().size() > c_max_slot_num) {                                    \
         append(ret, arg##s_.device_buffer().reallocate(buffers_.host_buffer().size(), async)); \

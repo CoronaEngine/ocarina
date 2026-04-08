@@ -192,8 +192,8 @@ inline ByteBufferView::ByteBufferView(const ocarina::ByteBuffer &buffer)
     : Super(buffer.handle(), buffer.size()) {}
 
 template<typename T, ocarina::AccessMode mode>
-List<T, mode> Device::create_list(size_t size, const std::string &name) const noexcept {
-    return List<T, mode>(create_byte_buffer(sizeof(T) * size + sizeof(uint), name));
+CountedBuffer<T, mode> Device::create_list(size_t size, const std::string &name) const noexcept {
+    return CountedBuffer<T, mode>(create_byte_buffer(sizeof(T) * size + sizeof(uint), name));
 }
 
 }// namespace ocarina

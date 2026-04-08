@@ -47,7 +47,7 @@ public:
         [[nodiscard]] virtual BufferUploadCommand *upload_texture2d_handles(bool async) const noexcept = 0;
 
         [[nodiscard]] virtual ByteBufferDesc buffer_view(uint index) const noexcept = 0;
-        virtual CommandList update_slotSOA(bool async) noexcept = 0;
+        virtual CommandBatch update_slotSOA(bool async) noexcept = 0;
 
         /// for device side structure
         [[nodiscard]] virtual const void *handle_ptr() const noexcept = 0;
@@ -64,11 +64,11 @@ public:
     [[nodiscard]] const Impl *operator->() const noexcept { return impl(); }
     [[nodiscard]] Impl *operator->() noexcept { return impl(); }
 
-    [[nodiscard]] CommandList update_slotSOA() noexcept {
+    [[nodiscard]] CommandBatch update_slotSOA() noexcept {
         return impl()->update_slotSOA(true);
     }
 
-    [[nodiscard]] CommandList update_slotSOA_sync() noexcept {
+    [[nodiscard]] CommandBatch update_slotSOA_sync() noexcept {
         return impl()->update_slotSOA(false);
     }
 
@@ -100,7 +100,7 @@ public:
     [[nodiscard]] uint buffer_num() const noexcept;
     [[nodiscard]] uint texture3d_num() const noexcept;
     [[nodiscard]] uint texture2d_num() const noexcept;
-    [[nodiscard]] CommandList upload_handles(bool async = true) noexcept;
+    [[nodiscard]] CommandBatch upload_handles(bool async = true) noexcept;
 
     /// for dsl
     [[nodiscard]] const Expression *expression() const noexcept override {

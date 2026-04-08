@@ -388,15 +388,15 @@ public:
 };
 
 class Function;
-class ArgumentList;
+class ShaderArgumentPack;
 class OC_RHI_API ShaderDispatchCommand final : public Command {
 private:
-    SP<ArgumentList> argument_list_;
+    SP<ShaderArgumentPack> argument_list_;
     uint3 dispatch_dim_;
     handle_ty entry_{};
 
 public:
-    ShaderDispatchCommand(handle_ty entry, SP<ArgumentList> argument_list, uint3 dim);
+    ShaderDispatchCommand(handle_ty entry, SP<ShaderArgumentPack> argument_list, uint3 dim);
     [[nodiscard]] span<void *> args() noexcept;
     [[nodiscard]] span<const std::byte> argument_data() noexcept;
     [[nodiscard]] size_t params_size() noexcept;

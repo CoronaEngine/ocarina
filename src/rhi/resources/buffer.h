@@ -298,7 +298,7 @@ public:
     [[nodiscard]] size_t size() const noexcept { return size_; }
     [[nodiscard]] size_t size_in_byte() const noexcept { return size_ * sizeof(T); }
 
-    [[nodiscard]] CommandList reallocate(size_t size, bool async = true) {
+    [[nodiscard]] CommandBatch reallocate(size_t size, bool async = true) {
         return {BufferReallocateCommand::create(this, size * element_size(), async),
                 HostFunctionCommand::create(async,
                                             [this, size] {

@@ -168,10 +168,10 @@ public:
 };
 
 template<typename T, AccessMode mode = AOS>
-class RegistrableList : public List<T, mode, ByteBuffer>,
+class RegistrableList : public CountedBuffer<T, mode, ByteBuffer>,
                         public Registrable {
 public:
-    using Super = List<T, mode, ByteBuffer>;
+    using Super = CountedBuffer<T, mode, ByteBuffer>;
 
 public:
     RegistrableList() = default;

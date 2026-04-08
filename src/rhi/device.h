@@ -25,7 +25,7 @@ class Buffer;
 class ByteBuffer;
 
 template<typename T, AccessMode mode = AOS, typename TBuffer = ByteBuffer>
-class List;
+class CountedBuffer;
 
 template<typename T, AccessMode mode = AOS>
 class ManagedList;
@@ -144,7 +144,7 @@ public:
     [[nodiscard]] ByteBuffer create_byte_buffer(size_t size, const string &name = "") const noexcept;
 
     template<typename T, AccessMode mode = AOS>
-    [[nodiscard]] List<T, mode> create_list(size_t size, const string &name = "") const noexcept;// implement in byte_buffer.h
+    [[nodiscard]] CountedBuffer<T, mode> create_list(size_t size, const string &name = "") const noexcept;// implement in byte_buffer.h
 
     template<typename T, AccessMode mode = AOS>
     [[nodiscard]] ManagedList<T, mode> create_managed_list(size_t size, const string &name = "") const noexcept {

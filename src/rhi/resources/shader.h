@@ -41,7 +41,7 @@ struct prototype_to_shader_invocation<BindlessArray> {
 template<typename T>
 using prototype_to_shader_invocation_t = typename detail::prototype_to_shader_invocation<T>::type;
 
-class OC_RHI_API ArgumentList {
+class OC_RHI_API ShaderArgumentPack {
 private:
     static constexpr auto Size = 200;
     ocarina::vector<void *> args_;
@@ -76,7 +76,7 @@ private:
     }
 
 public:
-    explicit ArgumentList(const Function *f = nullptr) : function_(f) {}
+    explicit ShaderArgumentPack(const Function *f = nullptr) : function_(f) {}
     [[nodiscard]] span<void *> ptr() noexcept { return args_; }
     [[nodiscard]] size_t num() const noexcept { return args_.size(); }
     void clear() noexcept {
@@ -127,7 +127,7 @@ public:
     [[nodiscard]] span<const MemoryBlock> blocks() noexcept { return blocks_; }
 
     template<typename T>
-    ArgumentList &operator<<(T &&arg) {
+    ShaderArgumentPack &operator<<(T &&arg) {
         if constexpr (is_param_struct_v<T>) {
             using arg_type = std::remove_cvref_t<T>;
             using Tuple = ocarina::struct_member_tuple_t<arg_type>;
@@ -156,13 +156,15 @@ public:
     }
 };
 
+using ArgumentList = ShaderArgumentPack;
+
 class ShaderInvoke {
 private:
-    SP<ArgumentList> argument_list_;
+    SP<ShaderArgumentPack> argument_list_;
     handle_ty shader_entry_;
 
 public:
-    ShaderInvoke(handle_ty entry, SP<ArgumentList> argument_list)
+    ShaderInvoke(handle_ty entry, SP<ShaderArgumentPack> argument_list)
         : shader_entry_(entry),
           argument_list_(ocarina::move(argument_list)) {}
 
@@ -230,7 +232,7 @@ public:
     void compute_fit_size() noexcept { impl()->compute_fit_size(); }
     [[nodiscard]] bool has_function() const noexcept { return function_ != nullptr; }
     [[nodiscard]] ShaderInvoke operator()(prototype_to_shader_invocation_t<Args> &&...args) const noexcept {
-        auto argument_list = make_shared<ArgumentList>(function_.get());
+        auto argument_list = make_shared<ShaderArgumentPack>(function_.get());
         (*argument_list << ... << OC_FORWARD(args));
         for (const auto &var : function_->captured_resources()) {
             argument_list->push_memory_block(var.block());
