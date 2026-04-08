@@ -14,7 +14,15 @@ void Printer::output_log(const OutputFunc &func) noexcept {
     uint offset = 0u;
     while (offset < length) {
         const uint *data = buffer_.host_buffer().data() + offset;
-        Item &item = items_[data[0]];
+        uint item_index = data[0];
+        if (item_index >= items_.size()) {
+            truncated = true;
+            OC_WARNING_FORMAT("Kernel log decode index {} is out of range {}; stopping log decode.",
+                              item_index,
+                              items_.size());
+            break;
+        }
+        Item &item = items_[item_index];
         offset += item.size + 1;
         if (offset > length) {
             truncated = true;
