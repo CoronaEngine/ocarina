@@ -112,6 +112,7 @@ void OptixAccel::update_bvh(ocarina::CUDACommandVisitor *visitor) noexcept {
                                        tlas_buffer_.ptr<CUdeviceptr>(),
                                        tlas_buffer_.size_in_byte(),
                                        &tlas_handle_, nullptr, 0));
+        mark_update();
         OC_CU_CHECK(cuCtxSynchronize());
     });
 
@@ -158,6 +159,7 @@ void OptixAccel::build_bvh(CUDACommandVisitor *visitor) noexcept {
                                        tlas_buffer_.ptr<CUdeviceptr>(),
                                        ias_buffer_sizes.outputSizeInBytes,
                                        &tlas_handle_, emit_desc_ptr, emit_desc_num));
+        mark_build();
         if (allow_compaction()) {
             auto compacted_tlas_size = device_->download<size_t>(compact_size_buffer.handle());
             OC_INFO_FORMAT("tlas : compacted_tlas_size is {} byte", compacted_tlas_size);
