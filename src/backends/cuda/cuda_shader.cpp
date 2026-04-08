@@ -11,6 +11,112 @@
 
 namespace ocarina {
 
+namespace {
+
+[[nodiscard]] bool valid_dim(uint3 dim) noexcept {
+    return dim.x != 0u && dim.y != 0u && dim.z != 0u;
+}
+
+[[nodiscard]] uint ceil_div(uint num, uint den) noexcept {
+    return (num + den - 1u) / den;
+}
+
+[[nodiscard]] uint3 ceil_div(uint3 num, uint3 den) noexcept {
+    return make_uint3(ceil_div(num.x, den.x),
+                      ceil_div(num.y, den.y),
+                      ceil_div(num.z, den.z));
+}
+
+[[nodiscard]] uint min_u(uint lhs, uint rhs) noexcept {
+    return lhs < rhs ? lhs : rhs;
+}
+
+[[nodiscard]] uint max_u(uint lhs, uint rhs) noexcept {
+    return lhs > rhs ? lhs : rhs;
+}
+
+[[nodiscard]] uint volume(uint3 dim) noexcept {
+    return dim.x * dim.y * dim.z;
+}
+
+[[nodiscard]] uint3 min_dim(uint3 lhs, uint3 rhs) noexcept {
+    return make_uint3(min_u(lhs.x, rhs.x), min_u(lhs.y, rhs.y), min_u(lhs.z, rhs.z));
+}
+
+[[nodiscard]] int score_candidate(uint3 candidate, uint3 dispatch_dim, uint max_threads) noexcept {
+    uint threads = volume(candidate);
+    if (threads == 0u || threads > max_threads) {
+        return std::numeric_limits<int>::min();
+    }
+    uint3 covered_dim = min_dim(candidate, dispatch_dim);
+    uint active_threads = volume(covered_dim);
+    uint wasted_threads = threads - active_threads;
+    return static_cast<int>(active_threads * 4096u + threads * 4u - wasted_threads);
+}
+
+[[nodiscard]] uint3 choose_block_shape(uint3 dispatch_dim, uint max_threads) noexcept {
+    max_threads = max_u(1u, min_u(max_threads, 1024u));
+
+    if (dispatch_dim.z > 1u) {
+        static constexpr std::array<uint3, 7> candidates{
+            make_uint3(8u, 8u, 4u),
+            make_uint3(8u, 4u, 4u),
+            make_uint3(4u, 4u, 4u),
+            make_uint3(8u, 4u, 2u),
+            make_uint3(4u, 4u, 2u),
+            make_uint3(2u, 2u, 2u),
+            make_uint3(1u, 1u, 1u)};
+        uint3 best = make_uint3(1u);
+        int best_score = std::numeric_limits<int>::min();
+        for (uint3 candidate : candidates) {
+            int score = score_candidate(candidate, dispatch_dim, max_threads);
+            if (score > best_score) {
+                best_score = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    if (dispatch_dim.y > 1u) {
+        static constexpr std::array<uint3, 14> candidates{
+            make_uint3(32u, 32u, 1u),
+            make_uint3(32u, 16u, 1u),
+            make_uint3(16u, 32u, 1u),
+            make_uint3(16u, 16u, 1u),
+            make_uint3(32u, 8u, 1u),
+            make_uint3(8u, 32u, 1u),
+            make_uint3(16u, 8u, 1u),
+            make_uint3(8u, 16u, 1u),
+            make_uint3(8u, 8u, 1u),
+            make_uint3(8u, 4u, 1u),
+            make_uint3(4u, 8u, 1u),
+            make_uint3(4u, 4u, 1u),
+            make_uint3(2u, 2u, 1u),
+            make_uint3(1u, 1u, 1u)};
+        uint3 best = make_uint3(1u);
+        int best_score = std::numeric_limits<int>::min();
+        for (uint3 candidate : candidates) {
+            int score = score_candidate(candidate, dispatch_dim, max_threads);
+            if (score > best_score) {
+                best_score = score;
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    static constexpr std::array<uint, 11> candidates{1024u, 512u, 256u, 128u, 64u, 32u, 16u, 8u, 4u, 2u, 1u};
+    for (uint candidate : candidates) {
+        if (candidate <= max_threads) {
+            return make_uint3(min_u(dispatch_dim.x, candidate), 1u, 1u);
+        }
+    }
+    return make_uint3(1u);
+}
+
+}// namespace
+
 CUDAShader::CUDAShader(Device::Impl *device,
                        const Function &func)
     : device_(dynamic_cast<CUDADevice *>(device)),
@@ -20,6 +126,26 @@ class CUDASimpleShader : public CUDAShader {
 private:
     CUmodule module_{};
     CUfunction func_handle_{};
+    uint preferred_block_threads_{0u};
+
+private:
+    void ensure_preferred_block_threads() noexcept {
+        if (preferred_block_threads_ != 0u) {
+            return;
+        }
+        device_->use_context([&] {
+            int min_grid_size = 0;
+            int auto_block_size = 0;
+            OC_CU_CHECK(cuOccupancyMaxPotentialBlockSize(&min_grid_size, &auto_block_size,
+                                                         func_handle_, 0, 0, 0));
+            preferred_block_threads_ = max_u(1u, static_cast<uint>(auto_block_size));
+        });
+    }
+
+    [[nodiscard]] uint3 auto_block_dim(uint3 dispatch_dim) noexcept {
+        ensure_preferred_block_threads();
+        return choose_block_shape(dispatch_dim, preferred_block_threads_);
+    }
 
 public:
     CUDASimpleShader(Device::Impl *device,
@@ -32,28 +158,23 @@ public:
         OC_CU_CHECK(cuModuleUnload(module_));
     }
     void launch(handle_ty stream, ShaderDispatchCommand *cmd) noexcept override {
-        uint3 grid_dim = make_uint3(1);
-        uint3 block_dim = make_uint3(1);
-        if (function_.has_configure()) {
-            grid_dim = function_.grid_dim();
-            block_dim = function_.block_dim();
-        } else {
-            grid_dim = (cmd->dispatch_dim() + block_dim - 1u) / block_dim;
+        uint3 dispatch_dim = cmd->dispatch_dim();
+        uint3 block_dim = valid_dim(function_.block_dim()) ? function_.block_dim() : auto_block_dim(dispatch_dim);
+        uint3 grid_dim = valid_dim(function_.grid_dim()) ? function_.grid_dim() : ceil_div(dispatch_dim, block_dim);
+        if (!valid_dim(block_dim)) {
+            block_dim = make_uint3(1u);
+        }
+        if (!valid_dim(grid_dim)) {
+            grid_dim = ceil_div(dispatch_dim, block_dim);
         }
         OC_CU_CHECK(cuLaunchKernel(func_handle_, grid_dim.x, grid_dim.y, grid_dim.z,
                                    block_dim.x, block_dim.y, block_dim.z,
                                    0, reinterpret_cast<CUstream>(stream), cmd->args().data(), nullptr));
     }
     void compute_fit_size() noexcept override {
-        device_->use_context([&] {
-            int min_grid_size;
-            int auto_block_size;
-            OC_CU_CHECK(cuOccupancyMaxPotentialBlockSize(&min_grid_size, &auto_block_size,
-                                                         func_handle_, 0, 0, 0));
-
-            function_.set_grid_dim(min_grid_size);
-            function_.set_block_dim(auto_block_size);
-        });
+        ensure_preferred_block_threads();
+        function_.set_grid_dim(0u);
+        function_.set_block_dim(preferred_block_threads_);
     }
 };
 
