@@ -55,6 +55,8 @@ namespace {
 }
 
 [[nodiscard]] uint3 choose_block_shape(uint3 dispatch_dim, uint max_threads) noexcept {
+    // First match the dispatch topology (1D/2D/3D), then pick the densest block
+    // shape that still fits the occupancy-guided thread budget.
     max_threads = max_u(1u, min_u(max_threads, 1024u));
 
     if (dispatch_dim.z > 1u) {
@@ -159,6 +161,8 @@ public:
     }
     void launch(handle_ty stream, ShaderDispatchCommand *cmd) noexcept override {
         uint3 dispatch_dim = cmd->dispatch_dim();
+        // User-provided launch dimensions win. Otherwise we derive a block shape
+        // from the occupancy budget and compute the matching grid dimensions.
         uint3 block_dim = valid_dim(function_.block_dim()) ? function_.block_dim() : auto_block_dim(dispatch_dim);
         uint3 grid_dim = valid_dim(function_.grid_dim()) ? function_.grid_dim() : ceil_div(dispatch_dim, block_dim);
         if (!valid_dim(block_dim)) {
@@ -173,6 +177,8 @@ public:
     }
     void compute_fit_size() noexcept override {
         ensure_preferred_block_threads();
+        // Keep the legacy API surface, but only cache the preferred thread budget.
+        // The final block shape still depends on the dispatch dimensionality.
         function_.set_grid_dim(0u);
         function_.set_block_dim(preferred_block_threads_);
     }

@@ -405,7 +405,9 @@ const CallExpr *Function::call(const ocarina::Type *type, string_view func_name,
 const CallExpr *Function::call_builtin(const Type *type, CallOp op,
                                        ocarina::list<const Expression *> args,
                                        ocarina::list<CallExpr::Template> t_args) noexcept {
-    if (to_underlying(op) >= to_underlying(CallOp::SYNCHRONIZE_BLOCK)) {
+    if (op == CallOp::TRACE_CLOSEST || op == CallOp::TRACE_OCCLUSION) {
+        set_raytracing(true);
+    } else if (to_underlying(op) >= to_underlying(CallOp::SYNCHRONIZE_BLOCK)) {
         set_raytracing(false);
     }
     return create_expression<CallExpr>(type, op, std::move(args), std::move(t_args));

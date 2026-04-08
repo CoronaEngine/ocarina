@@ -100,7 +100,7 @@ private:
     ocarina::vector<SP<const Function>> used_custom_func_;
     StructureSet used_struct_;
     bool allow_dsl_capture_{false};
-    mutable bool raytracing_{true};
+    mutable bool raytracing_{false};
     mutable uint3 block_dim_{make_uint3(0)};
     mutable uint3 grid_dim_{make_uint3(0)};
 
