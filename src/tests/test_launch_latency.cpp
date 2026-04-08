@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     device.init_rtx();
     Stream stream = device.create_stream();
 
-    Buffer<uint> output = device.create_buffer<uint>(large_dim.x * large_dim.y);
+    Buffer<uint> output = device.create_buffer<uint>(large_dim.x * large_dim.y, "test_launch_latency_output");
 
     auto raygen_small_kernel = make_linear_write_kernel(1u);
     raygen_small_kernel.function()->set_raytracing(true);

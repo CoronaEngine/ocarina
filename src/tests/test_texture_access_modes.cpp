@@ -193,7 +193,7 @@ int test_bindless_texture_capture(Device &device, Stream &stream) {
     }
 
     auto tex = device.create_texture2d(res, PixelStorage::FLOAT4, "test_bindless_texture_capture_src");
-    auto out = device.create_buffer<float4>(sample_count);
+    auto out = device.create_buffer<float4>(sample_count, "test_bindless_texture_capture_out");
     tex.upload_immediately(host_src.data());
 
     BindlessArray bindless = device.create_bindless_array();
@@ -249,7 +249,7 @@ int test_bindless_texture_param(Device &device, Stream &stream) {
     }
 
     auto tex = device.create_texture2d(res, PixelStorage::FLOAT4, "test_bindless_texture_param_src");
-    auto out = device.create_buffer<float4>(sample_count);
+    auto out = device.create_buffer<float4>(sample_count, "test_bindless_texture_param_out");
     tex.upload_immediately(host_src.data());
 
     BindlessArray bindless = device.create_bindless_array();

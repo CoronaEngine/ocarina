@@ -196,6 +196,7 @@ public:
     [[nodiscard]] Texture2D create_texture2d(uint2 res, PixelStorage storage, const string &desc = "") const noexcept;
     [[nodiscard]] Texture2D create_texture2d_from_external(uint external_handle, const string &desc = "") const noexcept;
     [[nodiscard]] Texture3D create_texture(Image *image_resource, const TextureViewCreation &texture_view) const noexcept;
+    [[nodiscard]] Texture3D create_texture(Image *image_resource, const TextureViewCreation &texture_view, const string &desc = "") const noexcept;
     template<typename T>
     [[nodiscard]] auto compile(const Kernel<T> &kernel, const string &shader_desc = "", ShaderTag tag = CS) const noexcept {
         OC_INFO_FORMAT("compile shader : {}", shader_desc.c_str());

@@ -2,203 +2,207 @@
 // Created by Zero on 21/09/2022.
 //
 
+#include <cstdlib>
+#include <iostream>
+#include <type_traits>
 #include <utility>
+
 #include "core/stl.h"
 #include "dsl/dsl.h"
-#include "dsl/polymorphic.h"
-#include "dsl/dsl.h"
-#include "rhi/common.h"
-#include "rhi/context.h"
-#include <type_traits>
+#include "math/basic_traits.h"
 
 using namespace ocarina;
 
-struct Data : public Encodable{
-    EncodedData<float> f;
-    EncodedData<float4> f4;
+namespace {
 
-    OC_ENCODABLE_FUNC(Encodable,f, f4)
+enum class TestEnum : uint {
+    Value = 7u
 };
 
-struct Data2 : public Data {
-    EncodedData<float3> f3;
-    OC_ENCODABLE_FUNC(Data, f3)
-};
+using HostSwizzle2 = decltype(std::declval<float4 &>().xy());
+using HostSwizzle3 = decltype(std::declval<float4 &>().xyz());
+using DeviceSwizzle2 = decltype(std::declval<Var<float4> &>().xy());
 
-struct Test : public Encodable{
-    EncodedData<float2> a;
-    EncodedData<int3> b;
-    EncodedData<float> c;
-    EncodedData<int> d;
-    EncodedData<vector<float>> e;
-    EncodedData<float3x3> f;
-    RegistrableManaged<float> mw;
-    Data2 data;
-    OC_ENCODABLE_FUNC(Encodable,a, b, c, d, e, f,mw, data)
-};
-
-
-
-union oc_scalar{
-    int i;
-    uint u;
-    float f;
-};
-
-void test(Device &device, Stream &stream) {
-    Test t;
-    t.a = make_float2(1,2);
-    t.a = [&]() {
-        return make_float2(1.1,2.2);
-    };
-    t.b = make_int3(3,4,5);
-    t.c = 6.8f;
-    t.d = 100;
-    for (int i = 0; i < 3; ++i) {
-        t.e.hv().push_back(i);
+[[nodiscard]] bool check_impl(bool condition, string_view message) {
+    if (!condition) {
+        std::cerr << "[FAIL] " << message << std::endl;
+        return false;
     }
-    t.f = make_float3x3(56.1f);
-    t.data.f = 106;
-    t.data.f4 = make_float4(199.f);
-    BindlessArray ra = device.create_bindless_array();
-    t.mw.set_bindless_array(ra);
-    t.mw.register_self();
-    t.mw.push_back(9.98);
-    t.mw.push_back(9.98);
-    RegistrableManaged<buffer_ty> vv(ra);
-
-    oc_scalar os{.f = 2.3f};
-    os.f = 2.f;
-
-    vv.resize(t.aligned_size());
-    t.encode(vv);
-    vv.reset_device_buffer_immediately(device);
-    vv.upload_immediately();
-    vv.register_self();
-    stream << ra->upload_buffer_handles(true) << synchronize();
-
-
-
-    Kernel kernel = [&](Float a) {
-        DataAccessor da{0u, vv};
-        t.decode(&da);
-        Env::printer().info("a = {} {}", t.a.dv());
-        Env::printer().info("b = {} {} {}", t.b.dv());
-        Env::printer().info("c = {}", t.c.dv());
-        Env::printer().info("d = {}", t.d.dv());
-        Env::printer().info("e = {} {} {}", t.e.dv().as_vec3());
-        Env::printer().info("f0 = {} {} {}", t.f.dv()[0]);
-        Env::printer().info("f1 = {} {} {}", t.f.dv()[1]);
-        Env::printer().info("f2 = {} {} {}", t.f.dv()[2]);
-        Env::printer().info("data.f = {}", t.data.f.dv());
-        Env::printer().info("data.f4 = {} {} {} {}", *t.data.f4);
-    };
-    auto shader = device.compile(kernel);
-    stream << shader(1.5f).dispatch(1);
-    stream << synchronize() << commit();
-    Env::printer().retrieve_immediately();
+    return true;
 }
 
-struct Mat : public Encodable {
-    EncodedData<float> a;
-    EncodedData<float> b;
-//    EncodedData<float> c;
-    EncodedData<float> d;
-    EncodedData<vector<float>> e;
-    OC_ENCODABLE_FUNC(Encodable, a, b,  d, e)
-};
+#define CHECK(...)                                \
+    do {                                          \
+        if (!check_impl((__VA_ARGS__), #__VA_ARGS__)) { \
+            return false;                         \
+        }                                         \
+    } while (false)
 
-void test2(Device &device, Stream &stream) {
-    BindlessArray ba = device.create_bindless_array();
+static_assert(to_underlying(TestEnum::Value) == 7u);
 
-    Mat m;
-    m.a = 0.25f;
-    m.b = 0.5f;
-//    m.c = 0.75;
-    m.d = 1;
-    m.e.hv().push_back(0.5f);
-    m.e.hv().push_back(0.25f);
-    m.a.set_encode_type(Uint8);
-    m.b.set_encode_type(Uint8);
-//    m.c.set_encode_type(Uint8);
-    m.d.set_encode_type(Uint8);
-    m.e.set_encode_type(Uint8);
+static_assert(is_integral_v<int>);
+static_assert(is_integral_v<const uint &>);
+static_assert(is_integral_v<size_t>);
+static_assert(!is_integral_v<float>);
 
-    auto as = m.aligned_size();
+static_assert(is_boolean_v<bool>);
+static_assert(!is_boolean_v<int>);
 
-    RegistrableManaged<buffer_ty> vv(ba);
-    vv.resize(m.aligned_size());
-    m.encode(vv);
-    vv.reset_device_buffer_immediately(device);
-    vv.upload_immediately();
-    vv.register_self();
-//    ba.prepare_slotSOA(device);
-    stream << ba->upload_buffer_handles(true) << synchronize();
+static_assert(is_half_v<half>);
+static_assert(is_float_v<float>);
+static_assert(is_floating_point_v<half>);
+static_assert(is_floating_point_v<float>);
+static_assert(!is_floating_point_v<int>);
 
-    Kernel kernel = [&](Float a) {
-        DataAccessor da{0u, vv};
-//        m.decode(&da);
+static_assert(is_signed_v<int>);
+static_assert(is_signed_v<float>);
+static_assert(is_signed_v<half>);
+static_assert(!is_signed_v<uint>);
 
-        auto array = da.load_dynamic_array<buffer_ty>(m.aligned_size() / 4);
-        m.decode(array);
-        Env::printer().info("a = {}", m.a.dv());
-        Env::printer().info("b = {}", m.b.dv());
-//        Env::printer().info("c = {}", m.c.dv());
-        Env::printer().info("d = {}", m.d.dv());
-        Env::printer().info("e = {} {}", m.e.dv().as_vec2());
+static_assert(is_unsigned_v<uint>);
+static_assert(is_unsigned_v<ulong>);
+static_assert(!is_unsigned_v<int>);
 
-    };
-    auto shader = device.compile(kernel);
-    stream << shader(1.5f).dispatch(1);
-    stream << synchronize() << commit();
-    Env::printer().retrieve_immediately();
+static_assert(is_scalar_v<int>);
+static_assert(is_scalar_v<bool>);
+static_assert(is_scalar_v<float>);
+static_assert(!is_scalar_v<float2>);
 
-    return;
+static_assert(is_number_v<int>);
+static_assert(is_number_v<float>);
+static_assert(!is_number_v<bool>);
+
+static_assert(is_all_scalar_v<int, bool, float>);
+static_assert(is_any_float_v<int, float, bool>);
+static_assert(is_none_half_v<int, float, uint>);
+static_assert(is_all_number_v<int, uint, float>);
+static_assert(is_any_boolean_v<int, bool, float>);
+static_assert(is_none_unsigned_v<int, float, bool>);
+
+static_assert(is_same_v<int, int, int>);
+static_assert(!is_same_v<int, uint>);
+static_assert(all_is_v<int, const int &, int>);
+static_assert(!all_is_v<int, int, uint>);
+
+static_assert(swizzle_dimension_v<HostSwizzle2> == 2u);
+static_assert(swizzle_dimension_v<HostSwizzle3> == 3u);
+static_assert(is_swizzle_v<HostSwizzle2>);
+static_assert(is_swizzle_v<HostSwizzle2, 2u>);
+static_assert(is_host_swizzle_v<HostSwizzle2>);
+static_assert(is_host_swizzle_v<HostSwizzle2, 2u>);
+static_assert(!is_device_swizzle_v<HostSwizzle2>);
+static_assert(is_device_swizzle_v<DeviceSwizzle2>);
+static_assert(is_device_swizzle_v<DeviceSwizzle2, 2u>);
+static_assert(!is_host_swizzle_v<DeviceSwizzle2>);
+static_assert(std::is_same_v<swizzle_decay_t<HostSwizzle2>, float2>);
+
+static_assert(vector_dimension_v<float> == 1u);
+static_assert(vector_dimension_v<float3> == 3u);
+static_assert(matrix_dimension_v<float2x2> == 2u);
+static_assert(matrix_dimension_v<float3x3> == 3u);
+static_assert(type_dimension_v<float> == 1u);
+static_assert(type_dimension_v<float3> == 3u);
+static_assert(type_dimension_v<HostSwizzle3> == 3u);
+
+static_assert(is_same_type_dimension_v<float3, HostSwizzle3, int3>);
+static_assert(!is_same_type_dimension_v<float3, float4>);
+static_assert(std::is_same_v<vector_element_t<float3>, float>);
+static_assert(std::is_same_v<type_element_t<float3>, float>);
+static_assert(std::is_same_v<type_element_t<HostSwizzle3>, float>);
+static_assert(is_same_type_element_v<float3, HostSwizzle3>);
+static_assert(!is_same_type_element_v<float3, int3>);
+
+static_assert(is_vector_v<float2>);
+static_assert(is_vector_v<float3>);
+static_assert(is_vector2_v<float2>);
+static_assert(is_vector3_v<float3>);
+static_assert(is_vector4_v<float4>);
+static_assert(!is_vector4_v<float3>);
+static_assert(is_general_vector_v<HostSwizzle2>);
+static_assert(is_general_vector2_v<HostSwizzle2>);
+static_assert(is_general_vector3_v<HostSwizzle3>);
+static_assert(is_vector_same_dimension_v<float3, int3, uint3>);
+static_assert(!is_vector_same_dimension_v<float2, float3>);
+
+static_assert(is_float_vector_v<float2>);
+static_assert(is_float_vector3_v<float3>);
+static_assert(is_int_vector3_v<int3>);
+static_assert(is_uint_vector4_v<uint4>);
+static_assert(is_general_float_vector2_v<HostSwizzle2>);
+static_assert(is_general_integer_vector3_v<int3>);
+
+static_assert(is_matrix_v<float2x2>);
+static_assert(is_matrix_v<float3x3>);
+static_assert(is_matrix2_v<float2x2>);
+static_assert(is_matrix3_v<float3x3>);
+static_assert(is_all_matrix_v<float2x2, float3x3, float4x4>);
+static_assert(!is_matrix_v<float4>);
+
+static_assert(is_basic_v<float>);
+static_assert(is_basic_v<float3>);
+static_assert(is_basic_v<float3x3>);
+static_assert(is_all_basic_v<float, float3, float3x3>);
+static_assert(is_general_basic_v<HostSwizzle2>);
+static_assert(is_all_general_basic_v<float, float2, HostSwizzle2>);
+
+static_assert(is_simple_type<int>::value);
+static_assert(is_simple_type<float4>::value);
+static_assert(!is_simple_type<const int &>::value);
+
+static_assert(is_std_vector_v<ocarina::vector<int>>);
+static_assert(!is_std_vector_v<int>);
+
+static_assert(std::is_same_v<general_vector_t<float, 1u>, float>);
+static_assert(std::is_same_v<general_vector_t<float, 3u>, float3>);
+static_assert(std::is_same_v<general_vector_t<int, 4u>, int4>);
+
+static_assert(match_basic_func_v<float3, HostSwizzle3>);
+static_assert(match_basic_func_v<float3, float3, HostSwizzle3>);
+static_assert(!match_basic_func_v<float3, int3>);
+static_assert(!match_basic_func_v<float3, float4>);
+
+[[nodiscard]] bool test_to_underlying_runtime() {
+    CHECK(to_underlying(TestEnum::Value) == 7u);
+    return true;
 }
 
-int main(int argc, char *argv[]) {
-    log_level_debug();
+[[nodiscard]] bool test_decay_swizzle_runtime() {
+    float4 value = make_float4(1.f, 2.f, 3.f, 4.f);
+    auto yz = decay_swizzle(value.yz());
+    auto wzyx = decay_swizzle(value.wzyx());
 
-    fs::path path(argv[0]);
-    RHIContext &context = RHIContext::instance();
-    //    context.clear_cache();
-    Device device = context.create_device("cuda");
-    Stream stream = device.create_stream();
-    Env::printer().init(device);
+    CHECK(yz.x == 2.f);
+    CHECK(yz.y == 3.f);
+    CHECK(wzyx.x == 4.f);
+    CHECK(wzyx.y == 3.f);
+    CHECK(wzyx.z == 2.f);
+    CHECK(wzyx.w == 1.f);
+    return true;
+}
 
-//    test(device, stream);
-    test2(device, stream);
+[[nodiscard]] bool test_general_vector_runtime() {
+    general_vector_t<float, 1u> scalar = 5.f;
+    general_vector_t<int, 3u> vec = make_int3(4, 5, 6);
 
+    CHECK(scalar == 5.f);
+    CHECK(vec.x == 4);
+    CHECK(vec.y == 5);
+    CHECK(vec.z == 6);
+    return true;
+}
 
-    return 0;
+}// namespace
 
-    //    cout << typeid(scalar_t<int3>).name() << endl;
-    //    cout << typeid(scalar_t<float>).name() << endl;
-    //    cout << typeid(scalar_t<float4x4>).name() << endl;
-    //    cout << typeid(scalar_t<Float3>).name() << endl;
-    //    cout << typeid(scalar_t<Float>).name() << endl;
-    //    cout << typeid(scalar_t<Float4x4>).name() << endl;
-    //
-    //    cout << endl;
-    //
-    //    cout << typeid(vec_t<float3, 2>).name() << endl;
-    //    cout << typeid(vec_t<float, 2>).name() << endl;
-    //    cout << typeid(vec_t<float4x4, 2>).name() << endl;
-    //    cout << typeid(vec_t<Float3, 2>).name() << endl;
-    //    cout << typeid(vec_t<Float, 2>).name() << endl;
-    //    cout << typeid(vec_t<Float4x4, 2>).name() << endl;
-    //
-    //    cout << endl;
-    //
-    //    cout << typeid(matrix_t<float3, 2>).name() << endl;
-    //    cout << typeid(matrix_t<float, 2>).name() << endl;
-    //    cout << typeid(matrix_t<float4x4, 2>).name() << endl;
-    //    cout << typeid(matrix_t<Float3, 2>).name() << endl;
-    //    cout << typeid(matrix_t<Float, 2>).name() << endl;
-    //    cout << typeid(matrix_t<Float4x4, 2>).name() << endl;
-    //
-    //    cout << typeid(boolean_t<Float>).name() << endl;
-    //    cout << typeid(boolean_t<float>).name() << endl;
-
-    return 0;
+int main() {
+    if (!test_to_underlying_runtime()) {
+        return EXIT_FAILURE;
+    }
+    if (!test_decay_swizzle_runtime()) {
+        return EXIT_FAILURE;
+    }
+    if (!test_general_vector_runtime()) {
+        return EXIT_FAILURE;
+    }
+    std::cout << "[test-trait] all checks passed" << std::endl;
+    return EXIT_SUCCESS;
 }

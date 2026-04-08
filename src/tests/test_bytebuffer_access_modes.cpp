@@ -54,8 +54,8 @@ int verify_output(const char *label, const vector<float4> &actual, const vector<
 int test_bytebuffer_param(Device &device, Stream &stream) {
     std::cout << "=== test_bytebuffer_param ===" << std::endl;
     constexpr uint count = 24u;
-    auto src = device.create_byte_buffer(count * sizeof(float4));
-    auto dst = device.create_byte_buffer(count * sizeof(float4));
+    auto src = device.create_byte_buffer(count * sizeof(float4), "test_bytebuffer_param_src");
+    auto dst = device.create_byte_buffer(count * sizeof(float4), "test_bytebuffer_param_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -88,8 +88,8 @@ int test_bytebuffer_param(Device &device, Stream &stream) {
 int test_bytebuffer_capture(Device &device, Stream &stream) {
     std::cout << "=== test_bytebuffer_capture ===" << std::endl;
     constexpr uint count = 24u;
-    auto src = device.create_byte_buffer(count * sizeof(float4));
-    auto dst = device.create_byte_buffer(count * sizeof(float4));
+    auto src = device.create_byte_buffer(count * sizeof(float4), "test_bytebuffer_capture_src");
+    auto dst = device.create_byte_buffer(count * sizeof(float4), "test_bytebuffer_capture_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -122,8 +122,8 @@ int test_bytebuffer_capture(Device &device, Stream &stream) {
 int test_bindless_bytebuffer_capture(Device &device, Stream &stream) {
     std::cout << "=== test_bindless_bytebuffer_capture ===" << std::endl;
     constexpr uint count = 24u;
-    auto src = device.create_byte_buffer(count * sizeof(float4));
-    auto dst = device.create_byte_buffer(count * sizeof(float4));
+    auto src = device.create_byte_buffer(count * sizeof(float4), "test_bindless_bytebuffer_capture_src");
+    auto dst = device.create_byte_buffer(count * sizeof(float4), "test_bindless_bytebuffer_capture_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -161,8 +161,8 @@ int test_bindless_bytebuffer_capture(Device &device, Stream &stream) {
 int test_bindless_bytebuffer_param(Device &device, Stream &stream) {
     std::cout << "=== test_bindless_bytebuffer_param ===" << std::endl;
     constexpr uint count = 24u;
-    auto src = device.create_byte_buffer(count * sizeof(float4));
-    auto dst = device.create_byte_buffer(count * sizeof(float4));
+    auto src = device.create_byte_buffer(count * sizeof(float4), "test_bindless_bytebuffer_param_src");
+    auto dst = device.create_byte_buffer(count * sizeof(float4), "test_bindless_bytebuffer_param_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {

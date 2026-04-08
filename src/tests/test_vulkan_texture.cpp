@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     TextureViewCreation texture_view = {};
     texture_view.mip_level_count = 0;
     texture_view.usage = TextureUsageFlags::ShaderReadOnly;
-    Texture3D texture = device.create_texture(&image, texture_view);
+    Texture3D texture = device.create_texture(&image, texture_view, "test_vulkan_texture_image");
 
     auto setup_quad = [&](Primitive& quad) {
         quad.set_vertex_shader(vertex_shader);

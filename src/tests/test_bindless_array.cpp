@@ -205,8 +205,8 @@ int test_bindless_buffer_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 16u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_bindless_buffer_read_write_src");
+    auto dst = device.create_buffer<float4>(count, "test_bindless_buffer_read_write_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -293,8 +293,8 @@ int test_bindless_buffer_inline_retrieve_regression(Device &device, Stream &stre
 
     auto shader = device.compile(kernel, "test_bindless_buffer_inline_retrieve_regression");
     for (uint iteration = 0; iteration < iterations; ++iteration) {
-        auto src = device.create_buffer<float4>(count);
-        auto dst = device.create_buffer<float4>(count);
+        auto src = device.create_buffer<float4>(count, "test_bindless_buffer_inline_retrieve_src");
+        auto dst = device.create_buffer<float4>(count, "test_bindless_buffer_inline_retrieve_dst");
         vector<float4> host_src(count);
         vector<float4> host_dst(count, make_float4(0.f));
         for (uint index = 0; index < count; ++index) {
@@ -350,8 +350,8 @@ int test_bindless_byte_buffer_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 12u;
-    auto src = device.create_byte_buffer(count * sizeof(float4));
-    auto dst = device.create_byte_buffer(count * sizeof(float4));
+    auto src = device.create_byte_buffer(count * sizeof(float4), "test_bindless_byte_buffer_read_write_src");
+    auto dst = device.create_byte_buffer(count * sizeof(float4), "test_bindless_byte_buffer_read_write_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -420,8 +420,8 @@ int test_bindless_aos_view_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 10u;
-    auto src = device.create_byte_buffer(count * sizeof(TestRecord));
-    auto dst = device.create_byte_buffer(count * sizeof(TestRecord));
+    auto src = device.create_byte_buffer(count * sizeof(TestRecord), "test_bindless_aos_view_read_write_src");
+    auto dst = device.create_byte_buffer(count * sizeof(TestRecord), "test_bindless_aos_view_read_write_dst");
     vector<TestRecord> host_src(count);
     vector<TestRecord> host_dst(count);
     for (uint index = 0; index < count; ++index) {
@@ -496,8 +496,8 @@ int test_bindless_soa_view_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 10u;
-    auto src = device.create_byte_buffer(count * sizeof(TestRecord));
-    auto dst = device.create_byte_buffer(count * sizeof(TestRecord));
+    auto src = device.create_byte_buffer(count * sizeof(TestRecord), "test_bindless_soa_view_read_write_src");
+    auto dst = device.create_byte_buffer(count * sizeof(TestRecord), "test_bindless_soa_view_read_write_dst");
     vector<TestRecord> host_records(count);
     for (uint index = 0; index < count; ++index) {
         host_records[index] = make_test_record(index + 20u);
@@ -584,7 +584,7 @@ int test_bindless_texture2d_sampling(Device &device, Stream &stream) {
     }
 
     auto tex = device.create_texture2d(res, PixelStorage::FLOAT4, "test_bindless_texture2d");
-    auto out = device.create_buffer<float4>(count);
+    auto out = device.create_buffer<float4>(count, "test_bindless_texture2d_out");
     tex.upload_immediately(host_texels.data());
 
     BindlessArray bindless = device.create_bindless_array();
@@ -667,7 +667,7 @@ int test_bindless_texture3d_sampling(Device &device, Stream &stream) {
     }
 
     auto tex = device.create_texture3d(res, PixelStorage::FLOAT4, "test_bindless_texture3d");
-    auto out = device.create_buffer<float4>(count);
+    auto out = device.create_buffer<float4>(count, "test_bindless_texture3d_out");
     tex.upload_immediately(host_texels.data());
 
     BindlessArray bindless = device.create_bindless_array();

@@ -88,8 +88,8 @@ static int test_buffer_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 64u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_soa_buffer_src");
+    auto dst = device.create_buffer<float4>(count, "test_soa_buffer_dst");
 
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
@@ -133,8 +133,8 @@ static int test_byte_buffer_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 32u;
-    auto src = device.create_byte_buffer(count * sizeof(float4));
-    auto dst = device.create_byte_buffer(count * sizeof(float4));
+    auto src = device.create_byte_buffer(count * sizeof(float4), "test_soa_byte_buffer_src");
+    auto dst = device.create_byte_buffer(count * sizeof(float4), "test_soa_byte_buffer_dst");
 
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
@@ -178,8 +178,8 @@ static int test_aos_view_var_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 24u;
-    auto src = device.create_byte_buffer(count * sizeof(TestRecord));
-    auto dst = device.create_byte_buffer(count * sizeof(TestRecord));
+    auto src = device.create_byte_buffer(count * sizeof(TestRecord), "test_soa_aos_src");
+    auto dst = device.create_byte_buffer(count * sizeof(TestRecord), "test_soa_aos_dst");
 
     vector<TestRecord> host_src(count);
     vector<TestRecord> host_dst(count);
@@ -222,8 +222,8 @@ static int test_soa_view_var_read_write(Device &device, Stream &stream) {
     int failures = 0;
 
     constexpr uint count = 24u;
-    auto src = device.create_byte_buffer(count * sizeof(TestRecord));
-    auto dst = device.create_byte_buffer(count * sizeof(TestRecord));
+    auto src = device.create_byte_buffer(count * sizeof(TestRecord), "test_soa_soa_src");
+    auto dst = device.create_byte_buffer(count * sizeof(TestRecord), "test_soa_soa_dst");
 
     vector<TestRecord> host_records(count);
     for (uint index = 0; index < count; ++index) {

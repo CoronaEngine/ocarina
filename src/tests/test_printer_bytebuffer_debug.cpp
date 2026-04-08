@@ -40,7 +40,7 @@ template<typename Shader, typename... Args>
 
 [[nodiscard]] int run_buffer_control(Device &device, Stream &stream) {
     std::cout << "=== run_buffer_control ===" << std::endl;
-    auto buffer = device.create_buffer<float4>(2u);
+    auto buffer = device.create_buffer<float4>(2u, "test_printer_buffer_control");
     vector<float4> host = {
         make_float4(1.f, 2.f, 3.f, 4.f),
         make_float4(5.f, 6.f, 7.f, 8.f)};
@@ -71,7 +71,7 @@ template<typename Shader, typename... Args>
 
 [[nodiscard]] int run_byte_buffer_repro(Device &device, Stream &stream) {
     std::cout << "=== run_byte_buffer_repro ===" << std::endl;
-    auto buffer = device.create_byte_buffer(2u * sizeof(float4));
+    auto buffer = device.create_byte_buffer(2u * sizeof(float4), "test_printer_byte_buffer_repro");
     vector<float4> host = {
         make_float4(11.f, 12.f, 13.f, 14.f),
         make_float4(21.f, 22.f, 23.f, 24.f)};
@@ -105,8 +105,8 @@ template<typename Shader, typename... Args>
     std::cout << "=== run_bindless_byte_buffer_then_printer_repro ===" << std::endl;
 
     constexpr uint count = 2u;
-    auto src = device.create_byte_buffer(count * sizeof(float4));
-    auto dst = device.create_byte_buffer(count * sizeof(float4));
+    auto src = device.create_byte_buffer(count * sizeof(float4), "test_printer_bindless_byte_buffer_src");
+    auto dst = device.create_byte_buffer(count * sizeof(float4), "test_printer_bindless_byte_buffer_dst");
     vector<float4> host_src = {
         make_float4(31.f, 32.f, 33.f, 34.f),
         make_float4(41.f, 42.f, 43.f, 44.f)};

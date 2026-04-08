@@ -78,7 +78,7 @@ RHIMesh create_cube_mesh(Device &device, Stream &stream) {
     Buffer triangle_buffer = device.create_buffer<Triangle>(triangles.size(), "test_accel_update_triangles");
     stream << vertex_buffer.upload_sync(vertices.data());
     stream << triangle_buffer.upload_sync(triangles.data());
-    RHIMesh mesh = device.create_mesh(vertex_buffer.view(), triangle_buffer.view());
+    RHIMesh mesh = device.create_mesh(vertex_buffer.view(), triangle_buffer.view(), FAST_TRACE, DISABLE_ANYHIT);
     stream << mesh.build_bvh();
     stream << synchronize() << commit();
     return mesh;
@@ -152,7 +152,7 @@ void expect_front_face_sample(Device &device, const Accel &accel, float translat
 void test_fast_trace_build(Device &device) {
     Stream stream = device.create_stream();
     RHIMesh mesh = create_cube_mesh(device, stream);
-    Accel accel = device.create_accel();
+    Accel accel = device.create_accel(FAST_TRACE);
     accel.add_instance(ocarina::move(mesh), make_float4x4(1.f));
     stream << accel.build_bvh();
     stream << synchronize() << commit();
@@ -164,7 +164,7 @@ void test_fast_trace_build(Device &device) {
 void test_fast_trace_update_command_falls_back_to_build(Device &device) {
     Stream stream = device.create_stream();
     RHIMesh mesh = create_cube_mesh(device, stream);
-    Accel accel = device.create_accel();
+    Accel accel = device.create_accel(FAST_TRACE);
     accel.add_instance(ocarina::move(mesh), make_float4x4(1.f));
     stream << accel.build_bvh();
     stream << synchronize() << commit();

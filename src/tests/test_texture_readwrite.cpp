@@ -148,7 +148,7 @@ int test_texture_sample(Device &device, Stream &stream) {
     }
 
     auto tex = device.create_texture2d(res, PixelStorage::FLOAT4, "test_texture_sample_src");
-    auto out = device.create_buffer<float4>(sample_count);
+    auto out = device.create_buffer<float4>(sample_count, "test_texture_sample_out");
     tex.upload_immediately(host_src.data());
 
     Kernel kernel = [&](Texture2DVar input, BufferVar<float4> output, Uint count) {

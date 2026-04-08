@@ -54,8 +54,8 @@ int verify_output(const char *label, const vector<float4> &actual, const vector<
 int test_buffer_param(Device &device, Stream &stream) {
     std::cout << "=== test_buffer_param ===" << std::endl;
     constexpr uint count = 32u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_buffer_param_src");
+    auto dst = device.create_buffer<float4>(count, "test_buffer_param_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -87,8 +87,8 @@ int test_buffer_param(Device &device, Stream &stream) {
 int test_buffer_capture(Device &device, Stream &stream) {
     std::cout << "=== test_buffer_capture ===" << std::endl;
     constexpr uint count = 32u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_buffer_capture_src");
+    auto dst = device.create_buffer<float4>(count, "test_buffer_capture_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -120,8 +120,8 @@ int test_buffer_capture(Device &device, Stream &stream) {
 int test_bindless_buffer_capture(Device &device, Stream &stream) {
     std::cout << "=== test_bindless_buffer_capture ===" << std::endl;
     constexpr uint count = 32u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_bindless_buffer_capture_src");
+    auto dst = device.create_buffer<float4>(count, "test_bindless_buffer_capture_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -158,8 +158,8 @@ int test_bindless_buffer_capture(Device &device, Stream &stream) {
 int test_bindless_buffer_param(Device &device, Stream &stream) {
     std::cout << "=== test_bindless_buffer_param ===" << std::endl;
     constexpr uint count = 32u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_bindless_buffer_param_src");
+    auto dst = device.create_buffer<float4>(count, "test_bindless_buffer_param_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {

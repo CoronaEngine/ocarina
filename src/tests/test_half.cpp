@@ -2,126 +2,138 @@
 // Created by z on 21/01/2026.
 //
 
-#include <utility>
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <limits>
+#include <type_traits>
+
 #include "core/stl.h"
 #include "dsl/dsl.h"
-#include "dsl/polymorphic.h"
-#include "dsl/dsl.h"
+#include "math/basic_traits.h"
 #include "rhi/common.h"
 #include "rhi/context.h"
-#include <type_traits>
 
 using namespace ocarina;
 
-//template<typename A, typename B, typename C>
-//requires any_device_type_v<A, B, C> && requires { lerp(remove_device_t<A>{}, remove_device_t<B>{}, remove_device_t<B>{}); }
-//[[nodiscard]] auto lerp(const A &a, const B &b, const C &c) noexcept {
-//    static constexpr auto dimension = std::max({type_dimension_v<remove_device_t<A>>, type_dimension_v<remove_device_t<B>>, type_dimension_v<remove_device_t<C>>});
-//    using scalar_type = type_element_t<remove_device_t<A>>;
-//    using var_type = Var<general_vector_t<scalar_type, dimension>>;
-//    static_assert(dimension == 3);
-//    return MemberAccessor::lerp<var_type>(a, b, a);
-//}
-//
-//template<typename A, typename B, typename C>
-//requires any_device_type_v<A, B, C> && requires { lerp(remove_device_t<A>{}, remove_device_t<B>{}, remove_device_t<B>{}); }
-// auto lerp(const A &a, const B &b, const C &c) noexcept {
-//    static constexpr auto dimension = std::max({type_dimension_v<remove_device_t<A>>, type_dimension_v<remove_device_t<B>>, type_dimension_v<remove_device_t<C>>});
-//    using scalar_type = type_element_t<remove_device_t<A>>;
-//    using var_type = Var<general_vector_t<scalar_type, dimension>>;
-//    return MemberAccessor::lerp<var_type>(
-//
-//
-//        to_general_vector<dimension>(a),
-//        to_general_vector<dimension>(b),
-////        to_general_vector<dimension>(c),
-//            to_general_vector<dimension>(c));
-//}
+namespace {
+
+template<typename T>
+[[nodiscard]] bool close_enough(T lhs, T rhs, float eps = 1e-3f) {
+        return std::abs(static_cast<float>(lhs) - static_cast<float>(rhs)) <= eps;
+}
+
+[[nodiscard]] bool check_impl(bool condition, string_view message) {
+        if (!condition) {
+                std::cerr << "[FAIL] " << message << std::endl;
+                return false;
+        }
+        return true;
+}
+
+#define CHECK(...)                                \
+        do {                                          \
+                if (!check_impl((__VA_ARGS__), #__VA_ARGS__)) { \
+                        return false;                         \
+                }                                         \
+        } while (false)
+
+static_assert(is_half_v<half>);
+static_assert(is_floating_point_v<half>);
+static_assert(is_scalar_v<half>);
+static_assert(is_half_vector_v<half2>);
+static_assert(is_half_vector2_v<half2>);
+static_assert(is_half_vector3_v<half3>);
+static_assert(is_half_vector4_v<half4>);
+static_assert(is_general_half_vector_v<half3>);
+static_assert(std::is_same_v<vector_element_t<half3>, half>);
+static_assert(std::is_same_v<type_element_t<half4>, half>);
+static_assert(std::is_same_v<binary_op_half_target_t<int>, half>);
+static_assert(std::is_same_v<binary_op_half_target_t<float>, float>);
+static_assert(std::is_same_v<decltype(half{} + int{}), half>);
+static_assert(std::is_same_v<decltype(float{} + half{}), float>);
+
+[[nodiscard]] bool test_host_half() {
+        half value = 1.5f;
+        CHECK(close_enough(static_cast<float>(value), 1.5f));
+
+        half sum = half(1.25f) + half(2.5f);
+        CHECK(close_enough(static_cast<float>(sum), 3.75f));
+
+        half scaled = half(3.f) * 2;
+        CHECK(close_enough(static_cast<float>(scaled), 6.f));
+
+        float mixed = 1.0f + half(2.5f);
+        CHECK(close_enough(mixed, 3.5f));
+
+        CHECK(half(3.f) > half(2.f));
+        CHECK(half(3.f) >= 3);
+        CHECK(half(1.f) != half(2.f));
+        CHECK(static_cast<bool>(half(1.f)));
+        CHECK(!static_cast<bool>(half(0.f)));
+
+        half inf = std::numeric_limits<float>::infinity();
+        CHECK(inf.is_inf());
+        CHECK(!inf.is_nan());
+
+        half nan = std::numeric_limits<float>::quiet_NaN();
+        CHECK(nan.is_nan());
+        CHECK(nan != nan);
+
+        return true;
+}
+
+[[nodiscard]] bool test_device_half() {
+        RHIContext &context = RHIContext::instance();
+        Device device = context.create_device("cuda");
+        device.init_rtx();
+        Stream stream = device.create_stream();
+
+        Buffer<float4> output = device.create_buffer<float4>(2u, "test_half_results");
+        vector<float4> host(2u, make_float4(0.f));
+
+        Kernel kernel = [&](BufferVar<float4> result) {
+                Half scalar = 4.f;
+                Half3 vec = make_float3(1.5f, 2.5f, 3.5f);
+                Half3 offset = make_float3(0.5f, 0.5f, 0.5f);
+
+                result.write(0u, make_float4(cast<float>(sqrt(scalar)),
+                                                                         cast<float>(scalar + Half(2.f)),
+                                                                         cast<float>(vec.x),
+                                                                         cast<float>(select(true, Half(5.f), Half(1.f)))));
+                result.write(1u, make_float4(cast<float>((Half(3.f) * Half(2.f))),
+                                                                         cast<float>((Half(7.f) / 2)),
+                                             cast<float>(Half(8.f) * Half(0.25f)),
+                                                                         cast<float>((vec + offset).z)));
+        };
+
+        auto shader = device.compile(kernel, "test_half_device");
+        stream << shader(output).dispatch(1u)
+                   << output.download(host.data())
+                   << synchronize()
+                   << commit();
+
+        CHECK(close_enough(host[0].x, 2.f));
+        CHECK(close_enough(host[0].y, 6.f));
+        CHECK(close_enough(host[0].z, 1.5f));
+        CHECK(close_enough(host[0].w, 5.f));
+        CHECK(close_enough(host[1].x, 6.f));
+        CHECK(close_enough(host[1].y, 3.5f));
+        CHECK(close_enough(host[1].z, 2.f));
+        CHECK(close_enough(host[1].w, 4.f));
+
+        return true;
+}
+
+}// namespace
 
 int main() {
-    RHIContext &context = RHIContext::instance();
-    Device device = context.create_device("cuda");
-    device.init_rtx();
-    Stream stream = device.create_stream();
-    Env::printer().init(device);
-
-    auto ts = TypeDesc<half3x3>::name();
-
-    float3 h3;
-    half3x3 h33;
-
-    auto rrr = int{-1} + uint{0};
-
-    auto re = uint3{}.x + int3{1,2,3}.xyz();
-
-    auto lll = lerp(float{} ,float3 {}, float3{});
-
-    auto res = h33 * float{};
-
-    Buffer<float3> buffer = device.create_buffer<float3>(1);
-
-    bool b = static_cast<bool>(half{});
-
-
-    Kernel kernel = [&](Float f) {
-//        $info("{} ", f);
-        ocarina::sqrt(Half{});
-//        Uint3 a = make_uint3(3);
-//        Int3 b ;
-//        b = a;
-
-        float3 f3 = make_float3(1.6f,5.f, 9.f);
-        Half3 h3 = make_float3(1.9f, 2.f, 3.f);
-        Half3 t3 = make_float3(0.5f, 0.5f, 0.5f);
-
-        auto aaa = lerp(1.f,h3, h3 - h3);
-
-//        buffer.write(0, h3);
-//        Float4 f4 = make_float4(h3,half( 1.f));
-//        h3 = f3;
-
-        h3 = f3.xyz();
-
-
-
-        auto bbb = ocarina::select(bool3{} , half3{} , float3{});
-
-//        auto a3 = ocarina::select(make_bool3(1,0,1).xyz(), uint3{5,6,7}, float3{1,2,3}.xyz());
-
-//        auto re = f3.x * h3.xyz() ;
-
-//        re = h3.xxx();
-
-//      $info("------  {} {} {} ", Uint3{});
-      $info("---  {} {} {} ", sqrt(h3) );
-      $info("------==  {} {} {} ", aaa);
-    };
-    auto shader = device.compile(kernel);
-    stream << shader(6.f).dispatch(1) << Env::printer().retrieve();
-    stream << synchronize() << commit();
-
-    half h = 0.66f;
-
-
-
-
-
-//    float3 f3 = make_float3(1.f, 2.f, 3.f);
-//    half3 h2(f3);
-//    auto m = ocarina::max(h2, h2);
-//
-//    float3x3 f3x3 = make_float3x3(3.f);
-//    half3x3 h3x3(f3x3);
-//    cout << to_str(m) << endl;
-//    cout << to_str(h3x3 * h3x3) << endl;
-//
-//    h = 100.66;
-//    auto a = 1.f+h ;
-//
-//    cout << 1 + h << endl;
-//    cout << h + h << endl;
-//    cout << (h += h) << endl;
-////    cout <<  (h+=2) ;
-
-    return 0;
+        if (!test_host_half()) {
+                return EXIT_FAILURE;
+        }
+        if (!test_device_half()) {
+                return EXIT_FAILURE;
+        }
+        std::cout << "[test-half] all checks passed" << std::endl;
+        return EXIT_SUCCESS;
 }

@@ -135,10 +135,10 @@ int test_device_swizzle(Device &device, Stream &stream) {
         host_input[index] = make_input(index);
     }
 
-    Buffer<float4> input = device.create_buffer<float4>(count);
-    Buffer<float2> out2 = device.create_buffer<float2>(count);
-    Buffer<float3> out3 = device.create_buffer<float3>(count);
-    Buffer<float4> out4 = device.create_buffer<float4>(count);
+    Buffer<float4> input = device.create_buffer<float4>(count, "test_swizzle_input");
+    Buffer<float2> out2 = device.create_buffer<float2>(count, "test_swizzle_out2");
+    Buffer<float3> out3 = device.create_buffer<float3>(count, "test_swizzle_out3");
+    Buffer<float4> out4 = device.create_buffer<float4>(count, "test_swizzle_out4");
     input.upload_immediately(host_input.data());
 
     Kernel kernel = [&](BufferVar<float4> src,

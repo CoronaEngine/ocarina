@@ -75,8 +75,8 @@ template<typename Shader, typename... Args>
 [[nodiscard]] int run_bindless_typed_buffer_staged_printer(Device &device, Stream &stream) {
     std::cout << "=== run_bindless_typed_buffer_staged_printer ===" << std::endl;
     constexpr uint count = 16u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_printer_bindless_staged_src");
+    auto dst = device.create_buffer<float4>(count, "test_printer_bindless_staged_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
@@ -137,8 +137,8 @@ template<typename Shader, typename... Args>
 [[nodiscard]] int run_bindless_typed_buffer_in_kernel_printer(Device &device, Stream &stream) {
     std::cout << "=== run_bindless_typed_buffer_in_kernel_printer ===" << std::endl;
     constexpr uint count = 16u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_printer_bindless_kernel_src");
+    auto dst = device.create_buffer<float4>(count, "test_printer_bindless_kernel_dst");
     vector<float4> host_src(count);
     for (uint index = 0; index < count; ++index) {
         host_src[index] = make_input(index);
@@ -192,8 +192,8 @@ template<typename Shader, typename... Args>
 [[nodiscard]] int run_bindless_typed_buffer_inline_retrieve(Device &device, Stream &stream) {
     std::cout << "=== run_bindless_typed_buffer_inline_retrieve ===" << std::endl;
     constexpr uint count = 16u;
-    auto src = device.create_buffer<float4>(count);
-    auto dst = device.create_buffer<float4>(count);
+    auto src = device.create_buffer<float4>(count, "test_printer_bindless_inline_src");
+    auto dst = device.create_buffer<float4>(count, "test_printer_bindless_inline_dst");
     vector<float4> host_src(count);
     vector<float4> host_dst(count, make_float4(0.f));
     for (uint index = 0; index < count; ++index) {
