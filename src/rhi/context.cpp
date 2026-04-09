@@ -12,8 +12,7 @@ namespace ocarina {
 #ifdef _MSC_VER
 static constexpr string_view backend_prefix = "ocarina-backend-";
 #else
-static constexpr string_view window_lib_prefix = "libocarina-backend-";
-static constexpr string_view window_lib_name = "libocarina-window-";
+static constexpr string_view backend_prefix = "libocarina-backend-";
 #endif
 
 namespace detail {
