@@ -10,6 +10,10 @@
 #include "core/util.h"
 #include "dsl/dsl.h"
 
+#ifndef OCARINA_CUDA_USE_FLOAT32
+#define OCARINA_CUDA_USE_FLOAT32 1
+#endif
+
 namespace ocarina {
 
 std::string get_cuda_path() {
@@ -40,6 +44,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
     OC_NVRTC_CHECK(nvrtcVersion(&ver_major, &ver_minor));
     int nvrtc_version = ver_major * 10000 + ver_minor * 100;
     auto nvrtc_option = fmt::format("-DLC_NVRTC_VERSION={}", nvrtc_version);
+    auto real_option = fmt::format("-DOCARINA_CUDA_USE_FLOAT32={}", OCARINA_CUDA_USE_FLOAT32 ? 1 : 0);
     std::vector header_names{"cuda_device_std.h", "cuda_device_scalar.h", "cuda_device_vector.h",
                              "cuda_device_matrix.h", "cuda_device_builtin.h", "cuda_vector_func.h",
                              "cuda_device_math.h", "cuda_matrix_func.h", "cuda_device_resource.h"};
@@ -72,6 +77,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
         const_option.c_str(),
         rt_option.c_str(),
         nvrtc_option.c_str(),
+        real_option.c_str(),
         "-default-device",
         "--use_fast_math",
         "-restrict",

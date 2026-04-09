@@ -87,6 +87,7 @@ template<typename T, size_t N, size_t M, typename... Args>
 
 OC_MAKE_MATRICES_FOR_TYPE(float)
 OC_MAKE_MATRICES_FOR_TYPE(half)
+OC_MAKE_MATRICES_FOR_TYPE(real)
 
 #undef OC_MAKE_MATRICES_FOR_TYPE
 #undef OC_MAKE_MATRIX
@@ -129,6 +130,7 @@ OC_MAKE_MATRICES_FOR_TYPE(half)
 
 OC_MAKE_MATRIX_CONVERTERS(float)
 OC_MAKE_MATRIX_CONVERTERS(half)
+OC_MAKE_MATRIX_CONVERTERS(real)
 
 #undef OC_MAKE_MATRIX_CONVERTERS
 
@@ -249,6 +251,7 @@ template<typename T, typename S, size_t N, size_t M>
 
 OC_MAKE_MATRICES_FOR_TYPE(float)
 OC_MAKE_MATRICES_FOR_TYPE(half)
+OC_MAKE_MATRICES_FOR_TYPE(real)
 
 template<typename T, size_t N, size_t M>
 [[nodiscard]] constexpr ocarina::Matrix<T, M, N> oc_transpose(const ocarina::Matrix<T, N, M> &mat) noexcept {

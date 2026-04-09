@@ -3,6 +3,10 @@
 
 #include <cuda_fp16.h>
 
+#ifndef OCARINA_CUDA_USE_FLOAT32
+#define OCARINA_CUDA_USE_FLOAT32 1
+#endif
+
 using oc_int = int;
 using oc_uint = unsigned int;
 using oc_half = half;
@@ -11,6 +15,14 @@ using oc_bool = bool;
 using oc_uchar = unsigned char;
 using oc_ushort = unsigned short;
 using oc_ulong = unsigned long long;
+
+#if OCARINA_CUDA_USE_FLOAT32
+using oc_real = oc_float;
+#else
+using oc_real = oc_half;
+#endif
+
+using real = oc_real;
 
 #define OC_DEFINE_TEMPLATE_VALUE(template_name) \
     template<typename T>                        \
@@ -34,6 +46,7 @@ using ulong = unsigned long long;
 using ushort = unsigned short;
 using uchar = unsigned char;
 using uint = unsigned int;
+using real = oc_real;
 
 template<typename... Ts>
 struct always_false {
