@@ -3,7 +3,6 @@
 //
 
 #include "pyexporter/ocapi.h"
-#include "GUI/window.h"
 #include "rhi/context.h"
 
 namespace py = pybind11;

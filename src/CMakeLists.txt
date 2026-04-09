@@ -9,9 +9,7 @@ add_subdirectory(ast)
 add_subdirectory(dsl)
 add_subdirectory(generator)
 add_subdirectory(rhi)
-add_subdirectory(GUI)
 add_subdirectory(backends)
-add_subdirectory(GUI_impl)
 add_subdirectory(framework)
 
 if (${OCARINA_PY})
@@ -26,11 +24,8 @@ target_link_libraries(ocarina-native INTERFACE
         ocarina-generator
         ocarina-backend
         ocarina-rhi
-        ocarina-GUI
         ocarina-core
         ocarina-framework)
-
-add_dependencies(ocarina-native ocarina-GUI_impl)
 
 add_library(ocarina SHARED main.cpp)
 target_link_libraries(ocarina ocarina-native)

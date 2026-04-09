@@ -40,13 +40,7 @@ target_link_libraries(ocarina-ext PUBLIC spdlog)
 
 add_subdirectory(glfw)
 add_subdirectory(imgui)
-add_library(glfw_config INTERFACE)
-target_link_libraries(glfw_config INTERFACE glfw)
-
 add_subdirectory(stblib)
-
-add_library(ocarina-gui-ext INTERFACE)
-target_link_libraries(ocarina-gui-ext INTERFACE glfw_config ocarina-imgui)
 
 add_subdirectory(SDL)
 set_property(TARGET SDL_uclibc PROPERTY FOLDER "ocarina/ext/SDL3")

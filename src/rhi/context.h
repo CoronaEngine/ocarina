@@ -7,7 +7,6 @@
 #include "core/header.h"
 #include "core/stl.h"
 #include "core/concepts.h"
-#include "rhi/window_types.h"
 #include "core/dynamic_module.h"
 #include "graphics_descriptions.h"
 
@@ -49,8 +48,6 @@ public:
     void unload_module(void *handle) noexcept;
     [[nodiscard]] Device create_device(const string &backend_name, const ocarina::InstanceCreation &instance_creation) noexcept;
     [[nodiscard]] Device create_device(const string &backend_name) noexcept;
-    [[nodiscard]] WindowWrapper create_window(const char *name, uint2 initial_size, WindowLibrary library, const char *type = "imgui", bool resizable = false);
-    [[nodiscard]] WindowWrapper create_window(const char *name, uint2 initial_size, const char *type = "gl", bool resizable = false);
 };
 
 }// namespace ocarina

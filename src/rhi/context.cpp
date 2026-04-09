@@ -11,7 +11,6 @@ namespace ocarina {
 
 #ifdef _MSC_VER
 static constexpr string_view backend_prefix = "ocarina-backend-";
-static constexpr string_view window_lib_prefix = "ocarina-GUI_impl-";
 #else
 static constexpr string_view window_lib_prefix = "libocarina-backend-";
 static constexpr string_view window_lib_name = "libocarina-window-";
@@ -41,10 +40,6 @@ bool create_directory_if_necessary(const fs::path &path) {
 
 [[nodiscard]] std::string backend_full_name(const string &name) {
     return string(backend_prefix) + name;
-}
-
-[[nodiscard]] string window_name(const string &name) {
-    return string(window_lib_prefix) + name;
 }
 }// namespace detail
 
@@ -172,20 +167,6 @@ Device RHIContext::create_device(const string &backend_name) noexcept {
     }
     auto destroy_func = reinterpret_cast<Device::Deleter *>(d->function_ptr("destroy"));
     return Device{Device::Handle{create_device(this), destroy_func}};
-}
-
-WindowWrapper RHIContext::create_window(const char *name, uint2 initial_size, WindowLibrary library, const char *type, bool resizable) {
-    auto d = obtain_module(dynamic_module_name(detail::window_name(type)));
-    auto create_window = reinterpret_cast<WindowCreator *>(d->function_ptr("create"));
-    auto destroy_func = reinterpret_cast<WindowDeleter *>(d->function_ptr("destroy"));
-    return WindowWrapper(create_window(name, initial_size, library, resizable), destroy_func);
-}
-
-WindowWrapper RHIContext::create_window(const char *name, uint2 initial_size, const char *type, bool resizable) {
-    auto d = obtain_module(dynamic_module_name(detail::window_name(type)));
-    auto create_window = reinterpret_cast<WindowCreator *>(d->function_ptr("create"));
-    auto destroy_func = reinterpret_cast<WindowDeleter *>(d->function_ptr("destroy"));
-    return WindowWrapper(create_window(name, initial_size, WindowLibrary::GLFW, resizable), destroy_func);
 }
 
 }// namespace ocarina
