@@ -7,7 +7,7 @@
 #include "core/header.h"
 #include "core/stl.h"
 #include "core/concepts.h"
-#include "GUI/decl.h"
+#include "rhi/window_types.h"
 #include "core/dynamic_module.h"
 #include "graphics_descriptions.h"
 
