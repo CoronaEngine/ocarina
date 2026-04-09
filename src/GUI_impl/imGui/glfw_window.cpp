@@ -236,11 +236,13 @@ void GLWindow::_end_frame() noexcept {
     if (!should_close()) {
         Window::_end_frame();
         // background
-        ImVec2 background_size{
-            static_cast<float>(texture_->size().x),
-            static_cast<float>(texture_->size().y)};
-        ImGui::GetBackgroundDrawList()->AddImage(
-                reinterpret_cast<ImTextureID>(static_cast<uint64_t>(texture_->tex_handle())), {}, background_size);
+        if (background_visible_) {
+            ImVec2 background_size{
+                static_cast<float>(texture_->size().x),
+                static_cast<float>(texture_->size().y)};
+            ImGui::GetBackgroundDrawList()->AddImage(
+                    reinterpret_cast<ImTextureID>(static_cast<uint64_t>(texture_->tex_handle())), {}, background_size);
+        }
         // rendering
         ImGui::Render();
         int display_w, display_h;
@@ -248,6 +250,14 @@ void GLWindow::_end_frame() noexcept {
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color_.x, clear_color_.y, clear_color_.z, clear_color_.w);
         glClear(GL_COLOR_BUFFER_BIT);
+        if (auto &&cb = render_callback_) {
+            cb();
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            glDisable(GL_SCISSOR_TEST);
+            glBindVertexArray(0u);
+            glUseProgram(0u);
+        }
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(handle_);
     }

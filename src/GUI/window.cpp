@@ -60,6 +60,11 @@ Window &Window::set_end_frame_callback(Window::EndFrame cb) noexcept {
     return *this;
 }
 
+Window &Window::set_render_callback(Window::RenderCallback cb) noexcept {
+    render_callback_ = std::move(cb);
+    return *this;
+}
+
 void Window::_begin_frame() noexcept {
     if (auto &&cb = begin_frame_callback_) { cb(); }
 }

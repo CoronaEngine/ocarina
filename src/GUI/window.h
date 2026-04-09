@@ -18,6 +18,7 @@ public:
     using UpdateCallback = ocarina::function<void(double)>;
     using BeginFrame = ocarina::function<void()>;
     using EndFrame = ocarina::function<void()>;
+    using RenderCallback = ocarina::function<void()>;
 
 protected:
     MouseButtonCallback mouse_button_callback_;
@@ -27,7 +28,9 @@ protected:
     ScrollCallback scroll_callback_;
     BeginFrame begin_frame_callback_;
     EndFrame end_frame_callback_;
+    RenderCallback render_callback_;
     float4 clear_color_{make_float4(0, 0, 0, 0)};
+    bool background_visible_{true};
     bool resizable_{false};
     Clock clock_;
     double dt_{};
@@ -64,6 +67,12 @@ public:
     virtual Window &set_scroll_callback(ScrollCallback cb) noexcept;
     virtual Window &set_begin_frame_callback(BeginFrame cb) noexcept;
     virtual Window &set_end_frame_callback(EndFrame cb) noexcept;
+    virtual Window &set_render_callback(RenderCallback cb) noexcept;
+    virtual Window &set_background_visible(bool visible) noexcept {
+        background_visible_ = visible;
+        return *this;
+    }
+    [[nodiscard]] bool background_visible() const noexcept { return background_visible_; }
     virtual void download_background(float4 *data) const noexcept {
         OC_NOT_IMPLEMENT_ERROR(download_background);
     }
