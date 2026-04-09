@@ -84,7 +84,6 @@ endif()
 
 target_link_libraries(ocarina-ext
         PUBLIC
-        ocarina-gui-ext
         ocarina-ext-stb
         ${PYTHON_LIBRARIES}
         xxhash

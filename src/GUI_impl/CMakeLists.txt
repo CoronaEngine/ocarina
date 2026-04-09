@@ -8,7 +8,7 @@ function(ocarina_add_window_plugin name)
     cmake_parse_arguments(PLUGIN "" "CATEGORY" "SOURCES" ${ARGN})
     set(lib_name ocarina-${PLUGIN_CATEGORY}-${name})
     add_library(${lib_name} MODULE ${PLUGIN_SOURCES})
-    target_link_libraries(${lib_name} PRIVATE ocarina-GUI ocarina-rhi)
+    target_link_libraries(${lib_name} PRIVATE ocarina-GUI ocarina-rhi ocarina-gui-ext)
     set(category ocarina-${PLUGIN_CATEGORY})
     add_dependencies(${category} ${lib_name})
 
