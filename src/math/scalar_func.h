@@ -12,34 +12,76 @@
 
 namespace ocarina {
 
-// math
-using std::abs;
-using std::acos;
-using std::acosh;
-using std::asin;
-using std::asinh;
-using std::atan;
-using std::atan2;
-using std::atanh;
-using std::ceil;
-using std::copysign;
-using std::cos;
-using std::cosh;
-using std::exp;
-using std::exp2;
-using std::floor;
-using std::fma;
-using std::fmod;
-using std::log;
-using std::log10;
-using std::log2;
-using std::pow;
-using std::round;
+#define OC_WRAP_STD_UNARY_SCALAR_FUNC(func)                  \
+    template<typename T>                                     \
+    requires is_scalar_v<T>                                  \
+    [[nodiscard]] constexpr auto func(const T &v) noexcept { \
+        if constexpr (is_half_v<T> || is_real_v<T>) {        \
+            return T(std::func(static_cast<float>(v)));      \
+        } else {                                             \
+            return std::func(v);                             \
+        }                                                    \
+    }
+
+#define OC_WRAP_STD_BINARY_SCALAR_FUNC(func)                                 \
+    template<typename T>                                                     \
+    requires is_scalar_v<T>                                                  \
+    [[nodiscard]] constexpr auto func(const T &lhs, const T &rhs) noexcept { \
+        if constexpr (is_half_v<T> || is_real_v<T>) {                        \
+            return T(std::func(static_cast<float>(lhs),                      \
+                               static_cast<float>(rhs)));                    \
+        } else {                                                             \
+            return std::func(lhs, rhs);                                      \
+        }                                                                    \
+    }
+
+#define OC_WRAP_STD_TERNARY_SCALAR_FUNC(func)                                        \
+    template<typename T>                                                             \
+    requires is_scalar_v<T>                                                          \
+    [[nodiscard]] constexpr auto func(const T &x, const T &y, const T &z) noexcept { \
+        if constexpr (is_half_v<T> || is_real_v<T>) {                                \
+            return T(std::func(static_cast<float>(x),                                \
+                               static_cast<float>(y),                                \
+                               static_cast<float>(z)));                              \
+        } else {                                                                     \
+            return std::func(x, y, z);                                               \
+        }                                                                            \
+    }
+
+OC_WRAP_STD_UNARY_SCALAR_FUNC(abs)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(acos)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(acosh)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(asin)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(asinh)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(atan)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(atanh)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(ceil)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(cos)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(cosh)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(exp)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(exp2)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(floor)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(log)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(log10)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(log2)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(round)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(sin)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(sinh)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(tan)
+OC_WRAP_STD_UNARY_SCALAR_FUNC(tanh)
+
+OC_WRAP_STD_BINARY_SCALAR_FUNC(atan2)
+OC_WRAP_STD_BINARY_SCALAR_FUNC(copysign)
+OC_WRAP_STD_BINARY_SCALAR_FUNC(fmod)
+OC_WRAP_STD_BINARY_SCALAR_FUNC(pow)
+
+OC_WRAP_STD_TERNARY_SCALAR_FUNC(fma)
+
+#undef OC_WRAP_STD_TERNARY_SCALAR_FUNC
+#undef OC_WRAP_STD_BINARY_SCALAR_FUNC
+#undef OC_WRAP_STD_UNARY_SCALAR_FUNC
+
 using std::roundf;
-using std::sin;
-using std::sinh;
-using std::tan;
-using std::tanh;
 
 template<typename T>
 requires ocarina::is_scalar_v<T>
@@ -130,11 +172,7 @@ template<typename T>
 requires is_floating_point_v<T>
 [[nodiscard]] constexpr auto
 fract(const T &v) {
-    return v - floorf(v);
-}
-
-[[nodiscard]] constexpr auto fract(half v) {
-    return float2half(fract(half2float(v)));
+    return v - floor(v);
 }
 
 [[nodiscard]] inline float mod(float x, float y) {

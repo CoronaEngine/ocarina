@@ -17,6 +17,7 @@ class OC_RHI_API BindlessArray : public RHIResource {
 public:
     class Impl {
     public:
+        virtual ~Impl() = default;
         static constexpr auto c_max_slot_num = 50000;
 
         virtual size_t emplace_buffer(handle_ty handle, uint offset_in_byte,
