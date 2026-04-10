@@ -17,6 +17,8 @@ to_underlying(T e) noexcept {
     return static_cast<std::underlying_type_t<T>>(e);
 }
 class half;
+class real;
+
 using uint = uint32_t;
 using ulong = uint64_t;
 using uchar = unsigned char;
@@ -46,7 +48,11 @@ using is_float = std::is_same<std::remove_cvref_t<T>, float>;
 OC_DEFINE_TEMPLATE_VALUE(is_float)
 
 template<typename T>
-using is_floating_point = std::disjunction<is_half<T>, is_float<T>>;
+using is_real = std::is_same<std::remove_cvref_t<T>, real>;
+OC_DEFINE_TEMPLATE_VALUE(is_real)
+
+template<typename T>
+using is_floating_point = std::disjunction<is_half<T>, is_float<T>, is_real<T>>;
 
 template<typename T>
 constexpr auto is_floating_point_v = is_floating_point<T>::value;
@@ -175,6 +181,7 @@ MAKE_TYPE_TRAITS(number)
 MAKE_TYPE_TRAITS(integral)
 MAKE_TYPE_TRAITS(half)
 MAKE_TYPE_TRAITS(float)
+MAKE_TYPE_TRAITS(real)
 MAKE_TYPE_TRAITS(swizzle)
 MAKE_TYPE_TRAITS(floating_point)
 MAKE_TYPE_TRAITS(boolean)

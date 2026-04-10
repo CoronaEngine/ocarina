@@ -4,6 +4,8 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <limits>
+#include <sstream>
 #include <type_traits>
 #include <utility>
 
@@ -50,12 +52,15 @@ static_assert(!is_boolean_v<int>);
 
 static_assert(is_half_v<half>);
 static_assert(is_float_v<float>);
+static_assert(is_real_v<real>);
 static_assert(is_floating_point_v<half>);
 static_assert(is_floating_point_v<float>);
+static_assert(is_floating_point_v<real>);
 static_assert(!is_floating_point_v<int>);
 
 static_assert(is_signed_v<int>);
 static_assert(is_signed_v<float>);
+static_assert(is_signed_v<real>);
 static_assert(is_signed_v<half>);
 static_assert(!is_signed_v<uint>);
 
@@ -66,10 +71,12 @@ static_assert(!is_unsigned_v<int>);
 static_assert(is_scalar_v<int>);
 static_assert(is_scalar_v<bool>);
 static_assert(is_scalar_v<float>);
+static_assert(is_scalar_v<real>);
 static_assert(!is_scalar_v<float2>);
 
 static_assert(is_number_v<int>);
 static_assert(is_number_v<float>);
+static_assert(is_number_v<real>);
 static_assert(!is_number_v<bool>);
 
 static_assert(is_all_scalar_v<int, bool, float>);
@@ -139,11 +146,24 @@ static_assert(is_all_matrix_v<float2x2, float3x3, float4x4>);
 static_assert(!is_matrix_v<float4>);
 
 static_assert(is_basic_v<float>);
+static_assert(is_basic_v<real>);
 static_assert(is_basic_v<float3>);
+static_assert(is_basic_v<real3>);
 static_assert(is_basic_v<float3x3>);
+static_assert(is_basic_v<real3x3>);
 static_assert(is_all_basic_v<float, float3, float3x3>);
+static_assert(is_all_basic_v<real, real3, real3x3>);
 static_assert(is_general_basic_v<HostSwizzle2>);
 static_assert(is_all_general_basic_v<float, float2, HostSwizzle2>);
+static_assert(is_real_op_enable_v<int>);
+static_assert(is_real_op_enable_v<float>);
+static_assert(is_real_op_enable_v<double>);
+static_assert(std::is_same_v<binary_op_real_target_t<int>, real>);
+static_assert(std::is_same_v<binary_op_real_target_t<float>, float>);
+static_assert(std::is_same_v<binary_op_real_target_t<double>, double>);
+static_assert(std::is_same_v<decltype(real{} + int{}), real>);
+static_assert(std::is_same_v<decltype(real{} + float{}), float>);
+static_assert(std::is_same_v<decltype(double{} + real{}), double>);
 
 static_assert(is_simple_type<int>::value);
 static_assert(is_simple_type<float4>::value);
@@ -154,12 +174,16 @@ static_assert(!is_std_vector_v<int>);
 
 static_assert(std::is_same_v<general_vector_t<float, 1u>, float>);
 static_assert(std::is_same_v<general_vector_t<float, 3u>, float3>);
+static_assert(std::is_same_v<general_vector_t<real, 3u>, real3>);
 static_assert(std::is_same_v<general_vector_t<int, 4u>, int4>);
 
 static_assert(match_basic_func_v<float3, HostSwizzle3>);
 static_assert(match_basic_func_v<float3, float3, HostSwizzle3>);
 static_assert(!match_basic_func_v<float3, int3>);
 static_assert(!match_basic_func_v<float3, float4>);
+
+static_assert(sizeof(real) == sizeof(float));
+static_assert(alignof(real) == alignof(float));
 
 [[nodiscard]] bool test_to_underlying_runtime() {
     CHECK(to_underlying(TestEnum::Value) == 7u);
@@ -183,11 +207,56 @@ static_assert(!match_basic_func_v<float3, float4>);
 [[nodiscard]] bool test_general_vector_runtime() {
     general_vector_t<float, 1u> scalar = 5.f;
     general_vector_t<int, 3u> vec = make_int3(4, 5, 6);
+    real3 rvec = make_real3(1.f, 2.f, 3.f);
 
     CHECK(scalar == 5.f);
     CHECK(vec.x == 4);
     CHECK(vec.y == 5);
     CHECK(vec.z == 6);
+    CHECK(static_cast<float>(rvec.x) == 1.f);
+    CHECK(static_cast<float>(rvec.y) == 2.f);
+    CHECK(static_cast<float>(rvec.z) == 3.f);
+    return true;
+}
+
+[[nodiscard]] bool test_real_runtime() {
+    real value = 1.5f;
+    real sum = value + 2;
+    float mixed_float = value + 2.5f;
+    double mixed_double = 2.0 + value;
+    real accum = value;
+    accum += 2;
+    accum *= 2;
+    real inc = value;
+    real post = inc++;
+    real pre = ++inc;
+    real neg_zero = -real{0.f};
+    real inf = std::numeric_limits<float>::infinity();
+    real nan = std::numeric_limits<float>::quiet_NaN();
+    std::stringstream ss;
+    ss << real{3.25f};
+    real parsed{};
+    ss >> parsed;
+
+    CHECK(static_cast<float>(sum) == 3.5f);
+    CHECK(mixed_float == 4.f);
+    CHECK(mixed_double == 3.5);
+    CHECK(static_cast<float>(accum) == 7.f);
+    CHECK(static_cast<float>(post) == 1.5f);
+    CHECK(static_cast<float>(pre) == 3.5f);
+    CHECK(inc == 3.5f);
+    CHECK(real{3.f} > 2);
+    CHECK(2 < real{3.f});
+    CHECK(static_cast<bool>(real{1.f}));
+    CHECK(!static_cast<bool>(real{0.f}));
+    CHECK(neg_zero.is_neg());
+    CHECK(inf.is_inf());
+    CHECK(!inf.is_nan());
+    CHECK(nan.is_nan());
+    CHECK(nan != nan);
+    CHECK(parsed == real{3.25f});
+    CHECK(real2float(real{4.5f}) == 4.5f);
+    CHECK(float2real(2.25f) == real{2.25f});
     return true;
 }
 
@@ -201,6 +270,9 @@ int main() {
         return EXIT_FAILURE;
     }
     if (!test_general_vector_runtime()) {
+        return EXIT_FAILURE;
+    }
+    if (!test_real_runtime()) {
         return EXIT_FAILURE;
     }
     std::cout << "[test-trait] all checks passed" << std::endl;

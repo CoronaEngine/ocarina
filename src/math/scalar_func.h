@@ -5,6 +5,7 @@
 #pragma once
 
 #include "half.h"
+#include "real.h"
 #include "math/constants.h"
 #include "core/concepts.h"
 #include <numeric>
@@ -111,8 +112,8 @@ template<typename T>
 requires is_scalar_v<T>
 [[nodiscard]] constexpr auto
 sqrt(const T &v) {
-    if constexpr (is_half_v<T>) {
-        return std::sqrt(static_cast<float>(v));
+    if constexpr (is_half_v<T> || is_real_v<T>) {
+        return T(std::sqrt(static_cast<float>(v)));
     } else {
         return std::sqrt(v);
     }
@@ -170,7 +171,11 @@ OC_NODISCARD constexpr auto sqr(const T &v) {
     return (u & 0x7f800000u) == 0x7f800000u && (u & 0x007fffffu) == 0u;
 }
 
-[[nodiscard]] inline bool isinf(half x) noexcept {
+[[nodiscard]] inline bool isinf(const half &x) noexcept {
+    return x.is_inf();
+}
+
+[[nodiscard]] inline bool isinf(const real &x) noexcept {
     return x.is_inf();
 }
 

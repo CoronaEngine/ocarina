@@ -374,6 +374,7 @@ public:
     enum struct Tag : uint32_t {
         BOOL,
         FLOAT,
+        REAL,
         HALF,
         INT,
         UINT,
@@ -461,7 +462,7 @@ public:
     [[nodiscard]] const Type *element() const noexcept;
     [[nodiscard]] bool is_valid() const noexcept;
     [[nodiscard]] constexpr bool is_scalar() const noexcept {
-        return tag_ == Tag::BOOL || tag_ == Tag::FLOAT || tag_ == Tag::INT ||
+        return tag_ == Tag::BOOL || tag_ == Tag::FLOAT || tag_ == Tag::REAL || tag_ == Tag::INT ||
                tag_ == Tag::UINT || tag_ == Tag::UCHAR || tag_ == Tag::CHAR ||
                tag_ == Tag::USHORT || tag_ == Tag::SHORT || tag_ == Tag::HALF || tag_ == Tag::ULONG;
     }

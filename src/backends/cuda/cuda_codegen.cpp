@@ -417,6 +417,7 @@ void CUDACodegen::_emit_type_name(const Type *type) noexcept {
         switch (type->tag()) {
             case Type::Tag::BOOL:
             case Type::Tag::FLOAT:
+            case Type::Tag::REAL:
             case Type::Tag::INT:
             case Type::Tag::UINT:
             case Type::Tag::UCHAR:

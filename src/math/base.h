@@ -229,7 +229,7 @@ OC_NODISCARD auto has_inf(const T &v) noexcept {
 template<typename T>
 requires is_scalar_v<T>
 [[nodiscard]] constexpr bool isnan(T val) noexcept {
-    if constexpr (is_half_v<T>) {
+    if constexpr (is_half_v<T> || is_real_v<T>) {
         return val.is_nan();
     } else {
         return std::isnan(val);
@@ -239,7 +239,7 @@ requires is_scalar_v<T>
 template<typename T>
 requires is_scalar_v<T>
 [[nodiscard]] constexpr bool isinf(T val) noexcept {
-    if constexpr (is_half_v<T>) {
+    if constexpr (is_half_v<T> || is_real_v<T>) {
         return val.is_inf();
     } else {
         return std::isinf(val);

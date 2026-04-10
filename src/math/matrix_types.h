@@ -228,6 +228,7 @@ requires is_all_basic_v<Args...>
     OC_MAKE_MATRIX_(type, 4, 4)
 
 OC_MAKE_MATRICES_FOR_TYPE(float)
+OC_MAKE_MATRICES_FOR_TYPE(real)
 OC_MAKE_MATRICES_FOR_TYPE(half)
 
 #undef OC_MAKE_MATRICES_FOR_TYPE

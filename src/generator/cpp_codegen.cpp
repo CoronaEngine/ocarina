@@ -21,9 +21,17 @@ struct LiteralPrinter {
                 if (ocarina::isnan(v)) [[unlikely]] {
                     OC_ERROR("nan error!");
                 } else if (ocarina::isinf(v)) {
-                    scratch << (v < 0.f ? "(1.f/-0.f)" : "1.f/+0.f");
+                    if constexpr (ocarina::is_real_v<T>) {
+                        scratch << (static_cast<float>(v) < 0.f ? "(1.f/-0.f)" : "1.f/+0.f");
+                    } else {
+                        scratch << (v < 0.f ? "(1.f/-0.f)" : "1.f/+0.f");
+                    }
                 } else {
-                    scratch << v;
+                    if constexpr (ocarina::is_real_v<T>) {
+                        scratch << static_cast<float>(v);
+                    } else {
+                        scratch << v;
+                    }
                 }
             } else {
                 scratch << v;

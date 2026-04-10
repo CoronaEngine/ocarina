@@ -115,6 +115,14 @@ static bool test_void_and_scalar_types(TypeRegistry &registry) {
     CHECK(half_type->tag() == Type::Tag::HALF);
     CHECK(half_type->size() == sizeof(half));
     CHECK(half_type->alignment() == alignof(half));
+
+    const Type *real_type = registry.parse_type(TypeDesc<real>::description());
+    CHECK(real_type != nullptr);
+    CHECK(real_type->is_scalar());
+    CHECK(real_type->tag() == Type::Tag::REAL);
+    CHECK(real_type->size() == sizeof(real));
+    CHECK(real_type->alignment() == alignof(real));
+    CHECK(real_type->name() == "real");
     return true;
 }
 
@@ -122,6 +130,8 @@ static bool test_vector_and_matrix_types(TypeRegistry &registry) {
     using Float3 = Vector<float, 3>;
     using Float4 = Vector<float, 4>;
     using Float3x4 = Matrix<float, 3, 4>;
+    using Real3 = Vector<real, 3>;
+    using Real3x3 = Matrix<real, 3, 3>;
 
     const Type *float_type = Type::of<float>();
     const Type *float3_type = registry.parse_type(TypeDesc<Float3>::description());
@@ -142,6 +152,13 @@ static bool test_vector_and_matrix_types(TypeRegistry &registry) {
     CHECK(float4_type->dimension() == 4);
     CHECK(float4_type->element() == float_type);
 
+    const Type *real_type = Type::of<real>();
+    const Type *real3_type = registry.parse_type(TypeDesc<Real3>::description());
+    CHECK(real3_type != nullptr);
+    CHECK(real3_type->is_vector());
+    CHECK(real3_type->element() == real_type);
+    CHECK(real3_type->name() == "real3");
+
     const Type *matrix_type = registry.parse_type(TypeDesc<Float3x4>::description());
     CHECK(matrix_type != nullptr);
     CHECK(matrix_type->is_matrix());
@@ -153,6 +170,12 @@ static bool test_vector_and_matrix_types(TypeRegistry &registry) {
     CHECK(matrix_type->alignment() == alignof(Float3x4));
     CHECK(matrix_type->name() == "float3x4");
     CHECK(registry.parse_type(TypeDesc<Float3x4>::description()) == matrix_type);
+
+    const Type *real3x3_type = registry.parse_type(TypeDesc<Real3x3>::description());
+    CHECK(real3x3_type != nullptr);
+    CHECK(real3x3_type->is_matrix());
+    CHECK(real3x3_type->element() == Type::of<Real3>());
+    CHECK(real3x3_type->name() == "real3x3");
     return true;
 }
 

@@ -160,6 +160,7 @@ const Type *TypeRegistry::parse_type(ocarina::string_view desc) noexcept {
     OC_PARSE_BASIC_TYPE(uint, UINT)
     OC_PARSE_BASIC_TYPE(bool, BOOL)
     OC_PARSE_BASIC_TYPE(float, FLOAT)
+    OC_PARSE_BASIC_TYPE(real, REAL)
     OC_PARSE_BASIC_TYPE(half, HALF)
     OC_PARSE_BASIC_TYPE(uchar, UCHAR)
     OC_PARSE_BASIC_TYPE(char, CHAR)
@@ -247,6 +248,7 @@ void TypeRegistry::parse_matrix(Type *type, ocarina::string_view desc) noexcept 
     OC_SIZE_ALIGN(type, 4, 4)
 
     OC_SIZE_ALIGN_FOR_TYPE(float)
+    OC_SIZE_ALIGN_FOR_TYPE(real)
     OC_SIZE_ALIGN_FOR_TYPE(half) {
         OC_ERROR("invalid matrix dimension <{}, {}>!", N, M);
     }

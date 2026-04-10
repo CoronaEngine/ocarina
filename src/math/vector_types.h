@@ -8,6 +8,7 @@
 #include "scalar_func.h"
 #include "math/constants.h"
 #include "half.h"
+#include "real.h"
 
 namespace ocarina {
 namespace detail {
@@ -16,6 +17,7 @@ template<typename T>
 struct valid_vector_impl : public std::disjunction<
                                std::is_same<T, bool>,
                                std::is_same<T, float>,
+                               std::is_same<T, real>,
                                std::is_same<T, int>,
                                std::is_same<T, char>,
                                std::is_same<T, short>,
@@ -746,6 +748,7 @@ requires(is_all_general_vector_v<T, U, V> &&
 
 OC_MAKE_VECTOR_TYPES(bool)
 OC_MAKE_VECTOR_TYPES(float)
+OC_MAKE_VECTOR_TYPES(real)
 OC_MAKE_VECTOR_TYPES(half)
 OC_MAKE_VECTOR_TYPES(int)
 OC_MAKE_VECTOR_TYPES(char)
@@ -867,6 +870,7 @@ OC_MAKE_SWIZZLE_LOGIC_FUNC(none)
 
 OC_MAKE_TYPE_N(bool)
 OC_MAKE_TYPE_N(float)
+OC_MAKE_TYPE_N(real)
 OC_MAKE_TYPE_N(half)
 OC_MAKE_TYPE_N(int)
 OC_MAKE_TYPE_N(uint)
