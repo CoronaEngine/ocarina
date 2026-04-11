@@ -93,6 +93,10 @@ requires ocarina::is_scalar_v<T>
     return half2float(a) > half2float(b) ? a : b;
 }
 
+[[nodiscard]] constexpr real max(real a, real b) noexcept {
+    return real2float(a) > real2float(b) ? a : b;
+}
+
 template<typename T>
 requires ocarina::is_scalar_v<T>
 [[nodiscard]] constexpr auto min(T a, T b) noexcept {
@@ -101,6 +105,10 @@ requires ocarina::is_scalar_v<T>
 
 [[nodiscard]] constexpr half min(half a, half b) noexcept {
     return half2float(a) < half2float(b) ? a : b;
+}
+
+[[nodiscard]] constexpr real min(real a, real b) noexcept {
+    return real2float(a) < real2float(b) ? a : b;
 }
 
 template<typename T, typename F>
@@ -183,6 +191,10 @@ fract(const T &v) {
     return float2half(x - y * floor(half2float(x / y)));
 }
 
+[[nodiscard]] inline real mod(real x, real y) {
+    return float2real(real2float(x) - real2float(y) * floor(real2float(x / y)));
+}
+
 template<typename T>
 //requires is_scalar_v<T>
 [[nodiscard]] auto saturate(const T &f) { return min(1.f, max(0.f, f)); }
@@ -200,6 +212,10 @@ OC_NODISCARD constexpr auto sqr(const T &v) {
 }
 
 [[nodiscard]] inline bool isnan(half x) noexcept {
+    return x.is_nan();
+}
+
+[[nodiscard]] inline bool isnan(real x) noexcept {
     return x.is_nan();
 }
 

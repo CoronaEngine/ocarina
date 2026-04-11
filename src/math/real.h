@@ -36,9 +36,11 @@ static constexpr auto is_real_mixed_op_enable_v =
 template<typename T>
 using binary_op_real_target_t = typename detail::binary_op_real_target<std::remove_cvref_t<T>>::type;
 
-struct real {
+class real {
+private:
     float value{};
 
+public:
     constexpr real() noexcept = default;
 
     template<typename T>
@@ -121,6 +123,20 @@ struct real {
     OC_REAL_COMPARE_OP(>=)
 
 #undef OC_REAL_COMPARE_OP
+
+#define OC_REAL_INC_DEC_OP(op, assign_op, delta) \
+    constexpr real &operator op() noexcept {     \
+        value assign_op delta;                   \
+        return *this;                            \
+    }                                            \
+    constexpr real operator op(int) noexcept {   \
+        real temp = *this;                       \
+        value assign_op delta;                   \
+        return temp;                             \
+    }
+
+    OC_REAL_INC_DEC_OP(++, +=, 1.0f)
+    OC_REAL_INC_DEC_OP(--, -=, 1.0f)
 
 #undef OC_REAL_INC_DEC_OP
 

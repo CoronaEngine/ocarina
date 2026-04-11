@@ -238,6 +238,8 @@ static_assert(alignof(real) == alignof(float));
     accum += 2;
     accum *= 2;
     real inc = value;
+    ++inc;
+    ++inc;
     real neg_zero = -real{0.f};
     real inf = std::numeric_limits<float>::infinity();
     real nan = std::numeric_limits<float>::quiet_NaN();

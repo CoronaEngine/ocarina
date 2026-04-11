@@ -85,14 +85,10 @@ static size_t layout_alignment_of(const Type *type) {
         return type->alignment();
     }
     if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
-        return layout_alignment_of(type->element());
+        return type->alignment();
     }
     if (type->is_structure()) {
-        size_t alignment = 0u;
-        for (const Type *member : type->members()) {
-            alignment = std::max(alignment, layout_alignment_of(member));
-        }
-        return alignment;
+        return type->alignment();
     }
     return type->alignment();
 }
@@ -381,6 +377,9 @@ static bool test_layout_resolver(TypeRegistry &registry) {
     CHECK(real_leaf_type->is_structure());
     CHECK(real_leaf_type->get_member("value") == Type::of<real>());
     CHECK(real_leaf_type->get_member("index") == Type::of<Vector<real, 2>>());
+    CHECK(real_leaf_type->size() == sizeof(ParseRealLeaf));
+    CHECK(real_leaf_type->size() == layout_size_of(real_leaf_type));
+    CHECK(real_leaf_type->alignment() == layout_alignment_of(real_leaf_type));
 
     LayoutResolver float_resolver(StoragePrecisionPolicy{
         .policy = PrecisionPolicy::force_f32,
@@ -394,6 +393,7 @@ static bool test_layout_resolver(TypeRegistry &registry) {
     CHECK(resolved_float_leaf->is_structure());
     const Type *float_value_type = Type::of<float>();
     const Type *float_index_type = Type::of<Vector<float, 2>>();
+    CHECK(resolved_float_leaf->size() == sizeof(ParseRealLeaf));
     CHECK(resolved_float_leaf->size() == layout_size_of(resolved_float_leaf));
     CHECK(resolved_float_leaf->alignment() == layout_alignment_of(resolved_float_leaf));
     CHECK(resolved_float_leaf->members().size() == 2u);
@@ -428,6 +428,10 @@ static bool test_layout_resolver(TypeRegistry &registry) {
 
     const Type *real_nested_type = Type::of<ParseRealNested>();
     CHECK(real_nested_type != nullptr);
+    CHECK(real_nested_type->is_structure());
+    CHECK(real_nested_type->size() == sizeof(ParseRealNested));
+    CHECK(real_nested_type->size() == layout_size_of(real_nested_type));
+    CHECK(real_nested_type->alignment() == layout_alignment_of(real_nested_type));
     const Type *resolved_half_nested = half_resolver.resolve(real_nested_type);
     CHECK(resolved_half_nested != nullptr);
     CHECK(resolved_half_nested->is_structure());
