@@ -15,6 +15,14 @@
 
 using namespace ocarina;
 
+struct Test {
+    int a;
+    real3 b;
+};
+
+
+OC_STRUCT(,Test, a, b){};
+
 namespace {
 
 enum class TestEnum : uint {
@@ -73,6 +81,8 @@ static_assert(is_scalar_v<bool>);
 static_assert(is_scalar_v<float>);
 static_assert(is_scalar_v<real>);
 static_assert(!is_scalar_v<float2>);
+
+static_assert(is_dynamic_size_v<Test>);
 
 static_assert(is_number_v<int>);
 static_assert(is_number_v<float>);

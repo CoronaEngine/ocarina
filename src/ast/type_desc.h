@@ -83,16 +83,16 @@ struct TypeDesc<void> {
 
 /// matrices
 template<typename T, size_t N, size_t M>
-struct TypeDesc<ocarina::Matrix<T,N, M>> {
+struct TypeDesc<ocarina::Matrix<T, N, M>> {
     static ocarina::string &description() noexcept {
         static thread_local auto s = ocarina::format(
-            "matrix<{},{},{}>",TypeDesc<T>::description(),
+            "matrix<{},{},{}>", TypeDesc<T>::description(),
             N, M);
         return s;
     }
     static ocarina::string &name() noexcept {
         static thread_local auto s = ocarina::format(
-            "{}{}x{}",TypeDesc<T>::name(),
+            "{}{}x{}", TypeDesc<T>::name(),
             N, M);
         return s;
     }
@@ -227,5 +227,12 @@ struct TypeDesc<BindlessArray> {
             return #S;                                                                      \
         }                                                                                   \
     };
+
+#define OC_IS_DYNAMIC_SIZE(member, S) \
+    ocarina::is_dynamic_size<std::remove_cvref_t<decltype(S::member)>>
+
+#define OC_MAKE_STRUCT_IS_DYNAMIC(S, ...) \
+    template<>                            \
+    struct ocarina::is_dynamic_size<S> : std::disjunction<MAP_LIST_UD(OC_IS_DYNAMIC_SIZE,S, ##__VA_ARGS__)> {};
 
 }// namespace ocarina
