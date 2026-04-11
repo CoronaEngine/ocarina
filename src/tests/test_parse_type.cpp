@@ -3,6 +3,7 @@
 //
 
 #include "ast/type_registry.h"
+#include "ast/layout_resolver.h"
 #include "core/stl.h"
 
 using namespace ocarina;
@@ -40,6 +41,22 @@ struct ParseNested {
 
 OC_MAKE_STRUCT_REFLECTION(ParseNested, leaf, samples)
 OC_MAKE_STRUCT_DESC(ParseNested, leaf, samples)
+
+struct ParseRealLeaf {
+    real value;
+    Vector<real, 2> index;
+};
+
+OC_MAKE_STRUCT_REFLECTION(ParseRealLeaf, value, index)
+OC_MAKE_STRUCT_DESC(ParseRealLeaf, value, index)
+
+struct ParseRealNested {
+    ParseRealLeaf leaf;
+    ocarina::array<real, 4> samples;
+};
+
+OC_MAKE_STRUCT_REFLECTION(ParseRealNested, leaf, samples)
+OC_MAKE_STRUCT_DESC(ParseRealNested, leaf, samples)
 
 static bool check_impl(bool condition, string_view message) {
     if (!condition) {
@@ -303,6 +320,70 @@ static bool test_tuple_and_struct_types(TypeRegistry &registry) {
     return true;
 }
 
+static bool test_layout_resolver(TypeRegistry &registry) {
+    using RealLeafBuffer = Buffer<ParseRealLeaf>;
+    using RealNestedBuffer = Buffer<ParseRealNested>;
+
+    const Type *real_leaf_type = Type::of<ParseRealLeaf>();
+    CHECK(real_leaf_type != nullptr);
+    CHECK(real_leaf_type->is_structure());
+    CHECK(real_leaf_type->get_member("value") == Type::of<real>());
+    CHECK(real_leaf_type->get_member("index") == Type::of<Vector<real, 2>>());
+
+    LayoutResolver float_resolver(StoragePrecisionPolicy{
+        .policy = PrecisionPolicy::force_f32,
+        .allow_real_in_storage = true,
+    });
+    const Type *resolved_float_leaf = float_resolver.resolve(real_leaf_type);
+    CHECK(resolved_float_leaf != nullptr);
+    CHECK(resolved_float_leaf->is_structure());
+    CHECK(resolved_float_leaf->get_member("value") == Type::of<float>());
+    CHECK(resolved_float_leaf->get_member("index") == Type::of<Vector<float, 2>>());
+
+    LayoutResolver half_resolver(StoragePrecisionPolicy{
+        .policy = PrecisionPolicy::force_f16,
+        .allow_real_in_storage = true,
+    });
+    const Type *resolved_half_leaf = half_resolver.resolve(real_leaf_type);
+    CHECK(resolved_half_leaf != nullptr);
+    CHECK(resolved_half_leaf->is_structure());
+    CHECK(resolved_half_leaf->get_member("value") == Type::of<half>());
+    CHECK(resolved_half_leaf->get_member("index") == Type::of<Vector<half, 2>>());
+    CHECK(resolved_half_leaf->alignment() == Type::of<Vector<half, 2>>()->alignment());
+
+    const Type *real_nested_type = Type::of<ParseRealNested>();
+    CHECK(real_nested_type != nullptr);
+    const Type *resolved_half_nested = half_resolver.resolve(real_nested_type);
+    CHECK(resolved_half_nested != nullptr);
+    CHECK(resolved_half_nested->is_structure());
+    CHECK(resolved_half_nested->get_member("leaf") == resolved_half_leaf);
+    CHECK(resolved_half_nested->get_member("samples") == Type::of<ocarina::array<half, 4>>());
+    CHECK(resolved_half_nested->alignment() == std::max(resolved_half_leaf->alignment(), Type::of<ocarina::array<half, 4>>()->alignment()));
+
+    const Type *real_leaf_buffer = Type::of<RealLeafBuffer>();
+    CHECK(real_leaf_buffer != nullptr);
+    const Type *resolved_half_leaf_buffer = half_resolver.resolve(real_leaf_buffer);
+    CHECK(resolved_half_leaf_buffer != nullptr);
+    CHECK(resolved_half_leaf_buffer->is_buffer());
+    CHECK(resolved_half_leaf_buffer->element() == resolved_half_leaf);
+
+    const Type *real_nested_buffer = Type::of<RealNestedBuffer>();
+    CHECK(real_nested_buffer != nullptr);
+    const Type *resolved_half_nested_buffer = half_resolver.resolve(real_nested_buffer);
+    CHECK(resolved_half_nested_buffer != nullptr);
+    CHECK(resolved_half_nested_buffer->is_buffer());
+    CHECK(resolved_half_nested_buffer->element() == resolved_half_nested);
+
+    LayoutResolver disallow_resolver(StoragePrecisionPolicy{
+        .policy = PrecisionPolicy::force_f32,
+        .allow_real_in_storage = false,
+    });
+    CHECK(disallow_resolver.resolve(real_leaf_type) == nullptr);
+    CHECK(disallow_resolver.resolve(real_nested_type) == nullptr);
+    CHECK(disallow_resolver.resolve(real_leaf_buffer) == nullptr);
+    return true;
+}
+
 static bool test_invalid_descriptions(const char *exe_path) {
     CHECK(expect_invalid_parse_failure(exe_path, "invalid-data-type"));
     CHECK(expect_invalid_parse_failure(exe_path, "invalid-vector-element"));
@@ -322,6 +403,7 @@ int main(int argc, char **argv) {
     passed = test_vector_and_matrix_types(registry) && passed;
     passed = test_array_and_resource_types(registry) && passed;
     passed = test_tuple_and_struct_types(registry) && passed;
+    passed = test_layout_resolver(registry) && passed;
     passed = test_invalid_descriptions(argv[0]) && passed;
 
     if (!passed) {

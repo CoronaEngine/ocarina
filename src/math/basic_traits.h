@@ -114,8 +114,8 @@ struct is_dynamic_size<real> {
     static constexpr bool value = true;
 };
 
-template<size_t N>
-struct is_dynamic_size<Vector<real, N>> {
+template<template<typename, size_t> typename Container, size_t N>
+struct is_dynamic_size<Container<real, N>> {
     static constexpr bool value = true;
 };
 
