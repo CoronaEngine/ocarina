@@ -52,7 +52,7 @@ OC_MAKE_STRUCT_DESC(ParseRealLeaf, value, index)
 
 struct ParseRealNested {
     ParseRealLeaf leaf;
-    ocarina::array<real, 4> samples;
+    Vector<real, 3> samples;
 };
 
 OC_MAKE_STRUCT_REFLECTION(ParseRealNested, leaf, samples)
@@ -72,6 +72,58 @@ static bool check_impl(bool condition, string_view message) {
             return false;                     \
         }                                     \
     } while (false)
+
+static size_t align_up(size_t value, size_t alignment) {
+    return (value + alignment - 1u) / alignment * alignment;
+}
+
+static size_t layout_alignment_of(const Type *type) {
+    if (type == nullptr) {
+        return 0u;
+    }
+    if (type->is_scalar() || type->is_byte_buffer() || type->is_texture() || type->is_bindless_array() || type->is_accel()) {
+        return type->alignment();
+    }
+    if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
+        return layout_alignment_of(type->element());
+    }
+    if (type->is_structure()) {
+        size_t alignment = 0u;
+        for (const Type *member : type->members()) {
+            alignment = std::max(alignment, layout_alignment_of(member));
+        }
+        return alignment;
+    }
+    return type->alignment();
+}
+
+static size_t layout_size_of(const Type *type) {
+    if (type == nullptr) {
+        return 0u;
+    }
+    if (type->is_scalar() || type->is_byte_buffer() || type->is_texture() || type->is_bindless_array() || type->is_accel()) {
+        return type->size();
+    }
+    if (type->is_vector()) {
+        const size_t scalar_size = layout_size_of(type->element());
+        return scalar_size * (type->dimension() == 3 ? 4u : type->dimension());
+    }
+    if (type->is_matrix()) {
+        return type->size();
+    }
+    if (type->is_array() || type->is_buffer()) {
+        return type->size();
+    }
+    if (type->is_structure()) {
+        size_t size = 0u;
+        for (const Type *member : type->members()) {
+            size = align_up(size, member->alignment());
+            size += member->size();
+        }
+        return align_up(size, type->alignment());
+    }
+    return type->size();
+}
 
 static string_view invalid_case_desc(string_view case_name) {
     if (case_name == "invalid-data-type") {
@@ -334,31 +386,60 @@ static bool test_layout_resolver(TypeRegistry &registry) {
         .policy = PrecisionPolicy::force_f32,
         .allow_real_in_storage = true,
     });
+    const Type *real_type = Type::of<real>();
+    CHECK(float_resolver.resolve(real_type) == Type::of<float>());
+
     const Type *resolved_float_leaf = float_resolver.resolve(real_leaf_type);
     CHECK(resolved_float_leaf != nullptr);
     CHECK(resolved_float_leaf->is_structure());
-    CHECK(resolved_float_leaf->get_member("value") == Type::of<float>());
-    CHECK(resolved_float_leaf->get_member("index") == Type::of<Vector<float, 2>>());
+    const Type *float_value_type = Type::of<float>();
+    const Type *float_index_type = Type::of<Vector<float, 2>>();
+    CHECK(resolved_float_leaf->size() == layout_size_of(resolved_float_leaf));
+    CHECK(resolved_float_leaf->alignment() == layout_alignment_of(resolved_float_leaf));
+    CHECK(resolved_float_leaf->members().size() == 2u);
+    CHECK(resolved_float_leaf->members()[0] == float_value_type);
+    CHECK(resolved_float_leaf->members()[1] == float_index_type);
+
+    const Type *resolved_float_nested = float_resolver.resolve(Type::of<ParseRealNested>());
+    CHECK(resolved_float_nested != nullptr);
+    CHECK(resolved_float_nested->is_structure());
+    CHECK(resolved_float_nested->size() == layout_size_of(resolved_float_nested));
+    CHECK(resolved_float_nested->alignment() == layout_alignment_of(resolved_float_nested));
+    CHECK(resolved_float_nested->members().size() == 2u);
+    CHECK(resolved_float_nested->members()[0] == resolved_float_leaf);
+    CHECK(resolved_float_nested->members()[1] == Type::of<Vector<float, 3>>());
 
     LayoutResolver half_resolver(StoragePrecisionPolicy{
         .policy = PrecisionPolicy::force_f16,
         .allow_real_in_storage = true,
     });
+    CHECK(half_resolver.resolve(real_type) == Type::of<half>());
+
     const Type *resolved_half_leaf = half_resolver.resolve(real_leaf_type);
     CHECK(resolved_half_leaf != nullptr);
     CHECK(resolved_half_leaf->is_structure());
-    CHECK(resolved_half_leaf->get_member("value") == Type::of<half>());
-    CHECK(resolved_half_leaf->get_member("index") == Type::of<Vector<half, 2>>());
-    CHECK(resolved_half_leaf->alignment() == Type::of<Vector<half, 2>>()->alignment());
+    const Type *half_value_type = Type::of<half>();
+    const Type *half_index_type = Type::of<Vector<half, 2>>();
+    CHECK(resolved_half_leaf->size() == layout_size_of(resolved_half_leaf));
+    CHECK(resolved_half_leaf->alignment() == layout_alignment_of(resolved_half_leaf));
+    CHECK(resolved_half_leaf->members().size() == 2u);
+    CHECK(resolved_half_leaf->members()[0] == half_value_type);
+    CHECK(resolved_half_leaf->members()[1] == half_index_type);
 
     const Type *real_nested_type = Type::of<ParseRealNested>();
     CHECK(real_nested_type != nullptr);
     const Type *resolved_half_nested = half_resolver.resolve(real_nested_type);
     CHECK(resolved_half_nested != nullptr);
     CHECK(resolved_half_nested->is_structure());
-    CHECK(resolved_half_nested->get_member("leaf") == resolved_half_leaf);
-    CHECK(resolved_half_nested->get_member("samples") == Type::of<ocarina::array<half, 4>>());
-    CHECK(resolved_half_nested->alignment() == std::max(resolved_half_leaf->alignment(), Type::of<ocarina::array<half, 4>>()->alignment()));
+    CHECK(resolved_half_nested->members().size() == 2u);
+    CHECK(resolved_half_nested->members()[0] == resolved_half_leaf);
+    const Type *half_samples_type = resolved_half_nested->members()[1];
+    CHECK(half_samples_type != nullptr);
+    CHECK(half_samples_type->is_vector());
+    CHECK(half_samples_type->element() == half_value_type);
+    CHECK(half_samples_type->dimension() == 3u);
+    CHECK(resolved_half_nested->size() == layout_size_of(resolved_half_nested));
+    CHECK(resolved_half_nested->alignment() == layout_alignment_of(resolved_half_nested));
 
     const Type *real_leaf_buffer = Type::of<RealLeafBuffer>();
     CHECK(real_leaf_buffer != nullptr);
@@ -366,6 +447,8 @@ static bool test_layout_resolver(TypeRegistry &registry) {
     CHECK(resolved_half_leaf_buffer != nullptr);
     CHECK(resolved_half_leaf_buffer->is_buffer());
     CHECK(resolved_half_leaf_buffer->element() == resolved_half_leaf);
+
+    CHECK(half_resolver.resolve(real_nested_type) == resolved_half_nested);
 
     const Type *real_nested_buffer = Type::of<RealNestedBuffer>();
     CHECK(real_nested_buffer != nullptr);
@@ -381,6 +464,7 @@ static bool test_layout_resolver(TypeRegistry &registry) {
     CHECK(disallow_resolver.resolve(real_leaf_type) == nullptr);
     CHECK(disallow_resolver.resolve(real_nested_type) == nullptr);
     CHECK(disallow_resolver.resolve(real_leaf_buffer) == nullptr);
+    CHECK(disallow_resolver.resolve(real_type) == nullptr);
     return true;
 }
 
