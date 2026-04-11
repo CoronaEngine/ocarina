@@ -19,6 +19,12 @@ to_underlying(T e) noexcept {
 class half;
 class real;
 
+template<typename T, size_t N>
+class Vector;
+
+template<typename T, size_t N, size_t M>
+class Matrix;
+
 using uint = uint32_t;
 using ulong = uint64_t;
 using uchar = unsigned char;
@@ -95,6 +101,28 @@ constexpr auto is_number_v = is_number<T>::value;
 
 template<typename T, size_t N, size_t... Indices>
 struct Swizzle;
+
+template<typename T>
+struct is_dynamic_size {
+    static constexpr bool value = false;
+};
+template<typename T>
+static constexpr auto is_dynamic_size_v = is_dynamic_size<std::remove_cvref_t<T>>::value;
+
+template<>
+struct is_dynamic_size<real> {
+    static constexpr bool value = true;
+};
+
+template<size_t N>
+struct is_dynamic_size<Vector<real, N>> {
+    static constexpr bool value = true;
+};
+
+template<size_t N, size_t M>
+struct is_dynamic_size<Matrix<real, N, M>> {
+    static constexpr bool value = true;
+};
 
 namespace detail {
 
