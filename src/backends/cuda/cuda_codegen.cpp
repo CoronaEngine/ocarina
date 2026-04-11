@@ -119,6 +119,10 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
         case CallOp::MAKE_FLOAT3: OC_GEN_FUNC_NAME(make_float3); break;
         case CallOp::MAKE_FLOAT4: OC_GEN_FUNC_NAME(make_float4); break;
 
+        case CallOp::MAKE_REAL2 : OC_GEN_FUNC_NAME(make_real2); break;
+        case CallOp::MAKE_REAL3 : OC_GEN_FUNC_NAME(make_real3); break;
+        case CallOp::MAKE_REAL4 : OC_GEN_FUNC_NAME(make_real4); break;
+
         case CallOp::MAKE_HALF2: OC_GEN_FUNC_NAME(make_half2); break;
         case CallOp::MAKE_HALF3: OC_GEN_FUNC_NAME(make_half3); break;
         case CallOp::MAKE_HALF4: OC_GEN_FUNC_NAME(make_half4); break;
@@ -137,6 +141,18 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
         case CallOp::MAKE_HALF4X2: OC_GEN_FUNC_NAME(make_half4x2); break;
         case CallOp::MAKE_HALF4X3: OC_GEN_FUNC_NAME(make_half4x3); break;
         case CallOp::MAKE_HALF4X4: OC_GEN_FUNC_NAME(make_half4x4); break;
+
+        case CallOp::MAKE_REAL2X2: OC_GEN_FUNC_NAME(make_real2x2); break;
+        case CallOp::MAKE_REAL2X3: OC_GEN_FUNC_NAME(make_real2x3); break;
+        case CallOp::MAKE_REAL2X4: OC_GEN_FUNC_NAME(make_real2x4); break;
+
+        case CallOp::MAKE_REAL3X2: OC_GEN_FUNC_NAME(make_real3x2); break;
+        case CallOp::MAKE_REAL3X3: OC_GEN_FUNC_NAME(make_real3x3); break;
+        case CallOp::MAKE_REAL3X4: OC_GEN_FUNC_NAME(make_real3x4); break;
+
+        case CallOp::MAKE_REAL4X2: OC_GEN_FUNC_NAME(make_real4x2); break;
+        case CallOp::MAKE_REAL4X3: OC_GEN_FUNC_NAME(make_real4x3); break;
+        case CallOp::MAKE_REAL4X4: OC_GEN_FUNC_NAME(make_real4x4); break;
 
         case CallOp::MAKE_FLOAT2X2: OC_GEN_FUNC_NAME(make_float2x2); break;
         case CallOp::MAKE_FLOAT2X3: OC_GEN_FUNC_NAME(make_float2x3); break;
