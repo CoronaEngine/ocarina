@@ -4,38 +4,395 @@
 
 #include "type.h"
 
+#include <cctype>
+#include <mutex>
 #include <utility>
 
+#include "core/logging.h"
 #include "core/string_util.h"
 
 namespace ocarina {
 
 namespace detail {
 
-[[nodiscard]] static TypeRegistryCallbacks &type_registry_callbacks() noexcept {
-    static TypeRegistryCallbacks callbacks;
+[[nodiscard]] static TypeSystemCallbacks &type_system_callbacks() noexcept {
+    static TypeSystemCallbacks callbacks;
     return callbacks;
 }
 
-void register_type_registry_callbacks(TypeRegistryCallbacks callbacks) noexcept {
-    type_registry_callbacks() = callbacks;
+void register_type_system_callbacks(TypeSystemCallbacks callbacks) noexcept {
+    type_system_callbacks() = callbacks;
 }
 
 }// namespace detail
 
+namespace {
+
+struct TypeDatabase {
+    ocarina::vector<ocarina::unique_ptr<Type>> types;
+    ocarina::unordered_map<uint64_t, const Type *> by_hash;
+    std::recursive_mutex mutex;
+};
+
+[[nodiscard]] TypeDatabase &type_database() noexcept {
+    static TypeDatabase database;
+    return database;
+}
+
+[[nodiscard]] uint64_t compute_type_hash(ocarina::string_view desc) noexcept {
+    return Hashable::compute_hash<Type>(hash64(desc));
+}
+
+void notify_type_access(const Type *type) noexcept {
+    if (type == nullptr) {
+        return;
+    }
+    auto &callbacks = detail::type_system_callbacks();
+    if (callbacks.on_type_access != nullptr) {
+        callbacks.on_type_access(type);
+    }
+}
+
+[[nodiscard]] bool is_letter(char ch) noexcept {
+    return std::isalpha(static_cast<unsigned char>(ch)) || ch == '_';
+}
+
+[[nodiscard]] bool is_letter_or_num(char ch) noexcept {
+    return std::isalnum(static_cast<unsigned char>(ch)) || ch == '_' || ch == ':';
+}
+
+[[nodiscard]] bool is_num(char ch) noexcept {
+    return ch >= '0' && ch <= '9';
+}
+
+[[nodiscard]] std::pair<int, int> bracket_matching_far(ocarina::string_view str, char l = '<', char r = '>') noexcept {
+    int start = 0;
+    int end = 0;
+    int pair_count = 0;
+    for (int i = 0; i < str.size(); ++i) {
+        char ch = str[i];
+        if (ch == l) {
+            if (pair_count == 0) {
+                start = i;
+            }
+            pair_count += 1;
+        } else if (ch == r) {
+            pair_count -= 1;
+            if (pair_count == 0) {
+                end = i;
+            }
+        }
+    }
+    return std::make_pair(start, end);
+}
+
+[[nodiscard]] std::pair<int, int> bracket_matching_near(ocarina::string_view str, char l = '<', char r = '>') noexcept {
+    int start = -1;
+    int end = -1;
+    int pair_count = 0;
+    for (int i = 0; i < str.size(); ++i) {
+        char ch = str[i];
+        if (ch == l) {
+            if (pair_count == 0) {
+                start = i;
+            }
+            pair_count += 1;
+        } else if (ch == r) {
+            pair_count -= 1;
+            if (pair_count == 0) {
+                end = i;
+            }
+        }
+        if (pair_count == 0 && start != -1 && end != -1) {
+            break;
+        }
+    }
+    return std::make_pair(start, end);
+}
+
+[[nodiscard]] ocarina::string_view find_identifier(ocarina::string_view &str,
+                                                   bool check_start_with_num = false) noexcept {
+    OC_USING_SV
+    uint i = 0u;
+    for (; i < str.size() && is_letter_or_num(str[i]); ++i) {
+    }
+    auto ret = str.substr(0, i);
+    if (ret == "vector"sv ||
+        ret == "matrix"sv ||
+        ret == "struct"sv ||
+        ret == "buffer"sv ||
+        ret == "texture3d"sv ||
+        ret == "array"sv) {
+        auto [start, end] = bracket_matching_near(str);
+        ret = str.substr(0, end + 1);
+        str = str.substr(end + 1);
+    } else {
+        str = str.substr(i);
+    }
+    if (!ret.empty() && is_num(ret[0]) && check_start_with_num) [[unlikely]] {
+        OC_ERROR_FORMAT("invalid identifier {} !", ret)
+    }
+    return ret;
+}
+
+[[nodiscard]] auto find_content(ocarina::string_view &str, char l = '<', char r = '>') {
+    ocarina::vector<ocarina::string_view> ret;
+    auto prev_token = str.find(l);
+    constexpr auto token = ',';
+    str = str.substr(prev_token + 1);
+    uint count = 0;
+    constexpr uint limit = 10000;
+    while (true) {
+        auto content = find_identifier(str);
+        auto new_cursor = str.find(token) + 1;
+        str = str.substr(new_cursor);
+        ++count;
+        if (count > limit) {
+            OC_ERROR("The number of loops has exceeded the upper limit. Please check the code");
+        }
+        ret.push_back(content);
+        if (str[0] == r) {
+            break;
+        }
+    }
+    return ret;
+}
+
+const Type *parse_type_locked(ocarina::string_view desc) noexcept;
+
+void parse_vector_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::VECTOR;
+    auto [start, end] = bracket_matching_far(desc, '<', '>');
+    auto content = desc.substr(start + 1, end - start - 1);
+    auto lst = string_split(content, ',');
+    OC_ASSERT(lst.size() == 2);
+    auto type_str = lst[0];
+    auto dimension_str = lst[1];
+    auto dimension = std::stoi(string(dimension_str));
+    type->dimension_ = dimension;
+    type->members_.push_back(parse_type_locked(type_str));
+    auto member = type->members_.front();
+    if (!member->is_scalar()) [[unlikely]] {
+        OC_ERROR("invalid vector element: {}!", member->description());
+    }
+    type->size_ = member->size() * (dimension == 3 ? 4 : dimension);
+    type->alignment_ = type->size();
+}
+
+void parse_matrix_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::MATRIX;
+    auto [start, end] = bracket_matching_far(desc, '<', '>');
+    auto dimension_str = desc.substr(start + 1, end - start - 1);
+    auto dims = string_split(dimension_str, ',');
+    auto type_str = dims[0];
+    int N = std::stoi(string(dims[1]));
+    int M = std::stoi(string(dims[2]));
+    type->dimension_ = N;
+    auto tmp_desc = ocarina::format("vector<{},{}>", type_str, M);
+    type->members_.push_back(parse_type_locked(tmp_desc));
+
+#define OC_SIZE_ALIGN(TypeName, NN, MM)                 \
+    if (#TypeName == type_str && N == (NN) && M == (MM)) { \
+        type->size_ = sizeof(Matrix<TypeName, NN, MM>);    \
+        type->alignment_ = alignof(Matrix<TypeName, NN, MM>); \
+    } else
+
+#define OC_SIZE_ALIGN_FOR_TYPE(type_name) \
+    OC_SIZE_ALIGN(type_name, 2, 2)        \
+    OC_SIZE_ALIGN(type_name, 2, 3)        \
+    OC_SIZE_ALIGN(type_name, 2, 4)        \
+    OC_SIZE_ALIGN(type_name, 3, 2)        \
+    OC_SIZE_ALIGN(type_name, 3, 3)        \
+    OC_SIZE_ALIGN(type_name, 3, 4)        \
+    OC_SIZE_ALIGN(type_name, 4, 2)        \
+    OC_SIZE_ALIGN(type_name, 4, 3)        \
+    OC_SIZE_ALIGN(type_name, 4, 4)
+
+    OC_SIZE_ALIGN_FOR_TYPE(float)
+    OC_SIZE_ALIGN_FOR_TYPE(real)
+    OC_SIZE_ALIGN_FOR_TYPE(half) {
+        OC_ERROR("invalid matrix dimension <{}, {}>!", N, M);
+    }
+
+#undef OC_SIZE_ALIGN_FOR_TYPE
+#undef OC_SIZE_ALIGN
+}
+
+void parse_struct_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::STRUCTURE;
+    auto lst = find_content(desc);
+    type->cname_ = lst[0];
+    auto alignment_str = lst[1];
+    bool is_builtin_struct = lst[2] == "true";
+    type->builtin_struct_ = is_builtin_struct;
+    bool is_param_struct = lst[3] == "true";
+    type->param_struct_ = is_param_struct;
+    auto alignment = std::stoi(string(alignment_str));
+    type->alignment_ = alignment;
+    auto size = 0u;
+    static constexpr uint member_offset = 4;
+    for (int i = member_offset; i < lst.size(); ++i) {
+        auto type_str = lst[i];
+        type->members_.push_back(parse_type_locked(type_str));
+        auto member = type->members_[i - member_offset];
+        size = detail::mem_offset(size, member->alignment());
+        size += member->size();
+    }
+    type->size_ = detail::mem_offset(size, type->alignment());
+}
+
+void parse_bindless_array_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::BINDLESS_ARRAY;
+    type->alignment_ = alignof(BindlessArrayDesc);
+}
+
+void parse_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::BUFFER;
+    auto lst = find_content(desc);
+    auto type_str = lst[0];
+    const Type *element_type = parse_type_locked(type_str);
+    type->members_.push_back(element_type);
+    for (int i = 1; i < lst.size(); ++i) {
+        type->dims_.push_back(std::stoi(lst[i].data()));
+    }
+    type->alignment_ = alignof(BufferDesc<>);
+    type->size_ = sizeof(BufferDesc<>);
+}
+
+void parse_texture3d_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::TEXTURE3D;
+    type->alignment_ = alignof(TextureDesc);
+    type->size_ = sizeof(TextureDesc);
+}
+
+void parse_texture2d_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::TEXTURE2D;
+    type->alignment_ = alignof(TextureDesc);
+    type->size_ = sizeof(TextureDesc);
+}
+
+void parse_accel_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::ACCEL;
+}
+
+void parse_byte_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::BYTE_BUFFER;
+    type->alignment_ = alignof(BufferDesc<>);
+}
+
+void parse_array_locked(Type *type, ocarina::string_view desc) noexcept {
+    type->tag_ = Type::Tag::ARRAY;
+    auto lst = find_content(desc);
+    auto type_str = lst[0];
+    auto len = std::stoi(string(lst[1]));
+    const Type *element_type = parse_type_locked(type_str);
+    type->members_.push_back(element_type);
+    type->alignment_ = element_type->alignment();
+    type->dimension_ = len;
+    type->size_ = element_type->size() * len;
+}
+
+const Type *add_type_locked(ocarina::unique_ptr<Type> type) noexcept {
+    auto &database = type_database();
+    type->index_ = database.types.size();
+    const Type *ret = type.get();
+    database.by_hash.emplace(compute_type_hash(type->description()), ret);
+    database.types.push_back(ocarina::move(type));
+    notify_type_access(ret);
+    return ret;
+}
+
+const Type *parse_type_locked(ocarina::string_view desc) noexcept {
+    if (desc == "void") {
+        return nullptr;
+    }
+    auto &database = type_database();
+    uint64_t hash = compute_type_hash(desc);
+    if (auto iter = database.by_hash.find(hash); iter != database.by_hash.cend()) {
+        notify_type_access(iter->second);
+        return iter->second;
+    }
+
+    OC_USING_SV
+    auto type = ocarina::make_unique<Type>();
+
+#define OC_PARSE_BASIC_TYPE(T, TAG)    \
+    if (desc == #T##sv) {              \
+        type->size_ = sizeof(T);       \
+        type->tag_ = Type::Tag::TAG;   \
+        type->alignment_ = alignof(T); \
+        type->dimension_ = 1;          \
+    } else
+
+    OC_PARSE_BASIC_TYPE(int, INT)
+    OC_PARSE_BASIC_TYPE(uint, UINT)
+    OC_PARSE_BASIC_TYPE(bool, BOOL)
+    OC_PARSE_BASIC_TYPE(float, FLOAT)
+    OC_PARSE_BASIC_TYPE(real, REAL)
+    OC_PARSE_BASIC_TYPE(half, HALF)
+    OC_PARSE_BASIC_TYPE(uchar, UCHAR)
+    OC_PARSE_BASIC_TYPE(char, CHAR)
+    OC_PARSE_BASIC_TYPE(ushort, USHORT)
+    OC_PARSE_BASIC_TYPE(ulong, ULONG)
+    OC_PARSE_BASIC_TYPE(short, SHORT)
+
+#undef OC_PARSE_BASIC_TYPE
+
+    if (desc.starts_with("vector")) {
+        parse_vector_locked(type.get(), desc);
+    } else if (desc.starts_with("matrix")) {
+        parse_matrix_locked(type.get(), desc);
+    } else if (desc.starts_with("array")) {
+        parse_array_locked(type.get(), desc);
+    } else if (desc.starts_with("struct")) {
+        parse_struct_locked(type.get(), desc);
+    } else if (desc.starts_with("bytebuffer")) {
+        parse_byte_buffer_locked(type.get(), desc);
+    } else if (desc.starts_with("buffer")) {
+        parse_buffer_locked(type.get(), desc);
+    } else if (desc.starts_with("texture3d")) {
+        parse_texture3d_locked(type.get(), desc);
+    } else if (desc.starts_with("texture2d")) {
+        parse_texture2d_locked(type.get(), desc);
+    } else if (desc.starts_with("accel")) {
+        parse_accel_locked(type.get(), desc);
+    } else if (desc.starts_with("bindlessArray")) {
+        parse_bindless_array_locked(type.get(), desc);
+    } else {
+        OC_ERROR("invalid data type ", desc);
+    }
+    type->set_description(desc);
+    return add_type_locked(ocarina::move(type));
+}
+
+}// namespace
+
 size_t Type::count() noexcept {
-    auto &callbacks = detail::type_registry_callbacks();
-    return callbacks.count == nullptr ? 0u : callbacks.count();
+    auto &database = type_database();
+    std::unique_lock lock{database.mutex};
+    return database.types.size();
 }
 
 const Type *Type::from(std::string_view description) noexcept {
-    auto &callbacks = detail::type_registry_callbacks();
-    return callbacks.from == nullptr ? nullptr : callbacks.from(description);
+    auto &database = type_database();
+    std::unique_lock lock{database.mutex};
+    return parse_type_locked(description);
 }
 
 const Type *Type::at(uint32_t uid) noexcept {
-    auto &callbacks = detail::type_registry_callbacks();
-    return callbacks.at == nullptr ? nullptr : callbacks.at(uid);
+    auto &database = type_database();
+    std::unique_lock lock{database.mutex};
+    return uid < database.types.size() ? database.types[uid].get() : nullptr;
+}
+
+bool Type::exists(ocarina::string_view description) noexcept {
+    return exists(compute_type_hash(description));
+}
+
+bool Type::exists(uint64_t hash) noexcept {
+    auto &database = type_database();
+    std::unique_lock lock{database.mutex};
+    return database.by_hash.find(hash) != database.by_hash.cend();
 }
 
 ocarina::span<const Type *const> Type::members() const noexcept {
@@ -103,9 +460,17 @@ size_t Type::max_member_size() const noexcept {
 }
 
 void Type::for_each(TypeVisitor *visitor) {
-    auto &callbacks = detail::type_registry_callbacks();
-    if (callbacks.for_each != nullptr) {
-        callbacks.for_each(visitor);
+    auto &database = type_database();
+    ocarina::vector<const Type *> snapshot;
+    {
+        std::unique_lock lock{database.mutex};
+        snapshot.reserve(database.types.size());
+        for (const auto &type : database.types) {
+            snapshot.push_back(type.get());
+        }
+    }
+    for (const Type *type : snapshot) {
+        visitor->visit(type);
     }
 }
 

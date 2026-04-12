@@ -7,7 +7,7 @@
 #include "codegen.h"
 #include "ast/expression.h"
 #include "ast/statement.h"
-#include "ast/type.h"
+#include "core/type.h"
 
 namespace ocarina {
 

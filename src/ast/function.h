@@ -7,7 +7,7 @@
 #include "math/basic_types.h"
 #include "core/stl.h"
 #include "core/header.h"
-#include "type.h"
+#include "core/type.h"
 #include "expression.h"
 #include "statement.h"
 #include "ast_node.h"

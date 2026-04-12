@@ -407,14 +407,13 @@ struct TypeVisitor {
 
 namespace detail {
 
-struct TypeRegistryCallbacks {
-    const Type *(*from)(ocarina::string_view) noexcept{nullptr};
-    const Type *(*at)(uint32_t) noexcept{nullptr};
-    size_t (*count)() noexcept{nullptr};
-    void (*for_each)(TypeVisitor *) noexcept{nullptr};
+struct TypeParser;
+
+struct TypeSystemCallbacks {
+    void (*on_type_access)(const Type *) noexcept{nullptr};
 };
 
-OC_CORE_API void register_type_registry_callbacks(TypeRegistryCallbacks callbacks) noexcept;
+OC_CORE_API void register_type_system_callbacks(TypeSystemCallbacks callbacks) noexcept;
 
 }// namespace detail
 
@@ -449,6 +448,7 @@ public:
         NONE
     };
     friend class TypeRegistry;
+    friend struct detail::TypeParser;
 
 private:
     size_t size_{0};
@@ -490,6 +490,8 @@ public:
     [[nodiscard]] static const Type *from(ocarina::string_view description) noexcept;
     [[nodiscard]] static const Type *at(uint32_t uid) noexcept;
     [[nodiscard]] static size_t count() noexcept;
+    [[nodiscard]] static bool exists(ocarina::string_view description) noexcept;
+    [[nodiscard]] static bool exists(uint64_t hash) noexcept;
     [[nodiscard]] const Type *get_member(ocarina::string_view name) const noexcept;
     [[nodiscard]] ocarina::span<const string_view> member_name() const noexcept { return member_name_; }
     [[nodiscard]] bool operator==(const Type &rhs) const noexcept { return hash() == rhs.hash(); }
