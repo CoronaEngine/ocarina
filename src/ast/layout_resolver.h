@@ -8,7 +8,7 @@
 
 #include "core/precision_policy.h"
 #include "core/stl.h"
-#include "core/type_registry.h"
+#include "core/type_desc.h"
 
 namespace ocarina {
 

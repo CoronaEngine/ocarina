@@ -7,6 +7,7 @@
 #include <mutex>
 #include <thread>
 #include <ast/function.h>
+#include "core/util.h"
 #include "rhi/resources/managed.h"
 #include <dsl/ref.h>
 #include <dsl/var.h>

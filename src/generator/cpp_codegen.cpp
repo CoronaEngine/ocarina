@@ -3,7 +3,8 @@
 //
 
 #include "cpp_codegen.h"
-#include "core/type_registry.h"
+#include "core/type_desc.h"
+#include "core/util.h"
 
 namespace ocarina {
 

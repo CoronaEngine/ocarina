@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/type_registry.h"
+#include "core/type_desc.h"
 #include "var.h"
 #include "soa.h"
 

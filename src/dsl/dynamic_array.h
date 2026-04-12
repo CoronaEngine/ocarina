@@ -7,7 +7,7 @@
 #include "core/stl.h"
 #include "ref.h"
 #include "core/string_util.h"
-#include "core/type_registry.h"
+#include "core/type_desc.h"
 #include "syntax.h"
 
 namespace ocarina {

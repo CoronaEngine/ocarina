@@ -4,6 +4,7 @@
 
 #include "cuda_codegen.h"
 #include "ast/expression.h"
+#include "core/util.h"
 #include "cuda_device.h"
 
 namespace ocarina {

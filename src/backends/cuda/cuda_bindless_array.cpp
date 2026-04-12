@@ -4,6 +4,7 @@
 
 #include "cuda_bindless_array.h"
 #include "cuda_device.h"
+#include "core/util.h"
 
 namespace ocarina {
 

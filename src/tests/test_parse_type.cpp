@@ -3,8 +3,8 @@
 //
 
 #include "ast/layout_resolver.h"
-#include "core/type_registry.h"
 #include "core/stl.h"
+#include "core/type_desc.h"
 
 using namespace ocarina;
 
@@ -147,7 +147,7 @@ static int run_invalid_case(string_view case_name) {
         std::cerr << "unknown invalid case: " << case_name << std::endl;
         return 2;
     }
-    const Type *type = TypeRegistry::instance().parse_type(desc);
+    const Type *type = Type::from(desc);
     (void)type;
     std::cerr << "invalid case unexpectedly succeeded: " << case_name << std::endl;
     return 3;
@@ -160,10 +160,10 @@ static bool expect_invalid_parse_failure(const char *exe_path, string_view case_
     return true;
 }
 
-static bool test_void_and_scalar_types(TypeRegistry &registry) {
-    CHECK(registry.parse_type(TypeDesc<void>::description()) == nullptr);
+static bool test_void_and_scalar_types() {
+    CHECK(Type::from(TypeDesc<void>::description()) == nullptr);
 
-    const Type *float_type = registry.parse_type(TypeDesc<float>::description());
+    const Type *float_type = Type::from(TypeDesc<float>::description());
     CHECK(float_type != nullptr);
     CHECK(float_type->is_scalar());
     CHECK(float_type->tag() == Type::Tag::FLOAT);
@@ -172,23 +172,23 @@ static bool test_void_and_scalar_types(TypeRegistry &registry) {
     CHECK(float_type->dimension() == 1);
     CHECK(float_type->description() == TypeDesc<float>::description());
     CHECK(float_type->name() == "float");
-    CHECK(registry.is_exist(TypeDesc<float>::description()));
-    CHECK(registry.parse_type(TypeDesc<float>::description()) == float_type);
+    CHECK(Type::exists(TypeDesc<float>::description()));
+    CHECK(Type::from(TypeDesc<float>::description()) == float_type);
 
-    const Type *bool_type = registry.parse_type(TypeDesc<bool>::description());
+    const Type *bool_type = Type::from(TypeDesc<bool>::description());
     CHECK(bool_type != nullptr);
     CHECK(bool_type->tag() == Type::Tag::BOOL);
     CHECK(bool_type->size() == sizeof(bool));
     CHECK(bool_type->alignment() == alignof(bool));
     CHECK(bool_type->dimension() == 1);
 
-    const Type *half_type = registry.parse_type(TypeDesc<half>::description());
+    const Type *half_type = Type::from(TypeDesc<half>::description());
     CHECK(half_type != nullptr);
     CHECK(half_type->tag() == Type::Tag::HALF);
     CHECK(half_type->size() == sizeof(half));
     CHECK(half_type->alignment() == alignof(half));
 
-    const Type *real_type = registry.parse_type(TypeDesc<real>::description());
+    const Type *real_type = Type::from(TypeDesc<real>::description());
     CHECK(real_type != nullptr);
     CHECK(real_type->is_scalar());
     CHECK(real_type->tag() == Type::Tag::REAL);
@@ -198,7 +198,7 @@ static bool test_void_and_scalar_types(TypeRegistry &registry) {
     return true;
 }
 
-static bool test_vector_and_matrix_types(TypeRegistry &registry) {
+static bool test_vector_and_matrix_types() {
     using Float3 = Vector<float, 3>;
     using Float4 = Vector<float, 4>;
     using Float3x4 = Matrix<float, 3, 4>;
@@ -206,7 +206,7 @@ static bool test_vector_and_matrix_types(TypeRegistry &registry) {
     using Real3x3 = Matrix<real, 3, 3>;
 
     const Type *float_type = Type::of<float>();
-    const Type *float3_type = registry.parse_type(TypeDesc<Float3>::description());
+    const Type *float3_type = Type::from(TypeDesc<Float3>::description());
     CHECK(float3_type != nullptr);
     CHECK(float3_type->is_vector());
     CHECK(float3_type->tag() == Type::Tag::VECTOR);
@@ -216,22 +216,22 @@ static bool test_vector_and_matrix_types(TypeRegistry &registry) {
     CHECK(float3_type->size() == sizeof(Float3));
     CHECK(float3_type->alignment() == alignof(Float3));
     CHECK(float3_type->name() == "float3");
-    CHECK(registry.parse_type(TypeDesc<Float3>::description()) == float3_type);
+    CHECK(Type::from(TypeDesc<Float3>::description()) == float3_type);
 
-    const Type *float4_type = registry.parse_type(TypeDesc<Float4>::description());
+    const Type *float4_type = Type::from(TypeDesc<Float4>::description());
     CHECK(float4_type != nullptr);
     CHECK(float4_type->is_vector());
     CHECK(float4_type->dimension() == 4);
     CHECK(float4_type->element() == float_type);
 
     const Type *real_type = Type::of<real>();
-    const Type *real3_type = registry.parse_type(TypeDesc<Real3>::description());
+    const Type *real3_type = Type::from(TypeDesc<Real3>::description());
     CHECK(real3_type != nullptr);
     CHECK(real3_type->is_vector());
     CHECK(real3_type->element() == real_type);
     CHECK(real3_type->name() == "real3");
 
-    const Type *matrix_type = registry.parse_type(TypeDesc<Float3x4>::description());
+    const Type *matrix_type = Type::from(TypeDesc<Float3x4>::description());
     CHECK(matrix_type != nullptr);
     CHECK(matrix_type->is_matrix());
     CHECK(matrix_type->tag() == Type::Tag::MATRIX);
@@ -241,9 +241,9 @@ static bool test_vector_and_matrix_types(TypeRegistry &registry) {
     CHECK(matrix_type->size() == sizeof(Float3x4));
     CHECK(matrix_type->alignment() == alignof(Float3x4));
     CHECK(matrix_type->name() == "float3x4");
-    CHECK(registry.parse_type(TypeDesc<Float3x4>::description()) == matrix_type);
+    CHECK(Type::from(TypeDesc<Float3x4>::description()) == matrix_type);
 
-    const Type *real3x3_type = registry.parse_type(TypeDesc<Real3x3>::description());
+    const Type *real3x3_type = Type::from(TypeDesc<Real3x3>::description());
     CHECK(real3x3_type != nullptr);
     CHECK(real3x3_type->is_matrix());
     CHECK(real3x3_type->element() == Type::of<Real3>());
@@ -251,12 +251,12 @@ static bool test_vector_and_matrix_types(TypeRegistry &registry) {
     return true;
 }
 
-static bool test_array_and_resource_types(TypeRegistry &registry) {
+static bool test_array_and_resource_types() {
     using Float4 = Vector<float, 4>;
     using Float4Array = ocarina::array<Float4, 5>;
 
     const Type *float4_type = Type::of<Float4>();
-    const Type *array_type = registry.parse_type(TypeDesc<Float4Array>::description());
+    const Type *array_type = Type::from(TypeDesc<Float4Array>::description());
     CHECK(array_type != nullptr);
     CHECK(array_type->is_array());
     CHECK(array_type->tag() == Type::Tag::ARRAY);
@@ -266,7 +266,7 @@ static bool test_array_and_resource_types(TypeRegistry &registry) {
     CHECK(array_type->alignment() == float4_type->alignment());
     CHECK(array_type->is_valid());
 
-    const Type *buffer_type = registry.parse_type(TypeDesc<Buffer<float, 2, 3>>::description());
+    const Type *buffer_type = Type::from(TypeDesc<Buffer<float, 2, 3>>::description());
     CHECK(buffer_type != nullptr);
     CHECK(buffer_type->is_buffer());
     CHECK(buffer_type->tag() == Type::Tag::BUFFER);
@@ -277,40 +277,40 @@ static bool test_array_and_resource_types(TypeRegistry &registry) {
     CHECK(buffer_type->size() == sizeof(BufferDesc<>));
     CHECK(buffer_type->alignment() == alignof(BufferDesc<>));
 
-    const Type *byte_buffer_type = registry.parse_type(TypeDesc<ByteBuffer>::description());
+    const Type *byte_buffer_type = Type::from(TypeDesc<ByteBuffer>::description());
     CHECK(byte_buffer_type != nullptr);
     CHECK(byte_buffer_type->is_byte_buffer());
     CHECK(byte_buffer_type->tag() == Type::Tag::BYTE_BUFFER);
     CHECK(byte_buffer_type->alignment() == alignof(BufferDesc<>));
 
-    const Type *texture2d_type = registry.parse_type(TypeDesc<Texture2D>::description());
+    const Type *texture2d_type = Type::from(TypeDesc<Texture2D>::description());
     CHECK(texture2d_type != nullptr);
     CHECK(texture2d_type->tag() == Type::Tag::TEXTURE2D);
     CHECK(texture2d_type->size() == sizeof(TextureDesc));
     CHECK(texture2d_type->alignment() == alignof(TextureDesc));
 
-    const Type *texture3d_type = registry.parse_type(TypeDesc<Texture3D>::description());
+    const Type *texture3d_type = Type::from(TypeDesc<Texture3D>::description());
     CHECK(texture3d_type != nullptr);
     CHECK(texture3d_type->tag() == Type::Tag::TEXTURE3D);
     CHECK(texture3d_type->size() == sizeof(TextureDesc));
     CHECK(texture3d_type->alignment() == alignof(TextureDesc));
 
-    const Type *bindless_array_type = registry.parse_type(TypeDesc<BindlessArray>::description());
+    const Type *bindless_array_type = Type::from(TypeDesc<BindlessArray>::description());
     CHECK(bindless_array_type != nullptr);
     CHECK(bindless_array_type->tag() == Type::Tag::BINDLESS_ARRAY);
     CHECK(bindless_array_type->alignment() == alignof(BindlessArrayDesc));
 
-    const Type *accel_type = registry.parse_type(TypeDesc<Accel>::description());
+    const Type *accel_type = Type::from(TypeDesc<Accel>::description());
     CHECK(accel_type != nullptr);
     CHECK(accel_type->tag() == Type::Tag::ACCEL);
     return true;
 }
 
-static bool test_tuple_and_struct_types(TypeRegistry &registry) {
+static bool test_tuple_and_struct_types() {
     using TupleType = ocarina::tuple<uint, uint, Vector<float, 2>>;
     using SampleArray = ocarina::array<float, 4>;
 
-    const Type *tuple_type = registry.parse_type(TypeDesc<TupleType>::description());
+    const Type *tuple_type = Type::from(TypeDesc<TupleType>::description());
     CHECK(tuple_type != nullptr);
     CHECK(tuple_type->is_structure());
     CHECK(tuple_type->tag() == Type::Tag::STRUCTURE);
@@ -371,11 +371,11 @@ static bool test_tuple_and_struct_types(TypeRegistry &registry) {
     CHECK(nested_type->get_member("samples") == Type::of<SampleArray>());
     CHECK(nested_type->size() == sizeof(ParseNested));
     CHECK(nested_type->alignment() == alignof(ParseNested));
-    CHECK(registry.parse_type(TypeDesc<ParseNested>::description()) == nested_type);
+    CHECK(Type::from(TypeDesc<ParseNested>::description()) == nested_type);
     return true;
 }
 
-static bool test_layout_resolver(TypeRegistry &registry) {
+static bool test_layout_resolver() {
     using RealLeafBuffer = Buffer<ParseRealLeaf>;
     using RealNestedBuffer = Buffer<ParseRealNested>;
     using RealArrayBuffer = Buffer<ParseRealArray>;
@@ -539,14 +539,12 @@ int main(int argc, char **argv) {
         return run_invalid_case(argv[2]);
     }
 
-    TypeRegistry &registry = TypeRegistry::instance();
-
     bool passed = true;
-    passed = test_void_and_scalar_types(registry) && passed;
-    passed = test_vector_and_matrix_types(registry) && passed;
-    passed = test_array_and_resource_types(registry) && passed;
-    passed = test_tuple_and_struct_types(registry) && passed;
-    passed = test_layout_resolver(registry) && passed;
+    passed = test_void_and_scalar_types() && passed;
+    passed = test_vector_and_matrix_types() && passed;
+    passed = test_array_and_resource_types() && passed;
+    passed = test_tuple_and_struct_types() && passed;
+    passed = test_layout_resolver() && passed;
     // passed = test_invalid_descriptions(argv[0]) && passed;
 
     if (!passed) {

@@ -8,7 +8,7 @@
 #include "typeinfo"
 #include "core/hash.h"
 #include "core/string_util.h"
-#include "core/type_registry.h"
+#include "core/type_desc.h"
 #include "dsl/dsl.h"
 
 using namespace ocarina;

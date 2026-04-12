@@ -338,7 +338,6 @@ template<typename S, typename M, typename I>
 static constexpr bool is_valid_reflection_v = detail::is_valid_reflection<S, M, I>::value;
 
 class Type;
-class TypeRegistry;
 
 struct BindlessArrayDesc {
     handle_ty buffer_slot;
@@ -447,7 +446,6 @@ public:
 
         NONE
     };
-    friend class TypeRegistry;
     friend struct detail::TypeParser;
 
 private:
