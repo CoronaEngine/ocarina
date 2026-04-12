@@ -15,6 +15,8 @@ endfunction()
 
 ocarina_add_test(test-parsetype SOURCES test_parse_type.cpp)
 ocarina_add_test(test-precision-caps SOURCES test_precision_caps.cpp)
+ocarina_add_test(test-host-bytebuffer SOURCES test_host_byte_buffer.cpp)
+ocarina_add_test(test-dynamic-buffer-layout-codec SOURCES test_dynamic_buffer_layout_codec.cpp)
 ocarina_add_test(test-imageio SOURCES test_image_io.cpp)
 ocarina_add_test(test-half SOURCES test_half.cpp)
 ocarina_add_test(test-accel-update SOURCES test_accel_update.cpp)

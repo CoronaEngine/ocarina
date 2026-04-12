@@ -10,7 +10,49 @@
 
 namespace ocarina {
 
+namespace {
+
+const Type *type_registry_from_bridge(ocarina::string_view desc) noexcept {
+    return TypeRegistry::instance().type_from(desc);
+}
+
+const Type *type_registry_at_bridge(uint32_t uid) noexcept {
+    return TypeRegistry::instance().type_at(uid);
+}
+
+size_t type_registry_count_bridge() noexcept {
+    return TypeRegistry::instance().type_count();
+}
+
+void type_registry_for_each_bridge(TypeVisitor *visitor) noexcept {
+    TypeRegistry::instance().for_each(visitor);
+}
+
+void register_type_registry_callbacks_once() noexcept {
+    static bool registered = [] {
+        detail::register_type_registry_callbacks(detail::TypeRegistryCallbacks{
+            .from = &type_registry_from_bridge,
+            .at = &type_registry_at_bridge,
+            .count = &type_registry_count_bridge,
+            .for_each = &type_registry_for_each_bridge,
+        });
+        return true;
+    }();
+    (void)registered;
+}
+
+}// namespace
+
+namespace detail {
+
+void ensure_type_registry_callbacks_registered() noexcept {
+    register_type_registry_callbacks_once();
+}
+
+}// namespace detail
+
 TypeRegistry &TypeRegistry::instance() noexcept {
+    detail::ensure_type_registry_callbacks_registered();
     static TypeRegistry type_registry;
     return type_registry;
 }

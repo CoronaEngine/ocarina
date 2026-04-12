@@ -5,17 +5,22 @@
 #pragma once
 
 #include "core/stl.h"
-#include "type.h"
+#include "core/type.h"
 #include <mutex>
 #include "core/util.h"
 #include "type_desc.h"
 
 namespace ocarina {
 
+namespace detail {
+OC_AST_API void ensure_type_registry_callbacks_registered() noexcept;
+}
+
 template<typename T>
 const Type *Type::of() noexcept {
     using raw_type = std::remove_cvref_t<T>;
     constexpr bool is_builtin = is_builtin_struct_v<raw_type>;
+    detail::ensure_type_registry_callbacks_registered();
     const Type *ret = Type::from(TypeDesc<raw_type>::description());
     if constexpr (ocarina::is_struct_v<T>) {
         if constexpr (requires {
@@ -74,50 +79,6 @@ template<typename T>
         return "";
     }
 }
-
-namespace detail {
-template<typename S, typename Members, typename offsets>
-struct is_valid_reflection : std::false_type {};
-
-template<typename S, typename... M, typename I, I... os>
-struct is_valid_reflection<S, ocarina::tuple<M...>, std::integer_sequence<I, os...>> {
-    //    static_assert(((!is_struct_v<M>)&&...));
-    static_assert((!is_bool_vector_v<M> && ...),
-                  "Boolean vectors are not allowed in DSL "
-                  "structures since their may have different "
-                  "layouts on different platforms.");
-
-private:
-    [[nodiscard]] static constexpr bool _check() noexcept {
-        constexpr auto count = sizeof...(M);
-        static_assert(sizeof...(os) == count);
-        constexpr ocarina::array<size_t, count> sizes{sizeof(M)...};
-        constexpr ocarina::array<size_t, count> alignments{alignof(M)...};
-        constexpr ocarina::array<size_t, count> offsets{os...};
-        size_t cur_offset = 0u;
-        for (auto i = 0u; i < count; ++i) {
-            auto offset = offsets[i];
-            auto size = sizes[i];
-            auto alignment = alignments[i];
-            cur_offset = mem_offset(cur_offset, alignment);
-            if (cur_offset != offset) {
-                return false;
-            }
-            cur_offset += size;
-        }
-        constexpr auto struct_size = sizeof(S);
-        constexpr auto struct_alignment = alignof(S);
-        cur_offset = mem_offset(cur_offset, struct_alignment);
-        return cur_offset == struct_size;
-    };
-
-public:
-    static constexpr bool value = _check();
-};
-}// namespace detail
-
-template<typename S, typename M, typename I>
-static constexpr bool is_valid_reflection_v = detail::is_valid_reflection<S, M, I>::value;
 
 class OC_AST_API TypeRegistry {
 public:
