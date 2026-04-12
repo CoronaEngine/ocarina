@@ -102,8 +102,7 @@ string LayoutResolver::resolve_array_description(const Type *type) const noexcep
 	if (elem == nullptr) {
 		return {};
 	}
-	OC_ASSERT(!type->dims().empty());
-	return ocarina::format("array<{},{}>", elem->description(), type->dims().front());
+	return ocarina::format("array<{},{}>", elem->description(), type->dimension());
 }
 
 string LayoutResolver::resolve_buffer_description(const Type *type) const noexcept {
@@ -112,11 +111,7 @@ string LayoutResolver::resolve_buffer_description(const Type *type) const noexce
 	if (elem == nullptr) {
 		return {};
 	}
-	string ret = ocarina::format("buffer<{}", elem->description());
-	for (auto dim : type->dims()) {
-		ret.append(",").append(std::to_string(dim));
-	}
-	ret.push_back('>');
+	string ret = ocarina::format("buffer<{}>", elem->description());
 	return ret;
 }
 
