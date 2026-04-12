@@ -3,7 +3,6 @@
 //
 
 #include "pyexporter/ocapi.h"
-#include "ast/type_desc.h"
 
 namespace py = pybind11;
 using namespace ocarina;

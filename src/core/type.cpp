@@ -53,19 +53,46 @@ void notify_type_access(const Type *type) noexcept {
     }
 }
 
-[[nodiscard]] bool is_letter(char ch) noexcept {
+}// namespace
+
+namespace detail {
+
+struct TypeParser {
+    [[nodiscard]] static bool is_letter(char ch) noexcept;
+    [[nodiscard]] static bool is_letter_or_num(char ch) noexcept;
+    [[nodiscard]] static bool is_num(char ch) noexcept;
+    [[nodiscard]] static std::pair<int, int> bracket_matching_far(ocarina::string_view str, char l = '<', char r = '>') noexcept;
+    [[nodiscard]] static std::pair<int, int> bracket_matching_near(ocarina::string_view str, char l = '<', char r = '>') noexcept;
+    [[nodiscard]] static ocarina::string_view find_identifier(ocarina::string_view &str,
+                                                              bool check_start_with_num = false) noexcept;
+    [[nodiscard]] static ocarina::vector<ocarina::string_view> find_content(ocarina::string_view &str, char l = '<', char r = '>');
+    [[nodiscard]] static const Type *parse_type_locked(ocarina::string_view desc) noexcept;
+    static void parse_vector_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_matrix_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_struct_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_bindless_array_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_buffer_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_texture3d_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_texture2d_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_accel_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_byte_buffer_locked(Type *type, ocarina::string_view desc) noexcept;
+    static void parse_array_locked(Type *type, ocarina::string_view desc) noexcept;
+    [[nodiscard]] static const Type *add_type_locked(ocarina::unique_ptr<Type> type) noexcept;
+};
+
+[[nodiscard]] bool TypeParser::is_letter(char ch) noexcept {
     return std::isalpha(static_cast<unsigned char>(ch)) || ch == '_';
 }
 
-[[nodiscard]] bool is_letter_or_num(char ch) noexcept {
+[[nodiscard]] bool TypeParser::is_letter_or_num(char ch) noexcept {
     return std::isalnum(static_cast<unsigned char>(ch)) || ch == '_' || ch == ':';
 }
 
-[[nodiscard]] bool is_num(char ch) noexcept {
+[[nodiscard]] bool TypeParser::is_num(char ch) noexcept {
     return ch >= '0' && ch <= '9';
 }
 
-[[nodiscard]] std::pair<int, int> bracket_matching_far(ocarina::string_view str, char l = '<', char r = '>') noexcept {
+[[nodiscard]] std::pair<int, int> TypeParser::bracket_matching_far(ocarina::string_view str, char l, char r) noexcept {
     int start = 0;
     int end = 0;
     int pair_count = 0;
@@ -86,7 +113,7 @@ void notify_type_access(const Type *type) noexcept {
     return std::make_pair(start, end);
 }
 
-[[nodiscard]] std::pair<int, int> bracket_matching_near(ocarina::string_view str, char l = '<', char r = '>') noexcept {
+[[nodiscard]] std::pair<int, int> TypeParser::bracket_matching_near(ocarina::string_view str, char l, char r) noexcept {
     int start = -1;
     int end = -1;
     int pair_count = 0;
@@ -110,8 +137,8 @@ void notify_type_access(const Type *type) noexcept {
     return std::make_pair(start, end);
 }
 
-[[nodiscard]] ocarina::string_view find_identifier(ocarina::string_view &str,
-                                                   bool check_start_with_num = false) noexcept {
+[[nodiscard]] ocarina::string_view TypeParser::find_identifier(ocarina::string_view &str,
+                                                                       bool check_start_with_num) noexcept {
     OC_USING_SV
     uint i = 0u;
     for (; i < str.size() && is_letter_or_num(str[i]); ++i) {
@@ -135,7 +162,7 @@ void notify_type_access(const Type *type) noexcept {
     return ret;
 }
 
-[[nodiscard]] auto find_content(ocarina::string_view &str, char l = '<', char r = '>') {
+[[nodiscard]] ocarina::vector<ocarina::string_view> TypeParser::find_content(ocarina::string_view &str, char l, char r) {
     ocarina::vector<ocarina::string_view> ret;
     auto prev_token = str.find(l);
     constexpr auto token = ',';
@@ -158,9 +185,7 @@ void notify_type_access(const Type *type) noexcept {
     return ret;
 }
 
-const Type *parse_type_locked(ocarina::string_view desc) noexcept;
-
-void parse_vector_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_vector_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::VECTOR;
     auto [start, end] = bracket_matching_far(desc, '<', '>');
     auto content = desc.substr(start + 1, end - start - 1);
@@ -179,7 +204,7 @@ void parse_vector_locked(Type *type, ocarina::string_view desc) noexcept {
     type->alignment_ = type->size();
 }
 
-void parse_matrix_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_matrix_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::MATRIX;
     auto [start, end] = bracket_matching_far(desc, '<', '>');
     auto dimension_str = desc.substr(start + 1, end - start - 1);
@@ -218,7 +243,7 @@ void parse_matrix_locked(Type *type, ocarina::string_view desc) noexcept {
 #undef OC_SIZE_ALIGN
 }
 
-void parse_struct_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_struct_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::STRUCTURE;
     auto lst = find_content(desc);
     type->cname_ = lst[0];
@@ -241,12 +266,12 @@ void parse_struct_locked(Type *type, ocarina::string_view desc) noexcept {
     type->size_ = detail::mem_offset(size, type->alignment());
 }
 
-void parse_bindless_array_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_bindless_array_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::BINDLESS_ARRAY;
     type->alignment_ = alignof(BindlessArrayDesc);
 }
 
-void parse_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::BUFFER;
     auto lst = find_content(desc);
     auto type_str = lst[0];
@@ -259,28 +284,28 @@ void parse_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
     type->size_ = sizeof(BufferDesc<>);
 }
 
-void parse_texture3d_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_texture3d_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::TEXTURE3D;
     type->alignment_ = alignof(TextureDesc);
     type->size_ = sizeof(TextureDesc);
 }
 
-void parse_texture2d_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_texture2d_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::TEXTURE2D;
     type->alignment_ = alignof(TextureDesc);
     type->size_ = sizeof(TextureDesc);
 }
 
-void parse_accel_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_accel_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::ACCEL;
 }
 
-void parse_byte_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_byte_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::BYTE_BUFFER;
     type->alignment_ = alignof(BufferDesc<>);
 }
 
-void parse_array_locked(Type *type, ocarina::string_view desc) noexcept {
+void TypeParser::parse_array_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::ARRAY;
     auto lst = find_content(desc);
     auto type_str = lst[0];
@@ -292,7 +317,7 @@ void parse_array_locked(Type *type, ocarina::string_view desc) noexcept {
     type->size_ = element_type->size() * len;
 }
 
-const Type *add_type_locked(ocarina::unique_ptr<Type> type) noexcept {
+const Type *TypeParser::add_type_locked(ocarina::unique_ptr<Type> type) noexcept {
     auto &database = type_database();
     type->index_ = database.types.size();
     const Type *ret = type.get();
@@ -302,7 +327,7 @@ const Type *add_type_locked(ocarina::unique_ptr<Type> type) noexcept {
     return ret;
 }
 
-const Type *parse_type_locked(ocarina::string_view desc) noexcept {
+const Type *TypeParser::parse_type_locked(ocarina::string_view desc) noexcept {
     if (desc == "void") {
         return nullptr;
     }
@@ -365,7 +390,7 @@ const Type *parse_type_locked(ocarina::string_view desc) noexcept {
     return add_type_locked(ocarina::move(type));
 }
 
-}// namespace
+}// namespace detail
 
 size_t Type::count() noexcept {
     auto &database = type_database();
@@ -376,7 +401,7 @@ size_t Type::count() noexcept {
 const Type *Type::from(std::string_view description) noexcept {
     auto &database = type_database();
     std::unique_lock lock{database.mutex};
-    return parse_type_locked(description);
+    return detail::TypeParser::parse_type_locked(description);
 }
 
 const Type *Type::at(uint32_t uid) noexcept {

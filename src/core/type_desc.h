@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "core/type.h"
 #include "core/string_util.h"
 
 namespace ocarina {
@@ -81,7 +82,6 @@ struct TypeDesc<void> {
     }
 };
 
-/// matrices
 template<typename T, size_t N, size_t M>
 struct TypeDesc<ocarina::Matrix<T, N, M>> {
     static ocarina::string &description() noexcept {
@@ -205,7 +205,6 @@ struct TypeDesc<BindlessArray> {
     }
 };
 
-/// make struct type description
 #define OC_MAKE_STRUCT_MEMBER_FMT(member) ",{}"
 
 #define OC_MAKE_STRUCT_MEMBER_DESC(member) \
@@ -234,5 +233,67 @@ struct TypeDesc<BindlessArray> {
 #define OC_MAKE_STRUCT_IS_DYNAMIC(S, ...) \
     template<>                            \
     struct ocarina::is_dynamic_size<S> : std::disjunction<MAP_LIST_UD(OC_IS_DYNAMIC_SIZE,S, ##__VA_ARGS__)> {};
+
+template<typename T>
+const Type *Type::of() noexcept {
+    using raw_type = std::remove_cvref_t<T>;
+    const Type *ret = Type::from(TypeDesc<raw_type>::description());
+    if constexpr (ocarina::is_struct_v<T>) {
+        if constexpr (requires {
+                          ocarina::struct_member_tuple<raw_type>::members;
+                      }) {
+            constexpr auto arr = ocarina::struct_member_tuple<raw_type>::members;
+            constexpr int num = sizeof(ocarina::struct_member_tuple<raw_type>::members) / sizeof(arr[0]);
+            const_cast<Type *>(ret)->update_member_name(arr, num);
+        }
+        using member_tuple = typename ocarina::struct_member_tuple<raw_type>::type;
+        traverse_tuple(member_tuple{}, [&](auto elm) {
+            using elm_t = decltype(elm);
+            auto t = Type::of<elm_t>();
+        });
+    }
+    return ret;
+}
+
+template<typename T>
+[[nodiscard]] string to_str(const T &val) noexcept {
+    static string type_string = string(TypeDesc<T>::name());
+    if constexpr (is_vector2_v<T>) {
+        return ocarina::format(type_string + "({}, {})", to_str(val.x), to_str(val.y));
+    } else if constexpr (is_vector3_v<T>) {
+        return ocarina::format(type_string + "({}, {}, {})", to_str(val.x), to_str(val.y), to_str(val.z));
+    } else if constexpr (is_vector4_v<T>) {
+        return ocarina::format(type_string + "({}, {}, {}, {})", to_str(val.x), to_str(val.y), to_str(val.z), to_str(val.w));
+    } else if constexpr (is_matrix2_v<T>) {
+        return ocarina::format("[{},\n {}]", to_str(val[0]), to_str(val[1]));
+    } else if constexpr (is_matrix3_v<T>) {
+        return ocarina::format("[{},\n {},\n {}]", to_str(val[0]), to_str(val[1]), to_str(val[2]));
+    } else if constexpr (is_matrix4_v<T>) {
+        return ocarina::format("[{},\n {},\n {},\n {}]", to_str(val[0]), to_str(val[1]), to_str(val[2]), to_str(val[3]));
+    } else if constexpr (is_scalar_v<T>) {
+        if constexpr (is_half_v<T>) {
+            return std::to_string(half2float(val));
+        } else {
+            return std::to_string(val);
+        }
+    } else if constexpr (is_struct_v<T>) {
+        string ret = ocarina::format("{}[", struct_member_tuple<T>::struct_name);
+        traverse_tuple(struct_member_tuple_t<T>{}, [&]<typename Elm>(const Elm &_, uint index) {
+            constexpr auto offset_array = struct_member_tuple<T>::offset_array;
+            auto head = reinterpret_cast<const std::byte *>(addressof(val));
+            auto addr = head + offset_array[index];
+            const Elm &elm = reinterpret_cast<const Elm &>(*addr);
+            if (index == offset_array.size() - 1) {
+                ret += to_str(elm);
+            } else {
+                ret += to_str(elm) + ",";
+            }
+        });
+        return ret + "]";
+    } else {
+        static_assert(always_false_v<T>);
+        return "";
+    }
+}
 
 }// namespace ocarina
