@@ -3,7 +3,7 @@
 //
 
 #include "function.h"
-#include "type_registry.h"
+#include "core/type_registry.h"
 #include "generator/codegen.h"
 #include "function_corrector.h"
 

@@ -5,9 +5,9 @@
 #include <iostream>
 
 #include "ast/layout_resolver.h"
-#include "ast/type_registry.h"
 #include "core/dynamic_buffer_layout_codec.h"
 #include "core/type_desc.h"
+#include "core/type_registry.h"
 #include "math/real.h"
 
 using namespace ocarina;

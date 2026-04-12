@@ -2,8 +2,8 @@
 // Created by Zero on 30/05/2022.
 //
 
-#include "ast/type_registry.h"
 #include "ast/layout_resolver.h"
+#include "core/type_registry.h"
 #include "core/stl.h"
 
 using namespace ocarina;
