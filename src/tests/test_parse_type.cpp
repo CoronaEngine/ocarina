@@ -58,6 +58,13 @@ struct ParseRealNested {
 OC_MAKE_STRUCT_REFLECTION(ParseRealNested, leaf, samples)
 OC_MAKE_STRUCT_DESC(ParseRealNested, leaf, samples)
 
+struct ParseRealArray {
+    ocarina::array<real, 4> samples;
+};
+
+OC_MAKE_STRUCT_REFLECTION(ParseRealArray, samples)
+OC_MAKE_STRUCT_DESC(ParseRealArray, samples)
+
 static bool check_impl(bool condition, string_view message) {
     if (!condition) {
         std::cerr << "[FAIL] " << message << std::endl;
@@ -371,6 +378,7 @@ static bool test_tuple_and_struct_types(TypeRegistry &registry) {
 static bool test_layout_resolver(TypeRegistry &registry) {
     using RealLeafBuffer = Buffer<ParseRealLeaf>;
     using RealNestedBuffer = Buffer<ParseRealNested>;
+    using RealArrayBuffer = Buffer<ParseRealArray>;
 
     const Type *real_leaf_type = Type::of<ParseRealLeaf>();
     CHECK(real_leaf_type != nullptr);
@@ -380,6 +388,42 @@ static bool test_layout_resolver(TypeRegistry &registry) {
     CHECK(real_leaf_type->size() == sizeof(ParseRealLeaf));
     CHECK(real_leaf_type->size() == layout_size_of(real_leaf_type));
     CHECK(real_leaf_type->alignment() == layout_alignment_of(real_leaf_type));
+
+    LayoutResolver auto_resolver(StoragePrecisionPolicy{
+        .policy = PrecisionPolicy::auto_select,
+        .allow_real_in_storage = true,
+    });
+    const Type *resolved_auto_leaf = auto_resolver.resolve(real_leaf_type);
+    CHECK(resolved_auto_leaf != nullptr);
+    CHECK(resolved_auto_leaf->is_structure());
+    CHECK(resolved_auto_leaf->members().size() == 2u);
+    CHECK(resolved_auto_leaf->members()[0] == Type::of<half>());
+    CHECK(resolved_auto_leaf->members()[1] == Type::of<Vector<half, 2>>());
+
+    const Type *resolved_auto_nested = auto_resolver.resolve(Type::of<ParseRealNested>());
+    CHECK(resolved_auto_nested != nullptr);
+    CHECK(resolved_auto_nested->is_structure());
+    CHECK(resolved_auto_nested->members().size() == 2u);
+    CHECK(resolved_auto_nested->members()[0] == resolved_auto_leaf);
+    CHECK(resolved_auto_nested->members()[1] == Type::of<Vector<half, 3>>());
+
+    const Type *real_array_type = Type::of<ParseRealArray>();
+    CHECK(real_array_type != nullptr);
+    CHECK(real_array_type->is_structure());
+    CHECK(real_array_type->size() == sizeof(ParseRealArray));
+    CHECK(real_array_type->size() == layout_size_of(real_array_type));
+    CHECK(real_array_type->alignment() == layout_alignment_of(real_array_type));
+
+    const Type *resolved_auto_array = auto_resolver.resolve(real_array_type);
+    CHECK(resolved_auto_array != nullptr);
+    CHECK(resolved_auto_array->is_structure());
+    CHECK(resolved_auto_array->members().size() == 1u);
+    CHECK(resolved_auto_array->members()[0] == Type::of<ocarina::array<float, 4>>());
+
+    const Type *resolved_auto_array_buffer = auto_resolver.resolve(Type::of<RealArrayBuffer>());
+    CHECK(resolved_auto_array_buffer != nullptr);
+    CHECK(resolved_auto_array_buffer->is_buffer());
+    CHECK(resolved_auto_array_buffer->element() == resolved_auto_array);
 
     LayoutResolver float_resolver(StoragePrecisionPolicy{
         .policy = PrecisionPolicy::force_f32,
@@ -461,12 +505,23 @@ static bool test_layout_resolver(TypeRegistry &registry) {
     CHECK(resolved_half_nested_buffer->is_buffer());
     CHECK(resolved_half_nested_buffer->element() == resolved_half_nested);
 
+    const Type *resolved_auto_leaf_buffer = auto_resolver.resolve(real_leaf_buffer);
+    CHECK(resolved_auto_leaf_buffer != nullptr);
+    CHECK(resolved_auto_leaf_buffer->is_buffer());
+    CHECK(resolved_auto_leaf_buffer->element() == resolved_auto_leaf);
+
+    const Type *resolved_auto_nested_buffer = auto_resolver.resolve(real_nested_buffer);
+    CHECK(resolved_auto_nested_buffer != nullptr);
+    CHECK(resolved_auto_nested_buffer->is_buffer());
+    CHECK(resolved_auto_nested_buffer->element() == resolved_auto_nested);
+
     LayoutResolver disallow_resolver(StoragePrecisionPolicy{
         .policy = PrecisionPolicy::force_f32,
         .allow_real_in_storage = false,
     });
     CHECK(disallow_resolver.resolve(real_leaf_type) == nullptr);
     CHECK(disallow_resolver.resolve(real_nested_type) == nullptr);
+    CHECK(disallow_resolver.resolve(real_array_type) == nullptr);
     CHECK(disallow_resolver.resolve(real_leaf_buffer) == nullptr);
     CHECK(disallow_resolver.resolve(real_type) == nullptr);
     return true;

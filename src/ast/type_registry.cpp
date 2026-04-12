@@ -329,6 +329,7 @@ void TypeRegistry::parse_array(Type *type, ocarina::string_view desc) noexcept {
     auto size = element_type->size() * len;
     type->alignment_ = alignment;
     type->dimension_ = len;
+    type->dims_.push_back(len);
     type->size_ = size;
 }
 

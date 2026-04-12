@@ -38,6 +38,7 @@ public:
 
 private:
     [[nodiscard]] string resolve_real_description() const noexcept;
+    [[nodiscard]] const Type *resolve_real_container_element(const Type *type) const noexcept;
     [[nodiscard]] string resolve_vector_description(const Type *type) const noexcept;
     [[nodiscard]] string resolve_matrix_description(const Type *type) const noexcept;
     [[nodiscard]] string resolve_array_description(const Type *type) const noexcept;

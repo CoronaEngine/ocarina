@@ -344,7 +344,7 @@ const RefExpr *Function::reference_argument(const Type *type) noexcept {
 const RefExpr *Function::local(const Type *type, std::source_location location) noexcept {
     auto ret = create_expression<RefExpr>(create_variable(type, Variable::Tag::LOCAL));
     ret->variable().set_src_location(location);
-    body()->add_var(ret->variable());
+    current_scope()->add_var(ret->variable());
     return ret;
 }
 

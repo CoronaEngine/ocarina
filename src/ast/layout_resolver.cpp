@@ -55,10 +55,23 @@ string LayoutResolver::resolve_real_description() const noexcept {
 		case PrecisionPolicy::force_f16:
 			return string(TypeDesc<half>::description());
 		case PrecisionPolicy::force_f32:
+			return string(TypeDesc<float>::description());
 		case PrecisionPolicy::auto_select:
+			return string(TypeDesc<half>::description());
 		default:
 			return string(TypeDesc<float>::description());
 	}
+}
+
+const Type *LayoutResolver::resolve_real_container_element(const Type *type) const noexcept {
+	const auto *elem = resolve(type);
+	if (elem == nullptr) {
+		return nullptr;
+	}
+	if (policy_.policy == PrecisionPolicy::auto_select && type != nullptr && type->tag() == Type::Tag::REAL && elem->tag() == Type::Tag::HALF) {
+		return Type::of<float>();
+	}
+	return elem;
 }
 
 string LayoutResolver::resolve_vector_description(const Type *type) const noexcept {
@@ -85,7 +98,7 @@ string LayoutResolver::resolve_matrix_description(const Type *type) const noexce
 
 string LayoutResolver::resolve_array_description(const Type *type) const noexcept {
 	OC_ASSERT(type != nullptr && type->is_array());
-	const auto *elem = resolve(type->element());
+	const auto *elem = resolve_real_container_element(type->element());
 	if (elem == nullptr) {
 		return {};
 	}
@@ -95,7 +108,7 @@ string LayoutResolver::resolve_array_description(const Type *type) const noexcep
 
 string LayoutResolver::resolve_buffer_description(const Type *type) const noexcept {
 	OC_ASSERT(type != nullptr && type->is_buffer());
-	const auto *elem = resolve(type->element());
+	const auto *elem = resolve_real_container_element(type->element());
 	if (elem == nullptr) {
 		return {};
 	}
@@ -119,7 +132,7 @@ size_t LayoutResolver::resolved_alignment(const Type *type) const noexcept {
 		return type->alignment();
 	}
 	if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
-		const auto *elem = resolve(type->element());
+		const auto *elem = resolve_real_container_element(type->element());
 		return elem == nullptr ? 0u : elem->alignment();
 	}
 	if (type->is_structure()) {
