@@ -168,17 +168,17 @@ public:
 };
 
 template<typename T, AccessMode mode = AOS>
-class RegistrableList : public CountedBuffer<T, mode, ByteBuffer>,
-                        public Registrable {
+class RegistrableCountedBuffer : public CountedBuffer<T, mode, ByteBuffer>,
+                                 public Registrable {
 public:
     using Super = CountedBuffer<T, mode, ByteBuffer>;
 
 public:
-    RegistrableList() = default;
-    explicit RegistrableList(BindlessArray &bindless_array)
+    RegistrableCountedBuffer() = default;
+    explicit RegistrableCountedBuffer(BindlessArray &bindless_array)
         : Super(), Registrable(&bindless_array) {}
 
-    explicit RegistrableList(Super &&list) : Super(std::move(list)) {}
+    explicit RegistrableCountedBuffer(Super &&list) : Super(std::move(list)) {}
 
     void set_list(Super &&list) noexcept {
         super() = std::move(list);

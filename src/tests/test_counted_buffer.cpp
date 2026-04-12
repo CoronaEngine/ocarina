@@ -18,7 +18,7 @@ void test_list(Device &device, Stream& stream) {
     size_t size = 10;
     auto list = device.create_list<Elm, SOA>(size);
 
-    RegistrableList<Elm, SOA> rl{};
+    RegistrableCountedBuffer<Elm, SOA> rl{};
     vector<Elm> host;
     rl.set_list(std::move(list));
 
