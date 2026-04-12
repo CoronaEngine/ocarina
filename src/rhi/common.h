@@ -11,7 +11,7 @@
 #include "resources/shader.h"
 #include "resources/buffer.h"
 #include "resources/byte_buffer.h"
-#include "resources/list.h"
+#include "resources/counted_buffer.h"
 #include "resources/texture.h"
 #include "resources/bindless_array.h"
 #include "rhi/resources/managed.h"

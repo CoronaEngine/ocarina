@@ -7,7 +7,7 @@
 #include "core/stl.h"
 #include "buffer.h"
 #include "texture.h"
-#include "list.h"
+#include "counted_buffer.h"
 #include "core/image.h"
 
 namespace ocarina {
