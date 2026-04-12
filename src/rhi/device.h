@@ -11,6 +11,7 @@
 #include "core/image_base.h"
 #include "core/concepts.h"
 #include "core/thread_pool.h"
+#include "ast/layout_resolver.h"
 #include "params.h"
 #include "graphics_descriptions.h"
 #include "pipeline_state.h"
@@ -109,6 +110,8 @@ public:
         virtual void memory_allocate(handle_ty *handle, size_t size, bool exported = true) {}
         virtual void memory_free(handle_ty *handle) {}
 
+        [[nodiscard]] virtual DevicePrecisionCaps precision_caps() const noexcept { return {}; }
+
         virtual uint64_t get_aligned_memory_size(handle_ty handle) const { return 0; }
 
 #if _WIN32 || _WIN64
@@ -170,6 +173,10 @@ public:
 
     [[nodiscard]] uint64_t get_aligned_memory_size(handle_ty handle) const noexcept {
         return impl_->get_aligned_memory_size(handle);
+    }
+
+    [[nodiscard]] DevicePrecisionCaps precision_caps() const noexcept {
+        return impl_->precision_caps();
     }
 
     template<typename T = std::byte>

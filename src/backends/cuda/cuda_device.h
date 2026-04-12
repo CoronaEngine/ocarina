@@ -162,6 +162,7 @@ public:
     void end_frame() noexcept override {}
     void memory_allocate(handle_ty *handle, size_t size, bool exported) override;
     void memory_free(handle_ty *handle) override;
+    [[nodiscard]] DevicePrecisionCaps precision_caps() const noexcept override;
     void register_shared_resource(handle_ty handle,CUgraphicsResource resource);
     void unregister_shared_resource(handle_ty handle);
     [[nodiscard]] bool is_external_resource(handle_ty handle) const;

@@ -35,10 +35,25 @@ void CUDADevice::init_hardware_info() {
     auto compute_cap_minor = 0;
     OC_CU_CHECK(cuDeviceGetAttribute(&compute_cap_major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, cu_device_));
     OC_CU_CHECK(cuDeviceGetAttribute(&compute_cap_minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cu_device_));
+    size_t total_mem = 0;
+    OC_CU_CHECK(cuDeviceTotalMem(&total_mem, cu_device_));
     OC_INFO_FORMAT(
-        "Created CUDA device : (capability = {}.{}).",
-        compute_cap_major, compute_cap_minor);
+        "Created CUDA device : (capability = {}.{}, VRAM = {} MB).",
+        compute_cap_major, compute_cap_minor,
+        total_mem / (1024u * 1024u));
     compute_capability_ = 10u * compute_cap_major + compute_cap_minor;
+}
+
+DevicePrecisionCaps CUDADevice::precision_caps() const noexcept {
+    DevicePrecisionCaps caps;
+    caps.compute_capability = compute_capability_;
+    size_t total_mem = 0;
+    cuDeviceTotalMem(&total_mem, cu_device_);
+    caps.total_vram_bytes = total_mem;
+    caps.has_native_fp16 = (compute_capability_ >= 53);
+    caps.has_fast_fp16 = (compute_capability_ >= 60);
+    caps.has_tensor_fp16 = (compute_capability_ >= 70);
+    return caps;
 }
 
 void CUDADevice::memory_allocate(handle_ty *handle, size_t size, bool exported) {
