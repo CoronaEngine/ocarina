@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include "core/host_byte_buffer.h"
+#include "core/dynamic_buffer/host_byte_buffer.h"
 #include "math/basic_types.h"
 
 using namespace ocarina;

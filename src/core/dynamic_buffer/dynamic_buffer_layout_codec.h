@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "host_byte_buffer.h"
-#include "precision_policy.h"
-#include "type.h"
+#include "core/dynamic_buffer/host_byte_buffer.h"
+#include "core/precision_policy.h"
+#include "core/type.h"
 #include "math/half.h"
 #include "math/real.h"
 
@@ -26,8 +26,8 @@ namespace detail {
 
 [[nodiscard]] inline bool store_real_as_f32(StoragePrecisionPolicy policy,
                                             bool direct_array_element = false) noexcept {
-    return policy.policy == PrecisionPolicy::force_f32 ||
-           (direct_array_element && policy.policy == PrecisionPolicy::auto_select);
+    (void)direct_array_element;
+    return policy.policy == PrecisionPolicy::force_f32;
 }
 
 template<typename T>
@@ -78,7 +78,7 @@ template<typename T>
     constexpr size_t cols = vector_dimension_v<column_t>;
     using scalar_t = type_element_t<column_t>;
     if constexpr (is_real_v<scalar_t>) {
-        if (policy.policy == PrecisionPolicy::force_f16 || policy.policy == PrecisionPolicy::auto_select) {
+        if (policy.policy == PrecisionPolicy::force_f16) {
             return sizeof(Matrix<half, rows, cols>);
         }
         return sizeof(Matrix<float, rows, cols>);
@@ -95,7 +95,7 @@ template<typename T>
     constexpr size_t cols = vector_dimension_v<column_t>;
     using scalar_t = type_element_t<column_t>;
     if constexpr (is_real_v<scalar_t>) {
-        if (policy.policy == PrecisionPolicy::force_f16 || policy.policy == PrecisionPolicy::auto_select) {
+        if (policy.policy == PrecisionPolicy::force_f16) {
             return alignof(Matrix<half, rows, cols>);
         }
         return alignof(Matrix<float, rows, cols>);
@@ -163,8 +163,9 @@ template<typename T>
 template<typename T>
 [[nodiscard]] size_t resolved_size_in_context(StoragePrecisionPolicy policy,
                                               bool direct_array_element) noexcept {
+    (void)direct_array_element;
     if constexpr (is_real_v<T>) {
-        return resolved_scalar_size<T>(policy, direct_array_element);
+        return resolved_scalar_size<T>(policy, false);
     }
     return resolved_size<T>(policy);
 }
@@ -172,8 +173,9 @@ template<typename T>
 template<typename T>
 [[nodiscard]] size_t resolved_alignment_in_context(StoragePrecisionPolicy policy,
                                                    bool direct_array_element) noexcept {
+    (void)direct_array_element;
     if constexpr (is_real_v<T>) {
-        return resolved_scalar_alignment<T>(policy, direct_array_element);
+        return resolved_scalar_alignment<T>(policy, false);
     }
     return resolved_alignment<T>(policy);
 }
@@ -232,9 +234,9 @@ void encode_scalar(HostByteBuffer &dst,
                    const T &value,
                    StoragePrecisionPolicy policy,
                    bool direct_array_element) noexcept {
+    (void)direct_array_element;
     if constexpr (is_real_v<T>) {
-        if ((direct_array_element && policy.policy == PrecisionPolicy::auto_select) ||
-            policy.policy == PrecisionPolicy::force_f32) {
+        if (policy.policy == PrecisionPolicy::force_f32) {
             dst.store<float>(offset, static_cast<float>(value));
         } else {
             dst.store<uint16_t>(offset, float_to_half(static_cast<float>(value)));
@@ -251,9 +253,9 @@ template<typename T>
                               size_t offset,
                               StoragePrecisionPolicy policy,
                               bool direct_array_element) noexcept {
+    (void)direct_array_element;
     if constexpr (is_real_v<T>) {
-        if ((direct_array_element && policy.policy == PrecisionPolicy::auto_select) ||
-            policy.policy == PrecisionPolicy::force_f32) {
+        if (policy.policy == PrecisionPolicy::force_f32) {
             return real{src.load<float>(offset)};
         }
         return real{half_to_float(src.load<uint16_t>(offset))};

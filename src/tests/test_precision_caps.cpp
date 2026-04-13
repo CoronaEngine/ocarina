@@ -75,11 +75,11 @@ static bool test_fast_fp16_scene_pressure() {
 
 static bool test_tensor_fp16_no_pressure() {
     constexpr size_t GB = size_t(1) << 30;
-    // SM >= 70, enough VRAM → auto_select
+    // SM >= 70, enough VRAM → force_f32
     DevicePrecisionCaps caps{
         .compute_capability = 75, .total_vram_bytes = 8 * GB,
         .has_native_fp16 = true, .has_fast_fp16 = true, .has_tensor_fp16 = true};
-    CHECK(caps.recommend_policy() == PrecisionPolicy::auto_select);
+    CHECK(caps.recommend_policy() == PrecisionPolicy::force_f32);
     return true;
 }
 
@@ -109,9 +109,9 @@ static bool test_recommend_feeds_layout_resolver() {
         .compute_capability = 86, .total_vram_bytes = 8 * GB,
         .has_native_fp16 = true, .has_fast_fp16 = true, .has_tensor_fp16 = true};
     PrecisionPolicy policy = caps.recommend_policy();
-    CHECK(policy == PrecisionPolicy::auto_select);
+    CHECK(policy == PrecisionPolicy::force_f32);
     LayoutResolver resolver(StoragePrecisionPolicy{.policy = policy, .allow_real_in_storage = true});
-    CHECK(resolver.resolve(Type::of<real>()) == Type::of<half>());
+    CHECK(resolver.resolve(Type::of<real>()) == Type::of<float>());
     CHECK(resolver.resolve(Type::of<float>()) == Type::of<float>());
     return true;
 }
@@ -137,7 +137,7 @@ static bool test_boundary_sm_values() {
         DevicePrecisionCaps caps{
             .compute_capability = 70, .total_vram_bytes = 8 * GB,
             .has_native_fp16 = true, .has_fast_fp16 = true, .has_tensor_fp16 = true};
-        CHECK(caps.recommend_policy() == PrecisionPolicy::auto_select);
+        CHECK(caps.recommend_policy() == PrecisionPolicy::force_f32);
     }
     return true;
 }

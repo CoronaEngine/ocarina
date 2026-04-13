@@ -11,7 +11,6 @@ namespace ocarina {
 enum class PrecisionPolicy : uint8_t {
     force_f32,
     force_f16,
-    auto_select,
 };
 
 struct DevicePrecisionCaps {

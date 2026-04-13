@@ -1,0 +1,61 @@
+//
+// Created by GitHub Copilot on 2026/4/13.
+//
+
+#include "host_dynamic_buffer.h"
+
+namespace ocarina {
+
+HostDynamicBuffer::HostDynamicBuffer(DynamicBufferLayoutPlan layout_plan,
+                                     size_t initial_count)
+    : layout_plan_(std::move(layout_plan)),
+      element_count_(initial_count),
+      element_capacity_(initial_count) {
+    storage_.resize(layout_plan_.storage_bytes(initial_count));
+}
+
+HostDynamicBuffer HostDynamicBuffer::create(const Type *logical_type,
+                                            StoragePrecisionPolicy policy,
+                                            DynamicBufferLayout layout,
+                                            size_t initial_count) {
+    return HostDynamicBuffer{DynamicBufferLayoutPlan::create(logical_type, policy, layout), initial_count};
+}
+
+void HostDynamicBuffer::ensure_capacity(size_t required_capacity) {
+    if (required_capacity <= element_capacity_) {
+        return;
+    }
+    storage_.reserve(layout_plan_.storage_bytes(required_capacity));
+    element_capacity_ = required_capacity;
+}
+
+void HostDynamicBuffer::validate_index(size_t index) const noexcept {
+    OC_ASSERT(index < element_count_);
+}
+
+void HostDynamicBuffer::mark_dirty(ByteRegion region) noexcept {
+    dirty_range_.merge(region);
+}
+
+void HostDynamicBuffer::reserve(size_t element_capacity) {
+    ensure_capacity(element_capacity);
+}
+
+void HostDynamicBuffer::resize(size_t element_count) {
+    ensure_capacity(element_count);
+    storage_.resize(layout_plan_.storage_bytes(element_count));
+    element_count_ = element_count;
+    if (!storage_.empty()) {
+        mark_dirty(ByteRegion{0u, storage_.size()});
+    }
+    generation_++;
+}
+
+void HostDynamicBuffer::clear() noexcept {
+    storage_.clear();
+    element_count_ = 0u;
+    dirty_range_.clear();
+    generation_++;
+}
+
+}// namespace ocarina

@@ -12,7 +12,7 @@ namespace ocarina {
 ///  53-59   | native,slow | -          | force_f32
 ///  60-69   | fast (2x)   | no         | force_f32
 ///  60-69   | fast (2x)   | yes        | force_f16
-///  >= 70   | tensor      | no         | auto_select
+///  >= 70   | tensor      | no         | force_f32
 ///  >= 70   | tensor      | yes        | force_f16
 PrecisionPolicy DevicePrecisionCaps::recommend_policy(
     size_t estimated_scene_vram_bytes) const noexcept {
@@ -25,9 +25,6 @@ PrecisionPolicy DevicePrecisionCaps::recommend_policy(
          estimated_scene_vram_bytes > total_vram_bytes * 6 / 10);
     if (has_fast_fp16 && vram_pressure) {
         return PrecisionPolicy::force_f16;
-    }
-    if (has_tensor_fp16) {
-        return PrecisionPolicy::auto_select;
     }
     return PrecisionPolicy::force_f32;
 }

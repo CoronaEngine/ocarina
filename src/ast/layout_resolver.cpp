@@ -56,8 +56,6 @@ string LayoutResolver::resolve_real_description() const noexcept {
 			return string(TypeDesc<half>::description());
 		case PrecisionPolicy::force_f32:
 			return string(TypeDesc<float>::description());
-		case PrecisionPolicy::auto_select:
-			return string(TypeDesc<half>::description());
 		default:
 			return string(TypeDesc<float>::description());
 	}
@@ -67,9 +65,6 @@ const Type *LayoutResolver::resolve_real_container_element(const Type *type) con
 	const auto *elem = resolve(type);
 	if (elem == nullptr) {
 		return nullptr;
-	}
-	if (policy_.policy == PrecisionPolicy::auto_select && type != nullptr && type->tag() == Type::Tag::REAL && elem->tag() == Type::Tag::HALF) {
-		return Type::of<float>();
 	}
 	return elem;
 }

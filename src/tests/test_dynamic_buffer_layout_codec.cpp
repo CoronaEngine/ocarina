@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "ast/layout_resolver.h"
-#include "core/dynamic_buffer_layout_codec.h"
+#include "core/dynamic_buffer/dynamic_buffer_layout_codec.h"
 #include "core/type_desc.h"
 #include "math/real.h"
 
@@ -130,8 +130,8 @@ template<typename T>
     return true;
 }
 
-[[nodiscard]] bool test_auto_select_array_uses_float_storage() {
-    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::auto_select);
+[[nodiscard]] bool test_force_f32_array_uses_float_storage() {
+    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
     HostByteBuffer bytes;
     CodecRealArray value = make_real_array(0u);
     DynamicBufferLayoutCodec<CodecRealArray>::encode(&value, 1u, bytes, policy, DynamicBufferLayout::aos);
@@ -193,8 +193,8 @@ template<typename T>
     return true;
 }
 
-[[nodiscard]] bool test_auto_soa_array_round_trip() {
-    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::auto_select);
+[[nodiscard]] bool test_float_soa_array_round_trip() {
+    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
     vector<CodecRealArray> src(3u);
     vector<CodecRealArray> dst(3u);
     for (uint index = 0; index < src.size(); ++index) {
@@ -219,13 +219,12 @@ int main() {
     bool passed = true;
     passed = test_aos_storage_matches_layout_resolver<CodecRealLeaf>(make_policy(PrecisionPolicy::force_f32)) && passed;
     passed = test_aos_storage_matches_layout_resolver<CodecRealLeaf>(make_policy(PrecisionPolicy::force_f16)) && passed;
-    passed = test_aos_storage_matches_layout_resolver<CodecRealLeaf>(make_policy(PrecisionPolicy::auto_select)) && passed;
-    passed = test_aos_storage_matches_layout_resolver<CodecRealArray>(make_policy(PrecisionPolicy::auto_select)) && passed;
-    passed = test_auto_select_array_uses_float_storage() && passed;
+    passed = test_aos_storage_matches_layout_resolver<CodecRealArray>(make_policy(PrecisionPolicy::force_f32)) && passed;
+    passed = test_force_f32_array_uses_float_storage() && passed;
     passed = test_float_aos_round_trip() && passed;
     passed = test_half_aos_round_trip() && passed;
     passed = test_half_soa_round_trip() && passed;
-    passed = test_auto_soa_array_round_trip() && passed;
+    passed = test_float_soa_array_round_trip() && passed;
 
     if (!passed) {
         std::cerr << "dynamic buffer layout codec test failed" << std::endl;
