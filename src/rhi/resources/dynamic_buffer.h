@@ -407,7 +407,7 @@ public:
         return !valid() ||
                view.bytes.size() > capacity_in_byte() ||
                logical_type() != view.logical_type ||
-               resolved_type() != view.resolved_type ||
+               resolved_type() != view.resolved_type() ||
                policy().policy != view.policy.policy ||
                policy().allow_real_in_storage != view.policy.allow_real_in_storage;
     }
@@ -416,7 +416,7 @@ public:
                                                             bool force_full_upload = false) noexcept {
         DynamicBufferUploadStats stats;
         if (view.logical_type != nullptr && (logical_type() != view.logical_type ||
-                                             resolved_type() != view.resolved_type ||
+                                             resolved_type() != view.resolved_type() ||
                                              policy().policy != view.policy.policy ||
                                              policy().allow_real_in_storage != view.policy.allow_real_in_storage)) {
             reset_layout(view.logical_type, view.policy);

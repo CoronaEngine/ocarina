@@ -482,7 +482,6 @@ DynamicBufferLayoutPlan DynamicBufferLayoutPlan::create(const Type *logical_type
     const auto *resolved_type = Type::resolve(logical_type, policy);
     OC_ASSERT(resolved_type != nullptr);
     return DynamicBufferLayoutPlan{logical_type,
-                                   resolved_type,
                                    policy,
                                    resolved_runtime_size(resolved_type),
                                    resolved_runtime_alignment(resolved_type),
@@ -501,7 +500,7 @@ ByteRegion DynamicBufferLayoutPlan::record_region(size_t index) const noexcept {
 
 ByteRegion DynamicBufferLayoutPlan::field_region(size_t index,
                                                  const TypedFieldPath &path) const noexcept {
-    auto info = resolve_field_region_info(logical_type_, resolved_type_, path.steps(), 0u);
+    auto info = resolve_field_region_info(logical_type_, resolved_type(), path.steps(), 0u);
     OC_ASSERT(info.valid());
     const auto record = record_region(index);
     return ByteRegion{record.begin_byte + info.offset_in_record,
@@ -534,13 +533,13 @@ vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t element_count
 }
 
 const Type *DynamicBufferLayoutPlan::field_logical_type(const TypedFieldPath &path) const noexcept {
-    auto info = resolve_field_region_info(logical_type_, resolved_type_, path.steps(), 0u);
+    auto info = resolve_field_region_info(logical_type_, resolved_type(), path.steps(), 0u);
     OC_ASSERT(info.valid());
     return info.logical_type;
 }
 
 const Type *DynamicBufferLayoutPlan::field_resolved_type(const TypedFieldPath &path) const noexcept {
-    auto info = resolve_field_region_info(logical_type_, resolved_type_, path.steps(), 0u);
+    auto info = resolve_field_region_info(logical_type_, resolved_type(), path.steps(), 0u);
     OC_ASSERT(info.valid());
     return info.resolved_type;
 }

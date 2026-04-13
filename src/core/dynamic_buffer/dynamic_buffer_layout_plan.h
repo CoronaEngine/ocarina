@@ -111,7 +111,6 @@ template<typename... Steps>
 class DynamicBufferLayoutPlan {
 private:
     const Type *logical_type_{nullptr};
-    const Type *resolved_type_{nullptr};
     StoragePrecisionPolicy policy_{};
     size_t element_size_bytes_{0u};
     size_t element_alignment_{0u};
@@ -121,14 +120,12 @@ private:
 public:
     DynamicBufferLayoutPlan() = default;
     DynamicBufferLayoutPlan(const Type *logical_type,
-                            const Type *resolved_type,
                             StoragePrecisionPolicy policy,
                             size_t element_size_bytes,
                             size_t element_alignment,
                             bool contains_real,
                             bool has_precision_lowering) noexcept
         : logical_type_(logical_type),
-          resolved_type_(resolved_type),
           policy_(policy),
           element_size_bytes_(element_size_bytes),
           element_alignment_(element_alignment),
@@ -139,7 +136,7 @@ public:
                                                                                                                 StoragePrecisionPolicy policy);
 
     [[nodiscard]] const Type *logical_type() const noexcept { return logical_type_; }
-    [[nodiscard]] const Type *resolved_type() const noexcept { return resolved_type_; }
+    [[nodiscard]] const Type *resolved_type() const noexcept { return Type::resolve(logical_type_, policy_); }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return policy_; }
     [[nodiscard]] size_t element_size_bytes() const noexcept { return element_size_bytes_; }
     [[nodiscard]] size_t element_alignment() const noexcept { return element_alignment_; }

@@ -286,7 +286,7 @@ namespace {
     auto upload = buffer.upload_view();
     CHECK(upload.element_count == 2u);
     CHECK(upload.logical_type == Type::of<HostDynamicRecord>());
-    CHECK(upload.resolved_type != nullptr);
+    CHECK(upload.resolved_type() == Type::resolve(Type::of<HostDynamicRecord>(), make_policy(PrecisionPolicy::force_f32)));
     CHECK(upload.bytes.size() == buffer.storage_size_bytes());
     CHECK(upload.dirty_segments.size() == 1u);
     return true;
@@ -317,7 +317,7 @@ namespace {
     CHECK(upload.element_count == values.size());
     CHECK(upload.bytes.size() == expected_bytes);
     CHECK(upload.logical_type == Type::of<HostDynamicRecord>());
-    CHECK(upload.resolved_type != nullptr);
+    CHECK(upload.resolved_type() == Type::resolve(Type::of<HostDynamicRecord>(), make_policy(PrecisionPolicy::force_f16)));
     CHECK(upload.dirty_segments.size() == 1u);
     return true;
 }
