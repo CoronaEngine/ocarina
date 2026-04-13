@@ -17,6 +17,7 @@ struct CodecRealLeaf {
 };
 
 OC_MAKE_STRUCT_REFLECTION(CodecRealLeaf, value, index)
+OC_MAKE_STORAGE_TYPE(CodecRealLeaf, value, index)
 OC_MAKE_STRUCT_DESC(CodecRealLeaf, value, index)
 OC_MAKE_STRUCT_IS_DYNAMIC(CodecRealLeaf, value, index)
 
@@ -27,6 +28,7 @@ struct CodecRealNested {
 };
 
 OC_MAKE_STRUCT_REFLECTION(CodecRealNested, leaf, samples, extra)
+OC_MAKE_STORAGE_TYPE(CodecRealNested, leaf, samples, extra)
 OC_MAKE_STRUCT_DESC(CodecRealNested, leaf, samples, extra)
 OC_MAKE_STRUCT_IS_DYNAMIC(CodecRealNested, leaf, samples, extra)
 
@@ -36,6 +38,7 @@ struct CodecRealArray {
 };
 
 OC_MAKE_STRUCT_REFLECTION(CodecRealArray, samples, weight)
+OC_MAKE_STORAGE_TYPE(CodecRealArray, samples, weight)
 OC_MAKE_STRUCT_DESC(CodecRealArray, samples, weight)
 OC_MAKE_STRUCT_IS_DYNAMIC(CodecRealArray, samples, weight)
 
@@ -144,6 +147,38 @@ template<typename T>
     return true;
 }
 
+[[nodiscard]] bool test_storage_type_scheme() {
+    using LeafImplHalf = resolved_storage_impl_t<CodecRealLeaf, half>;
+    using NestedImplHalf = resolved_storage_impl_t<CodecRealNested, half>;
+    using LeafF16 = storage_t<CodecRealLeaf, PrecisionPolicy::force_f16>;
+    using LeafF32 = storage_t<CodecRealLeaf, PrecisionPolicy::force_f32>;
+    using NestedF16 = storage_t<CodecRealNested, PrecisionPolicy::force_f16>;
+    using ArrayF16 = storage_t<CodecRealArray, PrecisionPolicy::force_f16>;
+
+    static_assert(std::is_same_v<LeafImplHalf, LeafF16>);
+    static_assert(std::is_same_v<NestedImplHalf, NestedF16>);
+    static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<LeafF16>().value)>, half>);
+    static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<LeafF16>().index)>, half2>);
+    static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<LeafF32>().value)>, float>);
+    static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<NestedF16>().leaf)>, LeafF16>);
+    static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<NestedF16>().samples)>, half3>);
+    static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<ArrayF16>().samples)>, ocarina::array<half, 4>>);
+
+    CodecRealNested nested = make_nested(2u);
+    auto nested_f16 = to_storage_value<PrecisionPolicy::force_f16>(nested);
+    auto nested_f32 = to_storage_value<PrecisionPolicy::force_f32>(nested);
+    CHECK(close_float(static_cast<float>(nested_f16.leaf.value), 2.125f, 1e-2f));
+    CHECK(close_float(nested_f32.leaf.value, 2.125f, 1e-6f));
+    CHECK(equal_nested(nested, from_storage_value<CodecRealNested, PrecisionPolicy::force_f16>(nested_f16), 1e-2f));
+    CHECK(equal_nested(nested, from_storage_value<CodecRealNested, PrecisionPolicy::force_f32>(nested_f32), 1e-6f));
+
+    CodecRealArray array_value = make_real_array(1u);
+    auto array_f16 = to_storage_value<PrecisionPolicy::force_f16>(array_value);
+    CHECK(close_float(static_cast<float>(array_f16.samples[0]), 1.25f, 1e-2f));
+    CHECK(equal_real_array(array_value, from_storage_value<CodecRealArray, PrecisionPolicy::force_f16>(array_f16), 1e-2f));
+    return true;
+}
+
 [[nodiscard]] bool test_half_aos_round_trip() {
     StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f16);
     vector<CodecRealNested> src(3u);
@@ -221,6 +256,7 @@ int main() {
     passed = test_aos_storage_matches_layout_resolver<CodecRealLeaf>(make_policy(PrecisionPolicy::force_f16)) && passed;
     passed = test_aos_storage_matches_layout_resolver<CodecRealArray>(make_policy(PrecisionPolicy::force_f32)) && passed;
     passed = test_force_f32_array_uses_float_storage() && passed;
+    passed = test_storage_type_scheme() && passed;
     passed = test_float_aos_round_trip() && passed;
     passed = test_half_aos_round_trip() && passed;
     passed = test_half_soa_round_trip() && passed;
