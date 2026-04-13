@@ -58,6 +58,16 @@ namespace {
     return total;
 }
 
+[[nodiscard]] bool contains_region(span<const ByteRegion> segments,
+                                   ByteRegion target) {
+    for (const auto &segment : segments) {
+        if (segment.begin_byte == target.begin_byte && segment.end_byte == target.end_byte) {
+            return true;
+        }
+    }
+    return false;
+}
+
 [[nodiscard]] HostDynamicRecord make_record(float base) {
     return {
         .leaf = HostDynamicLeaf{
@@ -143,6 +153,40 @@ namespace {
 
     CHECK(plan.field_logical_type(direction_z_path) == Type::of<real>());
     CHECK(plan.field_resolved_type(direction_z_path) == Type::of<half>());
+    return true;
+}
+
+[[nodiscard]] bool test_soa_dirty_segments_preserve_disjoint_field_segments() {
+    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
+                                                         make_policy(PrecisionPolicy::force_f16),
+                                                         DynamicBufferLayout::soa,
+                                                         2u);
+    buffer.write(0u, make_record(0.0f));
+    buffer.write(1u, make_record(10.0f));
+    buffer.clear_dirty();
+
+    auto first_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
+    auto second_path = make_typed_field_path<FieldMemberStep<3u>>();
+    auto first_segments = buffer.layout_plan().field_segments(buffer.element_count(), 0u, first_path);
+    auto second_segments = buffer.layout_plan().field_segments(buffer.element_count(), 1u, second_path);
+    CHECK(first_segments.size() == 1u);
+    CHECK(second_segments.size() == 1u);
+
+    buffer.patch(0u, first_path, real{1.5f});
+    buffer.patch(1u, second_path, 99.0f);
+
+    CHECK(buffer.dirty_segments().size() == 2u);
+    CHECK(contains_region(buffer.dirty_segments(),
+                          ByteRegion{first_segments[0].storage_begin_byte,
+                                     first_segments[0].storage_begin_byte + first_segments[0].size_in_bytes}));
+    CHECK(contains_region(buffer.dirty_segments(),
+                          ByteRegion{second_segments[0].storage_begin_byte,
+                                     second_segments[0].storage_begin_byte + second_segments[0].size_in_bytes}));
+    CHECK(buffer.dirty_range().dirty);
+    CHECK(buffer.dirty_range().begin_byte == std::min(first_segments[0].storage_begin_byte,
+                                                      second_segments[0].storage_begin_byte));
+    CHECK(buffer.dirty_range().end_byte == std::max(first_segments[0].storage_begin_byte + first_segments[0].size_in_bytes,
+                                                    second_segments[0].storage_begin_byte + second_segments[0].size_in_bytes));
     return true;
 }
 
@@ -245,6 +289,7 @@ namespace {
     CHECK(equal_record(buffer.read<HostDynamicRecord>(0u), lhs, 1e-2f));
     CHECK(equal_record(buffer.read<HostDynamicRecord>(1u), rhs, 1e-2f));
     CHECK(buffer.dirty_range().dirty);
+    CHECK(buffer.dirty_segments().size() == 1u);
     CHECK(buffer.dirty_range().begin_byte == 0u);
     CHECK(buffer.dirty_range().end_byte == buffer.storage_size_bytes());
     return true;
@@ -262,6 +307,7 @@ namespace {
     CHECK(equal_record(output, input, 1e-6f));
     CHECK(buffer.element_count() == 1u);
     CHECK(buffer.dirty_range().dirty);
+    CHECK(buffer.dirty_segments().size() == 1u);
     auto record_region = buffer.layout_plan().record_region(0u);
     CHECK(buffer.dirty_range().begin_byte == record_region.begin_byte);
     CHECK(buffer.dirty_range().end_byte == record_region.end_byte);
@@ -299,6 +345,7 @@ namespace {
     buffer.patch(0u, roughness_path, real{42.5f});
     auto record = buffer.read<HostDynamicRecord>(0u);
     CHECK(close_float(static_cast<float>(record.leaf.roughness), 42.5f));
+    CHECK(buffer.dirty_segments().size() == 1u);
     CHECK(buffer.dirty_range().begin_byte == roughness_region.begin_byte);
     CHECK(buffer.dirty_range().end_byte == roughness_region.end_byte);
 
@@ -308,6 +355,7 @@ namespace {
     buffer.patch(0u, weight_path, real{15.25f});
     record = buffer.read<HostDynamicRecord>(0u);
     CHECK(close_float(static_cast<float>(record.weights[2u]), 15.25f));
+    CHECK(buffer.dirty_segments().size() == 1u);
     CHECK(buffer.dirty_range().begin_byte == weight_region.begin_byte);
     CHECK(buffer.dirty_range().end_byte == weight_region.end_byte);
 
@@ -317,6 +365,7 @@ namespace {
     buffer.patch(0u, direction_path, real{7.75f});
     record = buffer.read<HostDynamicRecord>(0u);
     CHECK(close_float(static_cast<float>(record.leaf.direction[1u]), 7.75f));
+    CHECK(buffer.dirty_segments().size() == 1u);
     CHECK(buffer.dirty_range().begin_byte == direction_region.begin_byte);
     CHECK(buffer.dirty_range().end_byte == direction_region.end_byte);
 
@@ -326,6 +375,7 @@ namespace {
     buffer.patch(0u, matrix_path, real{9.5f});
     record = buffer.read<HostDynamicRecord>(0u);
     CHECK(close_float(static_cast<float>(record.basis[1u][0u]), 9.5f));
+    CHECK(buffer.dirty_segments().size() == 1u);
     CHECK(buffer.dirty_range().begin_byte == matrix_region.begin_byte);
     CHECK(buffer.dirty_range().end_byte == matrix_region.end_byte);
     return true;
@@ -347,6 +397,7 @@ namespace {
     CHECK(upload.logical_type == Type::of<HostDynamicRecord>());
     CHECK(upload.resolved_type != nullptr);
     CHECK(upload.bytes.size() == buffer.storage_size_bytes());
+    CHECK(upload.dirty_segments.size() == 1u);
     return true;
 }
 
@@ -362,6 +413,7 @@ namespace {
     CHECK(buffer.supports_field_patch());
     CHECK(buffer.element_count() == values.size());
     CHECK(buffer.dirty_range().dirty);
+    CHECK(buffer.dirty_segments().size() == 1u);
     CHECK(buffer.dirty_range().begin_byte == 0u);
     CHECK(buffer.dirty_range().end_byte == buffer.storage_size_bytes());
 
@@ -376,6 +428,7 @@ namespace {
     CHECK(upload.bytes.size() == expected_bytes);
     CHECK(upload.logical_type == Type::of<HostDynamicRecord>());
     CHECK(upload.resolved_type != nullptr);
+    CHECK(upload.dirty_segments.size() == 1u);
     return true;
 }
 
@@ -406,12 +459,14 @@ namespace {
     buffer.patch(0u, roughness_path, real{11.25f});
     auto record = buffer.read<HostDynamicRecord>(0u);
     CHECK(close_float(static_cast<float>(record.leaf.roughness), 11.25f));
+    CHECK(buffer.dirty_segments().size() == 1u);
 
     buffer.clear_dirty();
     auto weight_path = make_typed_field_path<FieldMemberStep<1u>, FieldIndexStep<2u>>();
     buffer.patch(0u, weight_path, real{6.5f});
     record = buffer.read<HostDynamicRecord>(0u);
     CHECK(close_float(static_cast<float>(record.weights[2u]), 6.5f));
+    CHECK(buffer.dirty_segments().size() == 1u);
 
     buffer.clear_dirty();
     auto matrix_path = make_typed_field_path<FieldMemberStep<2u>, FieldIndexStep<1u>, FieldComponentStep<0u>>();
@@ -419,6 +474,7 @@ namespace {
     record = buffer.read<HostDynamicRecord>(0u);
     CHECK(close_float(static_cast<float>(record.basis[1u][0u]), 17.0f));
     CHECK(buffer.dirty_range().dirty);
+    CHECK(buffer.dirty_segments().size() == 1u);
     return true;
 }
 
@@ -444,6 +500,7 @@ namespace {
     CHECK(close_float(static_cast<float>(updated_rhs.weights[2u]), static_cast<float>(rhs.weights[2u]), 1e-2f));
     CHECK(close_float(static_cast<float>(updated_rhs.weights[3u]), static_cast<float>(rhs.weights[3u]), 1e-2f));
     CHECK(buffer.dirty_range().dirty);
+    CHECK(buffer.dirty_segments().size() == 1u);
     return true;
 }
 
@@ -495,6 +552,7 @@ int main() {
     passed = test_aos_record_and_field_regions_report_expected_offsets() && passed;
     passed = test_soa_record_segments_follow_expected_layout() && passed;
     passed = test_soa_field_segments_report_expected_offsets() && passed;
+    passed = test_soa_dirty_segments_preserve_disjoint_field_segments() && passed;
     passed = test_host_buffer_record_round_trip() && passed;
     passed = test_single_element_external_read_write_usage() && passed;
     passed = test_typed_view_single_element_read_write_usage() && passed;

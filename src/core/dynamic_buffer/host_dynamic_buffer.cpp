@@ -34,6 +34,7 @@ void HostDynamicBuffer::validate_index(size_t index) const noexcept {
 }
 
 void HostDynamicBuffer::mark_dirty(ByteRegion region) noexcept {
+    dirty_segments_.merge(region);
     dirty_range_.merge(region);
 }
 
@@ -80,6 +81,7 @@ void HostDynamicBuffer::resize(size_t element_count) {
 void HostDynamicBuffer::clear() noexcept {
     storage_.clear();
     element_count_ = 0u;
+    dirty_segments_.clear();
     dirty_range_.clear();
     generation_++;
 }

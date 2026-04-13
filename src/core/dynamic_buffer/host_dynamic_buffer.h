@@ -16,6 +16,10 @@ struct DirtyByteRange {
     size_t begin_byte{0u};
     size_t end_byte{0u};
 
+    /// The current model exports one conservative continuous byte interval.
+    /// AoS updates usually map naturally to one region.
+    /// SoA updates may touch multiple disjoint columns, and those writes are currently merged.
+
     void clear() noexcept {
         dirty = false;
         begin_byte = 0u;
@@ -48,12 +52,70 @@ struct DirtyByteRange {
     }
 };
 
+class DirtyByteSegments {
+private:
+    vector<ByteRegion> segments_{};
+
+public:
+    void clear() noexcept {
+        segments_.clear();
+    }
+
+    void merge(ByteRegion region) noexcept {
+        if (region.empty()) {
+            return;
+        }
+        vector<ByteRegion> merged;
+        merged.reserve(segments_.size() + 1u);
+        ByteRegion pending = region;
+        bool inserted = false;
+        for (const auto &segment : segments_) {
+            if (segment.end_byte < pending.begin_byte) {
+                merged.emplace_back(segment);
+                continue;
+            }
+            if (pending.end_byte < segment.begin_byte) {
+                if (!inserted) {
+                    merged.emplace_back(pending);
+                    inserted = true;
+                }
+                merged.emplace_back(segment);
+                continue;
+            }
+            pending.begin_byte = std::min(pending.begin_byte, segment.begin_byte);
+            pending.end_byte = std::max(pending.end_byte, segment.end_byte);
+        }
+        if (!inserted) {
+            merged.emplace_back(pending);
+        }
+        segments_ = std::move(merged);
+    }
+
+    [[nodiscard]] span<const ByteRegion> segments() const noexcept {
+        return segments_;
+    }
+
+    [[nodiscard]] DirtyByteRange merged_range() const noexcept {
+        DirtyByteRange dirty_range;
+        for (const auto &segment : segments_) {
+            dirty_range.merge(segment);
+        }
+        return dirty_range;
+    }
+
+    [[nodiscard]] bool empty() const noexcept {
+        return segments_.empty();
+    }
+};
+
 struct HostDynamicBufferUploadView {
     span<const std::byte> bytes{};
     size_t element_count{0u};
     DynamicBufferLayout layout{DynamicBufferLayout::aos};
     const Type *logical_type{nullptr};
     const Type *resolved_type{nullptr};
+    /// Dirty export exposes precise byte segments and also keeps one merged range for compatibility.
+    span<const ByteRegion> dirty_segments{};
     DirtyByteRange dirty{};
 };
 
@@ -63,6 +125,7 @@ private:
     HostByteBuffer storage_{};
     size_t element_count_{0u};
     size_t element_capacity_{0u};
+    DirtyByteSegments dirty_segments_{};
     DirtyByteRange dirty_range_{};
     uint64_t generation_{0u};
 
@@ -108,7 +171,11 @@ public:
     [[nodiscard]] span<std::byte> bytes() noexcept { return storage_.bytes_span(); }
 
     [[nodiscard]] const DirtyByteRange &dirty_range() const noexcept { return dirty_range_; }
-    void clear_dirty() noexcept { dirty_range_.clear(); }
+    [[nodiscard]] span<const ByteRegion> dirty_segments() const noexcept { return dirty_segments_.segments(); }
+    void clear_dirty() noexcept {
+        dirty_segments_.clear();
+        dirty_range_.clear();
+    }
 
     [[nodiscard]] uint64_t generation() const noexcept { return generation_; }
 
@@ -120,6 +187,7 @@ public:
             .layout = layout_plan_.layout(),
             .logical_type = layout_plan_.logical_type(),
             .resolved_type = layout_plan_.resolved_type(),
+            .dirty_segments = dirty_segments_.segments(),
             .dirty = dirty_range_};
     }
 

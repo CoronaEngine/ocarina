@@ -263,73 +263,139 @@ struct FieldStorageInfo {
     }
 };
 
+enum class FieldOffsetMode : uint8_t {
+    aos,
+    soa,
+};
+
+struct FieldAccessInfo {
+    const Type *logical_type{nullptr};
+    const Type *resolved_type{nullptr};
+    size_t offset{0u};
+    size_t size_in_bytes{0u};
+    size_t record_stride{0u};
+
+    [[nodiscard]] bool valid() const noexcept {
+        return logical_type != nullptr && resolved_type != nullptr;
+    }
+};
+
+[[nodiscard]] size_t field_member_offset(const Type *resolved_type,
+                                         uint32_t member_index,
+                                         FieldOffsetMode mode,
+                                         size_t element_count) noexcept {
+    size_t offset = 0u;
+    for (uint32_t index = 0u; index < member_index; ++index) {
+        const auto *member = resolved_type->members()[index];
+        if (mode == FieldOffsetMode::aos) {
+            offset = align_up_size(offset, resolved_runtime_alignment(member));
+            offset += resolved_runtime_size(member);
+        } else {
+            offset += soa_storage_bytes(member, element_count);
+        }
+    }
+    return offset;
+}
+
+[[nodiscard]] size_t field_element_offset(const Type *resolved_elem,
+                                          uint32_t element_index,
+                                          FieldOffsetMode mode,
+                                          size_t element_count) noexcept {
+    if (mode == FieldOffsetMode::aos) {
+        return element_index * resolved_runtime_size(resolved_elem);
+    }
+    return element_index * soa_storage_bytes(resolved_elem, element_count);
+}
+
+[[nodiscard]] FieldAccessInfo resolve_field_access_info(const Type *logical_type,
+                                                        const Type *resolved_type,
+                                                        span<const TypedFieldPath::Step> steps,
+                                                        FieldOffsetMode mode,
+                                                        size_t element_count,
+                                                        size_t current_offset = 0u) noexcept {
+    if (logical_type == nullptr || resolved_type == nullptr) {
+        return {};
+    }
+    size_t record_stride = 0u;
+    while (!steps.empty()) {
+        const auto step = steps.front();
+        steps = steps.subspan(1u);
+        if (logical_type->is_structure()) {
+            if (step.kind != TypedFieldPath::StepKind::member) {
+                return {};
+            }
+            const auto logical_members = logical_type->members();
+            const auto resolved_members = resolved_type->members();
+            if (logical_members.size() != resolved_members.size() || step.value >= logical_members.size()) {
+                return {};
+            }
+            current_offset += field_member_offset(resolved_type, step.value, mode, element_count);
+            const auto *resolved_member = resolved_members[step.value];
+            if (mode == FieldOffsetMode::aos) {
+                current_offset = align_up_size(current_offset, resolved_runtime_alignment(resolved_member));
+            }
+            logical_type = logical_members[step.value];
+            resolved_type = resolved_member;
+            continue;
+        }
+        if (logical_type->is_array()) {
+            if (step.kind != TypedFieldPath::StepKind::index || step.value >= logical_type->dimension()) {
+                return {};
+            }
+            const auto *resolved_elem = resolved_type->element();
+            current_offset += field_element_offset(resolved_elem, step.value, mode, element_count);
+            logical_type = logical_type->element();
+            resolved_type = resolved_elem;
+            continue;
+        }
+        if (logical_type->is_vector()) {
+            if (step.kind != TypedFieldPath::StepKind::component || step.value >= logical_type->dimension()) {
+                return {};
+            }
+            const auto *logical_elem = logical_type->element();
+            const auto *resolved_elem = resolved_type->element();
+            current_offset += step.value * resolved_runtime_size(resolved_elem);
+            if (mode == FieldOffsetMode::soa && steps.empty()) {
+                record_stride = resolved_runtime_size(resolved_type);
+            }
+            logical_type = logical_elem;
+            resolved_type = resolved_elem;
+            continue;
+        }
+        if (logical_type->is_matrix()) {
+            if ((step.kind != TypedFieldPath::StepKind::index && step.kind != TypedFieldPath::StepKind::component) ||
+                step.value >= logical_type->dimension()) {
+                return {};
+            }
+            const auto *resolved_elem = resolved_type->element();
+            current_offset += field_element_offset(resolved_elem, step.value, mode, element_count);
+            logical_type = logical_type->element();
+            resolved_type = resolved_elem;
+            continue;
+        }
+        return {};
+    }
+    return FieldAccessInfo{logical_type,
+                           resolved_type,
+                           current_offset,
+                           resolved_runtime_size(resolved_type),
+                           record_stride == 0u ? resolved_runtime_size(resolved_type) : record_stride};
+}
+
 [[nodiscard]] FieldRegionInfo resolve_field_region_info(const Type *logical_type,
                                                         const Type *resolved_type,
                                                         span<const TypedFieldPath::Step> steps,
                                                         size_t current_offset) noexcept {
-    if (logical_type == nullptr || resolved_type == nullptr) {
+    auto info = resolve_field_access_info(logical_type,
+                                          resolved_type,
+                                          steps,
+                                          FieldOffsetMode::aos,
+                                          1u,
+                                          current_offset);
+    if (!info.valid()) {
         return {};
     }
-    if (steps.empty()) {
-        return FieldRegionInfo{logical_type, resolved_type, current_offset, resolved_runtime_size(resolved_type)};
-    }
-    const auto step = steps.front();
-    const auto rest = steps.subspan(1u);
-    if (logical_type->is_structure()) {
-        if (step.kind != TypedFieldPath::StepKind::member) {
-            return {};
-        }
-        const auto logical_members = logical_type->members();
-        const auto resolved_members = resolved_type->members();
-        if (logical_members.size() != resolved_members.size() || step.value >= logical_members.size()) {
-            return {};
-        }
-        size_t offset = 0u;
-        for (uint32_t index = 0u; index < step.value; ++index) {
-            const auto *member = resolved_members[index];
-            offset = align_up_size(offset, resolved_runtime_alignment(member));
-            offset += resolved_runtime_size(member);
-        }
-        const auto *logical_member = logical_members[step.value];
-        const auto *resolved_member = resolved_members[step.value];
-        offset = align_up_size(offset, resolved_runtime_alignment(resolved_member));
-        return resolve_field_region_info(logical_member, resolved_member, rest, current_offset + offset);
-    }
-    if (logical_type->is_array()) {
-        if (step.kind != TypedFieldPath::StepKind::index || step.value >= logical_type->dimension()) {
-            return {};
-        }
-        const auto *logical_elem = logical_type->element();
-        const auto *resolved_elem = resolved_type->element();
-        return resolve_field_region_info(logical_elem,
-                                         resolved_elem,
-                                         rest,
-                                         current_offset + step.value * resolved_runtime_size(resolved_elem));
-    }
-    if (logical_type->is_vector()) {
-        if (step.kind != TypedFieldPath::StepKind::component || step.value >= logical_type->dimension()) {
-            return {};
-        }
-        const auto *logical_elem = logical_type->element();
-        const auto *resolved_elem = resolved_type->element();
-        return resolve_field_region_info(logical_elem,
-                                         resolved_elem,
-                                         rest,
-                                         current_offset + step.value * resolved_runtime_size(resolved_elem));
-    }
-    if (logical_type->is_matrix()) {
-        if ((step.kind != TypedFieldPath::StepKind::index && step.kind != TypedFieldPath::StepKind::component) ||
-            step.value >= logical_type->dimension()) {
-            return {};
-        }
-        const auto *logical_elem = logical_type->element();
-        const auto *resolved_elem = resolved_type->element();
-        return resolve_field_region_info(logical_elem,
-                                         resolved_elem,
-                                         rest,
-                                         current_offset + step.value * resolved_runtime_size(resolved_elem));
-    }
-    return {};
+    return FieldRegionInfo{info.logical_type, info.resolved_type, info.offset, info.size_in_bytes};
 }
 
 [[nodiscard]] FieldStorageInfo resolve_field_storage_info(const Type *logical_type,
@@ -337,83 +403,16 @@ struct FieldStorageInfo {
                                                           span<const TypedFieldPath::Step> steps,
                                                           size_t current_offset,
                                                           size_t element_count) noexcept {
-    if (logical_type == nullptr || resolved_type == nullptr) {
+    auto info = resolve_field_access_info(logical_type,
+                                          resolved_type,
+                                          steps,
+                                          FieldOffsetMode::soa,
+                                          element_count,
+                                          current_offset);
+    if (!info.valid()) {
         return {};
     }
-    if (steps.empty()) {
-        return FieldStorageInfo{logical_type,
-                                resolved_type,
-                                current_offset,
-                                resolved_runtime_size(resolved_type)};
-    }
-    const auto step = steps.front();
-    const auto rest = steps.subspan(1u);
-    if (logical_type->is_structure()) {
-        if (step.kind != TypedFieldPath::StepKind::member) {
-            return {};
-        }
-        const auto logical_members = logical_type->members();
-        const auto resolved_members = resolved_type->members();
-        if (logical_members.size() != resolved_members.size() || step.value >= logical_members.size()) {
-            return {};
-        }
-        size_t offset = current_offset;
-        for (uint32_t index = 0u; index < step.value; ++index) {
-            offset += soa_storage_bytes(resolved_members[index], element_count);
-        }
-        return resolve_field_storage_info(logical_members[step.value],
-                                          resolved_members[step.value],
-                                          rest,
-                                          offset,
-                                          element_count);
-    }
-    if (logical_type->is_array()) {
-        if (step.kind != TypedFieldPath::StepKind::index || step.value >= logical_type->dimension()) {
-            return {};
-        }
-        const auto *logical_elem = logical_type->element();
-        const auto *resolved_elem = resolved_type->element();
-        const auto offset = current_offset + step.value * soa_storage_bytes(resolved_elem, element_count);
-        return resolve_field_storage_info(logical_elem,
-                                          resolved_elem,
-                                          rest,
-                                          offset,
-                                          element_count);
-    }
-    if (logical_type->is_vector()) {
-        if (step.kind != TypedFieldPath::StepKind::component || step.value >= logical_type->dimension()) {
-            return {};
-        }
-        const auto *logical_elem = logical_type->element();
-        const auto *resolved_elem = resolved_type->element();
-        const auto offset = current_offset + step.value * resolved_runtime_size(resolved_elem);
-        if (rest.empty()) {
-            return FieldStorageInfo{logical_elem,
-                                    resolved_elem,
-                                    offset,
-                                    resolved_runtime_size(resolved_type)};
-        }
-        return resolve_field_storage_info(logical_elem,
-                                          resolved_elem,
-                                          rest,
-                                          offset,
-                                          element_count);
-    }
-    if (logical_type->is_matrix()) {
-        if ((step.kind != TypedFieldPath::StepKind::index && step.kind != TypedFieldPath::StepKind::component) ||
-            step.value >= logical_type->dimension()) {
-            return {};
-        }
-        const auto *logical_elem = logical_type->element();
-        const auto *resolved_elem = resolved_type->element();
-        const auto offset = current_offset + step.value * soa_storage_bytes(resolved_elem, element_count);
-        return resolve_field_storage_info(logical_elem,
-                                          resolved_elem,
-                                          rest,
-                                          offset,
-                                          element_count);
-    }
-    return {};
+    return FieldStorageInfo{info.logical_type, info.resolved_type, info.offset, info.record_stride};
 }
 
 void collect_soa_segments(const Type *resolved_type,
