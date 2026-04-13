@@ -148,15 +148,15 @@ template<typename T>
 }
 
 [[nodiscard]] bool test_storage_type_scheme() {
-    using LeafImplHalf = resolved_storage_impl_t<CodecRealLeaf, half>;
-    using NestedImplHalf = resolved_storage_impl_t<CodecRealNested, half>;
+    using LeafHalfStorage = resolved_storage_by_tag_t<CodecRealLeaf, half>;
+    using NestedHalfStorage = resolved_storage_by_tag_t<CodecRealNested, half>;
     using LeafF16 = storage_t<CodecRealLeaf, PrecisionPolicy::force_f16>;
     using LeafF32 = storage_t<CodecRealLeaf, PrecisionPolicy::force_f32>;
     using NestedF16 = storage_t<CodecRealNested, PrecisionPolicy::force_f16>;
     using ArrayF16 = storage_t<CodecRealArray, PrecisionPolicy::force_f16>;
 
-    static_assert(std::is_same_v<LeafImplHalf, LeafF16>);
-    static_assert(std::is_same_v<NestedImplHalf, NestedF16>);
+    static_assert(std::is_same_v<LeafHalfStorage, LeafF16>);
+    static_assert(std::is_same_v<NestedHalfStorage, NestedF16>);
     static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<LeafF16>().value)>, half>);
     static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<LeafF16>().index)>, half2>);
     static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<LeafF32>().value)>, float>);

@@ -202,6 +202,9 @@ struct struct_member_tuple<Matrix<T, N, M>> {
 #define OC_TYPE_OFFSET_OF(member) OC_OFFSET_OF(this_type, member)
 #define OC_TYPE_SIZE(member) sizeof(this_type::member)
 
+// Pure type mapping from logical storage type T to the concrete storage tag F.
+namespace detail {
+
 template<typename T, typename F>
 struct resolved_storage_map {
     using type = T;
@@ -228,16 +231,27 @@ struct resolved_storage_impl;
 template<typename T, typename F>
 using resolved_storage_impl_t = typename resolved_storage_impl<std::remove_cvref_t<T>, F>::type;
 
+template<typename T>
+concept resolved_storage_supported_tag = std::same_as<T, float> || std::same_as<T, half>;
+
+template<typename F, typename T>
+[[nodiscard]] auto to_storage_impl_value(const T &value) noexcept -> resolved_storage_impl_t<T, F>;
+
+template<typename T, typename F>
+[[nodiscard]] auto from_storage_impl_value(const resolved_storage_impl_t<T, F> &value) noexcept -> std::remove_cvref_t<T>;
+
+}// namespace detail
+
 template<typename T, PrecisionPolicy Policy>
 using resolved_storage_tag_t = std::conditional_t<Policy == PrecisionPolicy::force_f16, half, float>;
 
-#define OC_STORAGE_MEMBER_TYPE(storage, member) ocarina::resolved_storage_impl_t<std::remove_cvref_t<decltype(this_type::member)>, storage>
-#define OC_STORAGE_MEMBER_DECL_FLOAT(member) OC_STORAGE_MEMBER_TYPE(float, member) member;
-#define OC_STORAGE_MEMBER_DECL_HALF(member) OC_STORAGE_MEMBER_TYPE(half, member) member;
-#define OC_STORAGE_MEMBER_ASSIGN_ENCODE_FLOAT(member) result.member = ocarina::to_storage_impl_value<float>(value.member);
-#define OC_STORAGE_MEMBER_ASSIGN_ENCODE_HALF(member) result.member = ocarina::to_storage_impl_value<half>(value.member);
-#define OC_STORAGE_MEMBER_ASSIGN_DECODE_FLOAT(member) result.member = ocarina::from_storage_impl_value<std::remove_cvref_t<decltype(this_type::member)>, float>(value.member);
-#define OC_STORAGE_MEMBER_ASSIGN_DECODE_HALF(member) result.member = ocarina::from_storage_impl_value<std::remove_cvref_t<decltype(this_type::member)>, half>(value.member);
+template<typename T, typename F>
+using resolved_storage_by_tag_t = detail::resolved_storage_impl_t<T, F>;
+
+#define OC_STORAGE_MEMBER_TYPE(storage, member) ocarina::resolved_storage_by_tag_t<std::remove_cvref_t<decltype(this_type::member)>, storage>
+#define OC_STORAGE_MEMBER_DECL(member, storage) OC_STORAGE_MEMBER_TYPE(storage, member) member;
+#define OC_STORAGE_MEMBER_ASSIGN_ENCODE(member, storage) result.member = ocarina::detail::to_storage_impl_value<storage>(value.member);
+#define OC_STORAGE_MEMBER_ASSIGN_DECODE(member, storage) result.member = ocarina::detail::from_storage_impl_value<std::remove_cvref_t<decltype(this_type::member)>, storage>(value.member);
 
 template<typename T, PrecisionPolicy Policy>
 struct resolved_storage_type;
@@ -254,11 +268,8 @@ template<PrecisionPolicy Policy, typename T>
 template<typename T, PrecisionPolicy Policy>
 [[nodiscard]] auto from_storage_value(const resolved_storage_type_t<T, Policy> &value) noexcept -> std::remove_cvref_t<T>;
 
-template<typename F, typename T>
-[[nodiscard]] auto to_storage_impl_value(const T &value) noexcept -> resolved_storage_impl_t<T, F>;
-
-template<typename T, typename F>
-[[nodiscard]] auto from_storage_impl_value(const resolved_storage_impl_t<T, F> &value) noexcept -> std::remove_cvref_t<T>;
+/// Value-level implementation working directly with a concrete storage tag F.
+namespace detail {
 
 template<typename T, typename F>
 struct resolved_storage_impl {
@@ -288,16 +299,17 @@ struct resolved_storage_impl<real, F> {
     }
 };
 
+/// Shared encode/decode path for fixed-size element-addressable containers.
 template<template<typename, size_t> typename Container, typename T, size_t N, typename F>
 struct resolved_storage_fixed_container_impl {
     using source_type = Container<T, N>;
-    using element_type = resolved_storage_impl_t<T, F>;
+    using element_type = detail::resolved_storage_impl_t<T, F>;
     using type = Container<element_type, N>;
 
     [[nodiscard]] static type encode(const source_type &value) noexcept {
         type result{};
         for (size_t index = 0; index < N; ++index) {
-            result[index] = to_storage_impl_value<F>(value[index]);
+            result[index] = detail::to_storage_impl_value<F>(value[index]);
         }
         return result;
     }
@@ -305,7 +317,7 @@ struct resolved_storage_fixed_container_impl {
     [[nodiscard]] static source_type decode(const type &value) noexcept {
         source_type result{};
         for (size_t index = 0; index < N; ++index) {
-            result[index] = from_storage_impl_value<T, F>(value[index]);
+            result[index] = detail::from_storage_impl_value<T, F>(value[index]);
         }
         return result;
     }
@@ -320,12 +332,12 @@ struct resolved_storage_impl<Vector<T, N>, F> : resolved_storage_fixed_container
 template<typename T, size_t N, size_t M, typename F>
 struct resolved_storage_impl<Matrix<T, N, M>, F> {
     using source_type = Matrix<T, N, M>;
-    using type = Matrix<resolved_storage_impl_t<T, F>, N, M>;
+    using type = Matrix<detail::resolved_storage_impl_t<T, F>, N, M>;
 
     [[nodiscard]] static type encode(const source_type &value) noexcept {
         type result{};
         for (size_t index = 0; index < N; ++index) {
-            result[index] = to_storage_impl_value<F>(value[index]);
+            result[index] = detail::to_storage_impl_value<F>(value[index]);
         }
         return result;
     }
@@ -333,7 +345,7 @@ struct resolved_storage_impl<Matrix<T, N, M>, F> {
     [[nodiscard]] static source_type decode(const type &value) noexcept {
         source_type result{};
         for (size_t index = 0; index < N; ++index) {
-            result[index] = from_storage_impl_value<Vector<T, M>, F>(value[index]);
+            result[index] = detail::from_storage_impl_value<Vector<T, M>, F>(value[index]);
         }
         return result;
     }
@@ -342,23 +354,29 @@ struct resolved_storage_impl<Matrix<T, N, M>, F> {
 template<typename... T, typename F>
 struct resolved_storage_impl<ocarina::tuple<T...>, F> {
     using source_type = ocarina::tuple<T...>;
-    using type = ocarina::tuple<resolved_storage_impl_t<T, F>...>;
+    using type = ocarina::tuple<detail::resolved_storage_impl_t<T, F>...>;
 
     [[nodiscard]] static type encode(const source_type &value) noexcept {
         return [&]<size_t... Index>(std::index_sequence<Index...>) {
-            return type{to_storage_impl_value<F>(ocarina::get<Index>(value))...};
+            return type{detail::to_storage_impl_value<F>(ocarina::get<Index>(value))...};
         }(std::make_index_sequence<sizeof...(T)>{});
     }
 
     [[nodiscard]] static source_type decode(const type &value) noexcept {
         return [&]<size_t... Index>(std::index_sequence<Index...>) {
-            return source_type{from_storage_impl_value<T, F>(ocarina::get<Index>(value))...};
+            return source_type{detail::from_storage_impl_value<T, F>(ocarina::get<Index>(value))...};
         }(std::make_index_sequence<sizeof...(T)>{});
     }
 };
 
+}// namespace detail
+
+/// External policy wrapper that selects the concrete storage tag first,
+/// then forwards to the internal F-based implementation layer.
 template<typename T, PrecisionPolicy Policy>
-struct resolved_storage_type : resolved_storage_impl<std::remove_cvref_t<T>, resolved_storage_tag_t<T, Policy>> {};
+struct resolved_storage_type : detail::resolved_storage_impl<std::remove_cvref_t<T>, resolved_storage_tag_t<T, Policy>> {};
+
+namespace detail {
 
 template<typename F, typename T>
 [[nodiscard]] auto to_storage_impl_value(const T &value) noexcept -> resolved_storage_impl_t<T, F> {
@@ -372,52 +390,36 @@ template<typename T, typename F>
     return resolved_storage_impl<raw_t, F>::decode(value);
 }
 
+}// namespace detail
+
 template<PrecisionPolicy Policy, typename T>
 [[nodiscard]] auto to_storage_value(const T &value) noexcept -> resolved_storage_type_t<T, Policy> {
-    return to_storage_impl_value<resolved_storage_tag_t<T, Policy>>(value);
+    return detail::to_storage_impl_value<resolved_storage_tag_t<T, Policy>>(value);
 }
 
 template<typename T, PrecisionPolicy Policy>
 [[nodiscard]] auto from_storage_value(const resolved_storage_type_t<T, Policy> &value) noexcept -> std::remove_cvref_t<T> {
-    return from_storage_impl_value<T, resolved_storage_tag_t<T, Policy>>(value);
+    return detail::from_storage_impl_value<T, resolved_storage_tag_t<T, Policy>>(value);
 }
 
 #define OC_MAKE_STORAGE_TYPE(S, ...)                                        \
-    template<>                                                              \
-    struct ocarina::resolved_storage_impl<S, float> {                       \
+    template<typename storage>                                              \
+    requires ocarina::detail::resolved_storage_supported_tag<storage>       \
+    struct ocarina::detail::resolved_storage_impl<S, storage> {             \
         using this_type = S;                                                \
         struct type {                                                       \
-            MAP(OC_STORAGE_MEMBER_DECL_FLOAT, ##__VA_ARGS__)                \
+            MAP_UD(OC_STORAGE_MEMBER_DECL, storage, ##__VA_ARGS__)          \
         };                                                                  \
                                                                             \
         [[nodiscard]] static type encode(const this_type &value) noexcept { \
             type result{};                                                  \
-            MAP(OC_STORAGE_MEMBER_ASSIGN_ENCODE_FLOAT, ##__VA_ARGS__)       \
+            MAP_UD(OC_STORAGE_MEMBER_ASSIGN_ENCODE, storage, ##__VA_ARGS__) \
             return result;                                                  \
         }                                                                   \
                                                                             \
         [[nodiscard]] static this_type decode(const type &value) noexcept { \
             this_type result{};                                             \
-            MAP(OC_STORAGE_MEMBER_ASSIGN_DECODE_FLOAT, ##__VA_ARGS__)       \
-            return result;                                                  \
-        }                                                                   \
-    };                                                                      \
-    template<>                                                              \
-    struct ocarina::resolved_storage_impl<S, half> {                        \
-        using this_type = S;                                                \
-        struct type {                                                       \
-            MAP(OC_STORAGE_MEMBER_DECL_HALF, ##__VA_ARGS__)                 \
-        };                                                                  \
-                                                                            \
-        [[nodiscard]] static type encode(const this_type &value) noexcept { \
-            type result{};                                                  \
-            MAP(OC_STORAGE_MEMBER_ASSIGN_ENCODE_HALF, ##__VA_ARGS__)        \
-            return result;                                                  \
-        }                                                                   \
-                                                                            \
-        [[nodiscard]] static this_type decode(const type &value) noexcept { \
-            this_type result{};                                             \
-            MAP(OC_STORAGE_MEMBER_ASSIGN_DECODE_HALF, ##__VA_ARGS__)        \
+            MAP_UD(OC_STORAGE_MEMBER_ASSIGN_DECODE, storage, ##__VA_ARGS__) \
             return result;                                                  \
         }                                                                   \
     };
