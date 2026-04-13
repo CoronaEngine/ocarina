@@ -8,6 +8,7 @@
 #include "rtx/accel.h"
 #include "resources/bindless_array.h"
 #include "resources/byte_buffer.h"
+#include "resources/dynamic_buffer.h"
 #include "context.h"
 #include "core/dynamic_module.h"
 
@@ -15,6 +16,19 @@ namespace ocarina {
 
 ByteBuffer Device::create_byte_buffer(size_t size, const std::string &name) const noexcept {
     return ByteBuffer(impl_.get(), size, name);
+}
+
+DynamicBuffer Device::create_dynamic_buffer(const Type *logical_type,
+                                            StoragePrecisionPolicy policy,
+                                            size_t element_count,
+                                            const string &name) const noexcept {
+    return create<DynamicBuffer>(logical_type, policy, element_count, name);
+}
+
+DynamicBuffer Device::create_dynamic_buffer_resolved(const Type *resolved_type,
+                                                     size_t element_count,
+                                                     const string &name) const noexcept {
+    return create<DynamicBuffer>(resolved_type, element_count, name);
 }
 
 Stream Device::create_stream() noexcept {

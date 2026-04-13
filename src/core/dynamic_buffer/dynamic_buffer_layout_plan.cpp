@@ -477,15 +477,13 @@ TypedFieldPath TypedFieldPath::member(uint32_t member_index) noexcept {
 }
 
 DynamicBufferLayoutPlan DynamicBufferLayoutPlan::create(const Type *logical_type,
-                                                        StoragePrecisionPolicy policy,
-                                                        DynamicBufferLayout layout) {
+                                                        StoragePrecisionPolicy policy) {
     OC_ASSERT(logical_type != nullptr);
     const auto *resolved_type = resolve_type_description(logical_type, policy);
     OC_ASSERT(resolved_type != nullptr);
     return DynamicBufferLayoutPlan{logical_type,
                                    resolved_type,
                                    policy,
-                                   layout,
                                    resolved_runtime_size(resolved_type),
                                    resolved_runtime_alignment(resolved_type),
                                    contains_real_recursive(logical_type),
@@ -493,25 +491,16 @@ DynamicBufferLayoutPlan DynamicBufferLayoutPlan::create(const Type *logical_type
 }
 
 size_t DynamicBufferLayoutPlan::storage_bytes(size_t element_count) const noexcept {
-    switch (layout_) {
-        case DynamicBufferLayout::AOS:
-            return element_size_bytes_ * element_count;
-        case DynamicBufferLayout::SOA:
-            return soa_storage_bytes(resolved_type_, element_count);
-        default:
-            return 0u;
-    }
+    return element_size_bytes_ * element_count;
 }
 
 ByteRegion DynamicBufferLayoutPlan::record_region(size_t index) const noexcept {
-    OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
     const auto begin = index * element_size_bytes_;
     return ByteRegion{begin, begin + element_size_bytes_};
 }
 
 ByteRegion DynamicBufferLayoutPlan::field_region(size_t index,
                                                  const TypedFieldPath &path) const noexcept {
-    OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
     auto info = resolve_field_region_info(logical_type_, resolved_type_, path.steps(), 0u);
     OC_ASSERT(info.valid());
     const auto record = record_region(index);
@@ -521,47 +510,26 @@ ByteRegion DynamicBufferLayoutPlan::field_region(size_t index,
 
 vector<ByteSegment> DynamicBufferLayoutPlan::record_segments(size_t element_count,
                                                              size_t index) const noexcept {
+    (void)element_count;
     vector<ByteSegment> segments;
-    switch (layout_) {
-        case DynamicBufferLayout::AOS: {
-            const auto region = record_region(index);
-            segments.emplace_back(ByteSegment{
-                .storage_begin_byte = region.begin_byte,
-                .staging_begin_byte = 0u,
-                .size_in_bytes = region.size()});
-            break;
-        }
-        case DynamicBufferLayout::SOA:
-            collect_soa_segments(resolved_type_, element_count, index, 0u, 0u, segments);
-            break;
-        default:
-            break;
-    }
+    const auto region = record_region(index);
+    segments.emplace_back(ByteSegment{
+        .storage_begin_byte = region.begin_byte,
+        .staging_begin_byte = 0u,
+        .size_in_bytes = region.size()});
     return segments;
 }
 
 vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t element_count,
                                                             size_t index,
                                                             const TypedFieldPath &path) const noexcept {
+    (void)element_count;
     vector<ByteSegment> segments;
-    switch (layout_) {
-        case DynamicBufferLayout::AOS: {
-            const auto region = field_region(index, path);
-            segments.emplace_back(ByteSegment{
-                .storage_begin_byte = region.begin_byte,
-                .staging_begin_byte = 0u,
-                .size_in_bytes = region.size()});
-            break;
-        }
-        case DynamicBufferLayout::SOA: {
-            auto info = resolve_field_storage_info(logical_type_, resolved_type_, path.steps(), 0u, element_count);
-            OC_ASSERT(info.valid());
-            collect_soa_field_segments(info, element_count, index, segments);
-            break;
-        }
-        default:
-            break;
-    }
+    const auto region = field_region(index, path);
+    segments.emplace_back(ByteSegment{
+        .storage_begin_byte = region.begin_byte,
+        .staging_begin_byte = 0u,
+        .size_in_bytes = region.size()});
     return segments;
 }
 

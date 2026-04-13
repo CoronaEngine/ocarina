@@ -20,10 +20,11 @@ namespace ocarina {
 
 class RHIContext;
 
-template<typename T, int... Dims>
+template<typename T>
 class Buffer;
 
 class ByteBuffer;
+class DynamicBuffer;
 
 template<typename T, AccessMode mode = AOS, typename TBuffer = ByteBuffer>
 class CountedBuffer;
@@ -134,17 +135,26 @@ public:
     [[nodiscard]] auto create(Args &&...args) const noexcept {
         return T(this->impl_.get(), std::forward<Args>(args)...);
     }
-    template<typename T = std::byte, int... Dims>
-    [[nodiscard]] Buffer<T, Dims...> create_buffer(size_t size, const string &name = "") const noexcept {
-        return Buffer<T, Dims...>(impl_.get(), size, name);
+    template<typename T = std::byte>
+    [[nodiscard]] Buffer<T> create_buffer(size_t size, const string &name = "") const noexcept {
+        return Buffer<T>(impl_.get(), size, name);
     }
 
-    template<typename T = std::byte, int... Dims>
-    [[nodiscard]] Buffer<T, Dims...> create_buffer(size_t size, handle_ty handle) const noexcept {
-        return Buffer<T, Dims...>(impl_.get(), size, handle);
+    template<typename T = std::byte>
+    [[nodiscard]] Buffer<T> create_buffer(size_t size, handle_ty handle) const noexcept {
+        return Buffer<T>(impl_.get(), size, handle);
     }
 
     [[nodiscard]] ByteBuffer create_byte_buffer(size_t size, const string &name = "") const noexcept;
+
+    [[nodiscard]] DynamicBuffer create_dynamic_buffer(const Type *logical_type,
+                                                      StoragePrecisionPolicy policy,
+                                                      size_t element_count = 0u,
+                                                      const string &name = "") const noexcept;
+
+    [[nodiscard]] DynamicBuffer create_dynamic_buffer_resolved(const Type *resolved_type,
+                                                               size_t element_count = 0u,
+                                                               const string &name = "") const noexcept;
 
     template<typename T, AccessMode mode = AOS>
     [[nodiscard]] CountedBuffer<T, mode> create_list(size_t size, const string &name = "") const noexcept;// implement in byte_buffer.h
@@ -154,9 +164,9 @@ public:
         return ManagedList<T, mode>(create_list<T, mode>(size, name));
     }
 
-    template<typename T = std::byte, int... Dims>
-    [[nodiscard]] Buffer<T, Dims...> create_buffer(size_t size, handle_ty stream) noexcept {
-        return Buffer<T, Dims...>(impl_.get(), size, stream);
+    template<typename T = std::byte>
+    [[nodiscard]] Buffer<T> create_buffer(size_t size, handle_ty stream) noexcept {
+        return Buffer<T>(impl_.get(), size, stream);
     }
 
     void destroy_buffer(handle_ty handle) noexcept {

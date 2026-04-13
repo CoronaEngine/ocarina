@@ -11,10 +11,10 @@
 
 namespace ocarina {
 
-template<typename T, int... Dims>
+template<typename T>
 class Buffer;
 
-template<typename T, int... Dims>
+template<typename T>
 class BufferView {
 private:
     handle_ty handle_{};
@@ -26,7 +26,7 @@ private:
 
 public:
     BufferView() = default;
-    BufferView(const Buffer<T, Dims...> &buffer);
+    BufferView(const Buffer<T> &buffer);
     [[nodiscard]] handle_ty handle() const { return handle_; }
     [[nodiscard]] size_t size() const { return size_; }
     [[nodiscard]] static constexpr size_t element_size() noexcept { return sizeof(T); }
@@ -110,15 +110,13 @@ public:
     }
 };
 
-template<typename T = std::byte, int... Dims>
+template<typename T = std::byte>
 class Buffer : public ExportableResource {
     static_assert(is_valid_buffer_element_v<T>);
     static constexpr bool use_for_dsl = is_dsl_basic_v<T>;
 
 public:
     using element_type = T;
-    static constexpr ocarina::array<int, sizeof...(Dims)> dims = {Dims...};
-    static constexpr bool has_multi_dim() noexcept { return !dims.empty(); }
     using Super = ExportableResource;
 
 protected:
@@ -139,7 +137,7 @@ public:
 
     OC_MAKE_MEMBER_GETTER_SETTER(name, )
 
-    Buffer(BufferView<T, Dims...> buffer_view)
+        Buffer(BufferView<T> buffer_view)
         : Super(nullptr, Tag::BUFFER, buffer_view.handle()),
           size_(buffer_view.size()) {
         descriptor_ptr();
@@ -362,8 +360,8 @@ public:
     }
 };
 
-template<typename T, int... dims>
-BufferView<T, dims...>::BufferView(const Buffer<T, dims...> &buffer)
+template<typename T>
+BufferView<T>::BufferView(const Buffer<T> &buffer)
     : BufferView(buffer.handle(), buffer.size()) {}
 
 }// namespace ocarina

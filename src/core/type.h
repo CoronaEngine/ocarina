@@ -714,7 +714,6 @@ private:
     mutable ocarina::vector<string_view> member_name_;
     ocarina::vector<const Type *> members_;
     [[nodiscard]] uint64_t compute_hash() const noexcept override;
-    vector<int> dims_;
     bool builtin_struct_{false};
     bool param_struct_{false};
 
@@ -752,8 +751,6 @@ public:
     [[nodiscard]] constexpr size_t index() const noexcept { return index_; }
     [[nodiscard]] constexpr size_t size() const noexcept { return size_; }
     [[nodiscard]] constexpr size_t alignment() const noexcept { return alignment_; }
-    [[nodiscard]] const vector<int> &dims() const noexcept { return dims_; }
-    [[nodiscard]] bool has_multi_dims() const noexcept { return !dims_.empty(); }
     [[nodiscard]] constexpr Tag tag() const noexcept { return tag_; }
     [[nodiscard]] auto description() const noexcept { return ocarina::string_view{description_}; }
     [[nodiscard]] ocarina::string name() const noexcept { return name_; }

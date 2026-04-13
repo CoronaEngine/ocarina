@@ -266,14 +266,11 @@ static bool test_array_and_resource_types() {
     CHECK(array_type->alignment() == float4_type->alignment());
     CHECK(array_type->is_valid());
 
-    const Type *buffer_type = Type::from(TypeDesc<Buffer<float, 2, 3>>::description());
+    const Type *buffer_type = Type::from(TypeDesc<Buffer<float>>::description());
     CHECK(buffer_type != nullptr);
     CHECK(buffer_type->is_buffer());
     CHECK(buffer_type->tag() == Type::Tag::BUFFER);
     CHECK(buffer_type->element() == Type::of<float>());
-    CHECK(buffer_type->dims().size() == 2);
-    CHECK(buffer_type->dims()[0] == 2);
-    CHECK(buffer_type->dims()[1] == 3);
     CHECK(buffer_type->size() == sizeof(BufferDesc<>));
     CHECK(buffer_type->alignment() == alignof(BufferDesc<>));
 

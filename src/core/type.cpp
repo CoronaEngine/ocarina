@@ -274,12 +274,12 @@ void TypeParser::parse_bindless_array_locked(Type *type, ocarina::string_view de
 void TypeParser::parse_buffer_locked(Type *type, ocarina::string_view desc) noexcept {
     type->tag_ = Type::Tag::BUFFER;
     auto lst = find_content(desc);
+    OC_ERROR_IF_NOT(lst.size() == 1u,
+                    "multidimensional buffer type is unsupported: ",
+                    desc);
     auto type_str = lst[0];
     const Type *element_type = parse_type_locked(type_str);
     type->members_.push_back(element_type);
-    for (int i = 1; i < lst.size(); ++i) {
-        type->dims_.push_back(std::stoi(lst[i].data()));
-    }
     type->alignment_ = alignof(BufferDesc<>);
     type->size_ = sizeof(BufferDesc<>);
 }

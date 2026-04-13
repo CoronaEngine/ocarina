@@ -1,0 +1,280 @@
+//
+// Created by Z on 2026/4/13.
+//
+
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+
+#include "core/dynamic_buffer/host_dynamic_buffer.h"
+#include "dsl/dsl.h"
+#include "math/real.h"
+#include "rhi/common.h"
+#include "rhi/context.h"
+#include "rhi/resources/bindless_array.h"
+#include "rhi/resources/dynamic_buffer.h"
+
+using namespace ocarina;
+
+struct DynamicLogicalLeaf {
+    real roughness;
+    Vector<real, 3> direction;
+};
+
+OC_MAKE_STRUCT_REFLECTION(DynamicLogicalLeaf, roughness, direction)
+OC_MAKE_STRUCT_DESC(DynamicLogicalLeaf, roughness, direction)
+OC_MAKE_STRUCT_IS_DYNAMIC(DynamicLogicalLeaf, roughness, direction)
+
+struct DynamicLogicalRecord {
+    DynamicLogicalLeaf leaf;
+    ocarina::array<real, 4> weights;
+    Matrix<real, 2, 2> basis;
+    float extra;
+};
+
+OC_MAKE_STRUCT_REFLECTION(DynamicLogicalRecord, leaf, weights, basis, extra)
+OC_MAKE_STRUCT_DESC(DynamicLogicalRecord, leaf, weights, basis, extra)
+OC_MAKE_STRUCT_IS_DYNAMIC(DynamicLogicalRecord, leaf, weights, basis, extra)
+
+struct DynamicResolvedRecord {
+    float4 lhs{};
+    float4 rhs{};
+
+    DynamicResolvedRecord() = default;
+    DynamicResolvedRecord(float4 lhs, float4 rhs) : lhs(lhs), rhs(rhs) {}
+};
+
+OC_STRUCT(, DynamicResolvedRecord, lhs, rhs) {
+};
+
+namespace {
+
+[[nodiscard]] bool check_impl(bool condition, const char *expr) {
+    if (!condition) {
+        std::cerr << "FAILED: " << expr << std::endl;
+    }
+    return condition;
+}
+
+#define CHECK(...)                                  \
+    do {                                            \
+        if (!check_impl((__VA_ARGS__), #__VA_ARGS__)) { \
+            return false;                           \
+        }                                           \
+    } while (false)
+
+[[nodiscard]] StoragePrecisionPolicy make_policy(PrecisionPolicy policy) {
+    return StoragePrecisionPolicy{.policy = policy, .allow_real_in_storage = true};
+}
+
+[[nodiscard]] DynamicLogicalRecord make_logical_record(float base) {
+    return {
+        .leaf = DynamicLogicalLeaf{
+            .roughness = real{base + 0.25f},
+            .direction = Vector<real, 3>{real{base + 1.0f}, real{base + 2.0f}, real{base + 3.0f}}},
+        .weights = {real{base + 4.0f}, real{base + 5.0f}, real{base + 6.0f}, real{base + 7.0f}},
+        .basis = Matrix<real, 2, 2>{Vector<real, 2>{real{base + 8.0f}, real{base + 9.0f}},
+                                     Vector<real, 2>{real{base + 10.0f}, real{base + 11.0f}}},
+        .extra = base + 12.0f};
+}
+
+[[nodiscard]] DynamicResolvedRecord make_resolved_record(uint index) {
+    float base = static_cast<float>(index * 8u);
+    return DynamicResolvedRecord{
+        make_float4(base + 1.f, base + 2.f, base + 3.f, base + 4.f),
+        make_float4(base + 5.f, base + 6.f, base + 7.f, base + 8.f)};
+}
+
+[[nodiscard]] DynamicResolvedRecord transform_resolved_record(DynamicResolvedRecord value) {
+    value.lhs += make_float4(2.f, 4.f, 6.f, 8.f);
+    value.rhs -= make_float4(1.f, 3.f, 5.f, 7.f);
+    return value;
+}
+
+[[nodiscard]] bool close_float(float lhs, float rhs, float eps = 1e-5f) {
+    return std::abs(lhs - rhs) <= eps;
+}
+
+[[nodiscard]] bool equal_float4(float4 lhs, float4 rhs, float eps = 1e-5f) {
+    return close_float(lhs.x, rhs.x, eps) &&
+           close_float(lhs.y, rhs.y, eps) &&
+           close_float(lhs.z, rhs.z, eps) &&
+           close_float(lhs.w, rhs.w, eps);
+}
+
+[[nodiscard]] bool equal_resolved_record(DynamicResolvedRecord lhs, DynamicResolvedRecord rhs) {
+    return equal_float4(lhs.lhs, rhs.lhs) && equal_float4(lhs.rhs, rhs.rhs);
+}
+
+[[nodiscard]] bool equal_bytes(span<const std::byte> lhs, span<const std::byte> rhs) {
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+    for (size_t index = 0; index < lhs.size(); ++index) {
+        if (lhs[index] != rhs[index]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+[[nodiscard]] bool test_dynamic_buffer_matches_host_bytes(Device &device) {
+    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f16);
+    auto host = HostDynamicBuffer<DynamicLogicalRecord>::create(policy);
+    vector<DynamicLogicalRecord> records = {make_logical_record(0.f), make_logical_record(20.f), make_logical_record(40.f)};
+    host.write_all(span<const DynamicLogicalRecord>(records.data(), records.size()));
+
+    DynamicBuffer buffer = device.create_dynamic_buffer(Type::of<DynamicLogicalRecord>(), policy, 0u,
+                                                        "test_dynamic_buffer_host_bytes");
+    buffer.upload_immediately(host.bytes());
+
+    CHECK(buffer.logical_type() == Type::of<DynamicLogicalRecord>());
+    CHECK(buffer.resolved_type() == host.layout_plan().resolved_type());
+    CHECK(buffer.policy().policy == policy.policy);
+    CHECK(buffer.policy().allow_real_in_storage == policy.allow_real_in_storage);
+    CHECK(buffer.element_stride() == host.layout_plan().element_size_bytes());
+    CHECK(buffer.element_alignment() == host.layout_plan().element_alignment());
+    CHECK(buffer.size() == host.element_count());
+    CHECK(buffer.size_in_byte() == host.storage_size_bytes());
+    CHECK(buffer.capacity() == host.element_count());
+    CHECK(buffer.capacity_in_byte() == host.storage_size_bytes());
+
+    DynamicBufferView middle = buffer.view(1u, 1u);
+    CHECK(middle.offset() == 1u);
+    CHECK(middle.size() == 1u);
+    CHECK(middle.size_in_byte() == buffer.element_stride());
+    CHECK(middle.total_size() == buffer.size());
+    CHECK(middle.total_size_in_byte() == buffer.size_in_byte());
+
+    vector<std::byte> downloaded(buffer.size_in_byte());
+    buffer.download_immediately(downloaded.data());
+    CHECK(equal_bytes(host.bytes(), downloaded));
+    return true;
+}
+
+[[nodiscard]] bool test_dynamic_buffer_bindless_aos_access(Device &device) {
+    constexpr uint count = 12u;
+    DynamicBuffer src = device.create_dynamic_buffer_resolved(Type::of<DynamicResolvedRecord>(), count,
+                                                              "test_dynamic_buffer_bindless_src");
+    DynamicBuffer dst = device.create_dynamic_buffer_resolved(Type::of<DynamicResolvedRecord>(), count,
+                                                              "test_dynamic_buffer_bindless_dst");
+
+    vector<DynamicResolvedRecord> host_src(count);
+    vector<DynamicResolvedRecord> host_dst(count);
+    for (uint index = 0u; index < count; ++index) {
+        host_src[index] = make_resolved_record(index);
+    }
+    src.upload_immediately(host_src.data(), host_src.size() * sizeof(DynamicResolvedRecord));
+
+    BindlessArray bindless = device.create_bindless_array();
+    uint src_slot = bindless.emplace(src);
+    uint dst_slot = bindless.emplace(dst);
+
+    Kernel kernel = [&](Uint n) {
+        Uint index = dispatch_id();
+        $if(index < n) {
+            auto src_view = bindless.byte_buffer_var(src_slot).template aos_view_var<DynamicResolvedRecord>();
+            auto dst_view = bindless.byte_buffer_var(dst_slot).template aos_view_var<DynamicResolvedRecord>();
+            Var<DynamicResolvedRecord> value = src_view.read(index);
+            value.lhs += make_float4(2.f, 4.f, 6.f, 8.f);
+            value.rhs -= make_float4(1.f, 3.f, 5.f, 7.f);
+            dst_view.write(index, value);
+        };
+    };
+
+    Stream stream = device.create_stream();
+    auto shader = device.compile(kernel, "test_dynamic_buffer_bindless_aos_access");
+    stream << bindless->upload_buffer_handles(false)
+           << shader(count).dispatch(count)
+           << dst.download(host_dst.data())
+           << synchronize()
+           << commit();
+
+    for (uint index = 0u; index < count; ++index) {
+        CHECK(equal_resolved_record(host_dst[index], transform_resolved_record(host_src[index])));
+    }
+    return true;
+}
+
+[[nodiscard]] bool test_dynamic_buffer_async_upload_round_trip(Device &device) {
+    constexpr uint count = 5u;
+    DynamicBuffer buffer = device.create_dynamic_buffer_resolved(Type::of<DynamicResolvedRecord>(), 0u,
+                                                                 "test_dynamic_buffer_async_round_trip");
+    vector<DynamicResolvedRecord> host_src(count);
+    vector<DynamicResolvedRecord> host_dst(count);
+    for (uint index = 0u; index < count; ++index) {
+        host_src[index] = make_resolved_record(index + 30u);
+    }
+
+    Stream stream = device.create_stream();
+    stream << buffer.upload(host_src.data(), host_src.size() * sizeof(DynamicResolvedRecord))
+           << buffer.download(host_dst.data())
+           << synchronize()
+           << commit();
+
+    CHECK(buffer.size() == count);
+    CHECK(buffer.capacity() == count);
+    CHECK(buffer.size_in_byte() == host_src.size() * sizeof(DynamicResolvedRecord));
+    for (uint index = 0u; index < count; ++index) {
+        CHECK(equal_resolved_record(host_dst[index], host_src[index]));
+    }
+    return true;
+}
+
+[[nodiscard]] bool test_dynamic_buffer_direct_host_sync(Device &device) {
+    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f16);
+    auto host = HostDynamicBuffer<DynamicLogicalRecord>::create(policy, 3u);
+    vector<DynamicLogicalRecord> records = {make_logical_record(5.f), make_logical_record(25.f), make_logical_record(45.f)};
+    host.write_all(span<const DynamicLogicalRecord>(records.data(), records.size()));
+
+    DynamicBuffer buffer = device.create_dynamic_buffer(Type::of<DynamicLogicalRecord>(), policy, 0u,
+                                                        "test_dynamic_buffer_direct_host_sync");
+    auto first_stats = buffer.sync_immediately(host);
+    CHECK(first_stats.full_upload);
+    CHECK(first_stats.uploaded_segment_count == 1u);
+    CHECK(first_stats.uploaded_bytes == host.storage_size_bytes());
+    CHECK(host.dirty_segments().empty());
+    CHECK(!host.dirty_range().dirty);
+
+    auto roughness_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
+    auto extra_path = make_typed_field_path<FieldMemberStep<3u>>();
+    host.patch(0u, roughness_path, real{13.5f});
+    host.patch(2u, extra_path, 207.25f);
+    vector<ByteRegion> dirty_segments(host.dirty_segments().begin(), host.dirty_segments().end());
+    size_t dirty_bytes = 0u;
+    for (const auto &segment : dirty_segments) {
+        dirty_bytes += segment.size();
+    }
+
+    auto second_stats = buffer.sync_immediately(host);
+    CHECK(!second_stats.full_upload);
+    CHECK(second_stats.uploaded_segment_count == dirty_segments.size());
+    CHECK(second_stats.uploaded_bytes == dirty_bytes);
+    CHECK(host.dirty_segments().empty());
+    CHECK(!host.dirty_range().dirty);
+
+    vector<std::byte> downloaded(buffer.size_in_byte());
+    buffer.download_immediately(downloaded.data());
+    CHECK(equal_bytes(host.bytes(), downloaded));
+    return true;
+}
+
+}// namespace
+
+int main() {
+    RHIContext &context = RHIContext::instance();
+    Device device = context.create_device("cuda");
+
+    bool passed = true;
+    passed = test_dynamic_buffer_matches_host_bytes(device) && passed;
+    passed = test_dynamic_buffer_bindless_aos_access(device) && passed;
+    passed = test_dynamic_buffer_async_upload_round_trip(device) && passed;
+    passed = test_dynamic_buffer_direct_host_sync(device) && passed;
+
+    if (!passed) {
+        std::cerr << "dynamic buffer test failed" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "dynamic buffer test passed" << std::endl;
+    return EXIT_SUCCESS;
+}

@@ -256,20 +256,7 @@ void CppCodegen::visit(const MemberExpr *expr) noexcept {
 }
 
 void CppCodegen::visit(const SubscriptExpr *expr) noexcept {
-    const Type *type = expr->range()->type();
-    if (type->has_multi_dims()) {
-        current_scratch() << "(*reinterpret_cast<";
-        _emit_type_name(type->element());
-        current_scratch() << "(*)";
-        for (int d : type->dims()) {
-            current_scratch() << "[" << d << "]";
-        }
-        current_scratch() << ">(";
-        expr->range()->accept(*this);
-        current_scratch() << "))";
-    } else {
-        expr->range()->accept(*this);
-    }
+    expr->range()->accept(*this);
     expr->for_each_index([&](const Expression *index) {
         current_scratch() << "[";
         index->accept(*this);

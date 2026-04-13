@@ -1,5 +1,5 @@
 //
-// Created by GitHub Copilot on 2026/4/13.
+// Created by Z on 2026/4/13.
 //
 
 #include <iostream>
@@ -75,17 +75,16 @@ namespace {
     return true;
 }
 
+template<typename T>
 [[nodiscard]] bool device_matches_host(const DynamicBufferGpuBridge &bridge,
-                                       const HostDynamicBuffer &buffer) {
+                                       const HostDynamicBuffer<T> &buffer) {
     vector<std::byte> downloaded(buffer.storage_size_bytes());
     bridge.device_buffer().download_immediately(downloaded.data());
     return equal_bytes(buffer.bytes(), downloaded);
 }
 
 [[nodiscard]] bool test_aos_upload_immediately_round_trips_full_buffer(Device &device) {
-    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<GpuBridgeRecord>(),
-                                                         make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::AOS);
+    auto buffer = HostDynamicBuffer<GpuBridgeRecord>::create(make_policy(PrecisionPolicy::force_f16));
     vector<GpuBridgeRecord> records = {make_record(0.f), make_record(20.f)};
     buffer.write_all(span<const GpuBridgeRecord>(records.data(), records.size()));
 
@@ -105,13 +104,12 @@ namespace {
 }
 
 [[nodiscard]] bool test_soa_dirty_segments_upload_only_changed_columns(Device &device) {
-    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<GpuBridgeRecord>(),
-                                                         make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::SOA);
+    auto buffer = HostDynamicBuffer<GpuBridgeRecord>::create(make_policy(PrecisionPolicy::force_f16),
+                                                             3u);
     vector<GpuBridgeRecord> records = {make_record(3.f), make_record(30.f), make_record(60.f)};
     buffer.write_all(span<const GpuBridgeRecord>(records.data(), records.size()));
 
-    DynamicBufferGpuBridge bridge{"test_dynamic_buffer_gpu_bridge_soa"};
+    DynamicBufferGpuBridge bridge{"test_dynamic_buffer_gpu_bridge_partial"};
     bridge.upload_immediately(device, buffer);
 
     auto roughness_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();

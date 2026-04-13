@@ -113,7 +113,6 @@ private:
     const Type *logical_type_{nullptr};
     const Type *resolved_type_{nullptr};
     StoragePrecisionPolicy policy_{};
-    DynamicBufferLayout layout_{DynamicBufferLayout::AOS};
     size_t element_size_bytes_{0u};
     size_t element_alignment_{0u};
     bool contains_real_{false};
@@ -124,7 +123,6 @@ public:
     DynamicBufferLayoutPlan(const Type *logical_type,
                             const Type *resolved_type,
                             StoragePrecisionPolicy policy,
-                            DynamicBufferLayout layout,
                             size_t element_size_bytes,
                             size_t element_alignment,
                             bool contains_real,
@@ -132,20 +130,17 @@ public:
         : logical_type_(logical_type),
           resolved_type_(resolved_type),
           policy_(policy),
-          layout_(layout),
           element_size_bytes_(element_size_bytes),
           element_alignment_(element_alignment),
           contains_real_(contains_real),
           has_precision_lowering_(has_precision_lowering) {}
 
     [[nodiscard]] static DynamicBufferLayoutPlan create(const Type *logical_type,
-                                                        StoragePrecisionPolicy policy,
-                                                        DynamicBufferLayout layout);
+                                                                                                                StoragePrecisionPolicy policy);
 
     [[nodiscard]] const Type *logical_type() const noexcept { return logical_type_; }
     [[nodiscard]] const Type *resolved_type() const noexcept { return resolved_type_; }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return policy_; }
-    [[nodiscard]] DynamicBufferLayout layout() const noexcept { return layout_; }
     [[nodiscard]] size_t element_size_bytes() const noexcept { return element_size_bytes_; }
     [[nodiscard]] size_t element_alignment() const noexcept { return element_alignment_; }
     [[nodiscard]] bool contains_real() const noexcept { return contains_real_; }

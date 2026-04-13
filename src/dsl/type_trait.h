@@ -21,7 +21,7 @@ struct Expr;
 template<typename T>
 class DynamicArray;
 
-template<typename T, int... Dims>
+template<typename T>
 class Buffer;
 
 class ByteBuffer;
@@ -424,15 +424,17 @@ template<typename T>
 using is_dsl_basic = std::disjunction<is_dsl_scalar<T>, is_vector<T>, is_matrix<T>>;
 OC_DEFINE_TEMPLATE_VALUE(is_dsl_basic)
 
-template<typename T, int... dims>
+template<typename T>
 class Buffer;
 
-template<typename T, int... dims>
+template<typename T>
 class BufferView;
 
 class ByteBuffer;
+class DynamicBuffer;
 
 class ByteBufferView;
+class DynamicBufferView;
 
 class Texture3D;
 class Texture2D;
@@ -457,6 +459,9 @@ struct is_buffer_impl<Buffer<T>> : std::true_type {};
 template<>
 struct is_buffer_impl<ByteBuffer> : std::true_type {};
 
+template<>
+struct is_buffer_impl<DynamicBuffer> : std::true_type {};
+
 template<typename T>
 struct is_buffer_view_impl : std::false_type {};
 
@@ -465,6 +470,9 @@ struct is_buffer_view_impl<BufferView<T>> : std::true_type {};
 
 template<>
 struct is_buffer_view_impl<ByteBufferView> : std::true_type {};
+
+template<>
+struct is_buffer_view_impl<DynamicBufferView> : std::true_type {};
 
 template<typename T>
 struct buffer_element_impl {
@@ -481,11 +489,24 @@ struct buffer_element_impl<BufferView<T>> {
     using type = T;
 };
 
+template<>
+struct buffer_element_impl<DynamicBuffer> {
+    using type = std::byte;
+};
+
+template<>
+struct buffer_element_impl<DynamicBufferView> {
+    using type = std::byte;
+};
+
 template<typename T>
 struct is_byte_buffer_view : public std::false_type {};
 
 template<>
 struct is_byte_buffer_view<ByteBufferView> : public std::true_type {};
+
+template<>
+struct is_byte_buffer_view<DynamicBufferView> : public std::true_type {};
 
 };// namespace detail
 
