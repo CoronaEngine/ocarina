@@ -48,7 +48,6 @@ void RawHostDynamicBuffer::validate_index(size_t index) const noexcept {
 
 void RawHostDynamicBuffer::mark_dirty(ByteRegion region) noexcept {
     dirty_segments_.merge(region);
-    dirty_range_.merge(region);
 }
 
 void RawHostDynamicBuffer::gather_segments(span<const ByteSegment> segments,
@@ -89,7 +88,6 @@ void RawHostDynamicBuffer::clear() noexcept {
     storage_.clear();
     element_count_ = 0u;
     dirty_segments_.clear();
-    dirty_range_.clear();
     generation_++;
 }
 

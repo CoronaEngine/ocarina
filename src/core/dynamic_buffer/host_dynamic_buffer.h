@@ -126,7 +126,6 @@ private:
     size_t element_count_{0u};
     size_t element_capacity_{0u};
     DirtyByteSegments dirty_segments_{};
-    DirtyByteRange dirty_range_{};
     uint64_t generation_{0u};
 
 private:
@@ -169,11 +168,10 @@ public:
     [[nodiscard]] span<const std::byte> bytes() const noexcept { return storage_.bytes_span(); }
     [[nodiscard]] span<std::byte> bytes() noexcept { return storage_.bytes_span(); }
 
-    [[nodiscard]] const DirtyByteRange &dirty_range() const noexcept { return dirty_range_; }
+    [[nodiscard]] DirtyByteRange dirty_range() const noexcept { return dirty_segments_.merged_range(); }
     [[nodiscard]] span<const ByteRegion> dirty_segments() const noexcept { return dirty_segments_.segments(); }
     void clear_dirty() noexcept {
         dirty_segments_.clear();
-        dirty_range_.clear();
     }
 
     [[nodiscard]] uint64_t generation() const noexcept { return generation_; }
@@ -187,7 +185,7 @@ public:
             .logical_type = layout_plan_.logical_type(),
             .resolved_type = layout_plan_.resolved_type(),
             .dirty_segments = dirty_segments_.segments(),
-            .dirty = dirty_range_};
+            .dirty = dirty_segments_.merged_range()};
     }
 
     /// Read one logical record.
@@ -283,7 +281,7 @@ public:
     [[nodiscard]] bool supports_field_patch() const noexcept { return buffer_.supports_field_patch(); }
     [[nodiscard]] span<const std::byte> bytes() const noexcept { return buffer_.bytes(); }
     [[nodiscard]] span<std::byte> bytes() noexcept { return buffer_.bytes(); }
-    [[nodiscard]] const DirtyByteRange &dirty_range() const noexcept { return buffer_.dirty_range(); }
+    [[nodiscard]] DirtyByteRange dirty_range() const noexcept { return buffer_.dirty_range(); }
     [[nodiscard]] span<const ByteRegion> dirty_segments() const noexcept { return buffer_.dirty_segments(); }
     [[nodiscard]] uint64_t generation() const noexcept { return buffer_.generation(); }
     [[nodiscard]] HostDynamicBufferUploadView upload_view() const noexcept { return buffer_.upload_view(); }
@@ -316,10 +314,6 @@ public:
 
     [[nodiscard]] HostDynamicBufferView<T> view() noexcept {
         return HostDynamicBufferView<T>{buffer_};
-    }
-
-    [[nodiscard]] const HostDynamicBufferView<T> view() const noexcept {
-        return HostDynamicBufferView<T>{const_cast<RawHostDynamicBuffer &>(buffer_)};
     }
 };
 
