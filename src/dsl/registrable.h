@@ -180,7 +180,7 @@ public:
 
     explicit RegistrableCountedBuffer(Super &&list) : Super(std::move(list)) {}
 
-    void set_list(Super &&list) noexcept {
+    void set_buffer(Super &&list) noexcept {
         super() = std::move(list);
     }
 

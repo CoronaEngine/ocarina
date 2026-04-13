@@ -20,7 +20,7 @@ void test_list(Device &device, Stream& stream) {
 
     RegistrableCountedBuffer<Elm, SOA> rl{};
     vector<Elm> host;
-    rl.set_list(std::move(list));
+    rl.set_buffer(std::move(list));
 
     host.resize(size , make_float4x4(2));
 
