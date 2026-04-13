@@ -6,9 +6,9 @@
 //#define XXH_STATIC_LINKING_ONLY   /* access advanced declarations */
 //#define XXH_INLINE_ALL   /* access definitions */
 #include "xxhash.h"
-#include "stl.h"
+#include "core/stl.h"
 #include "math/basic_types.h"
-#include "concepts.h"
+#include "core/concepts.h"
 
 namespace ocarina {
 namespace detail {

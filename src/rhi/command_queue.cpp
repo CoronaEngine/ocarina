@@ -4,7 +4,7 @@
 
 #include "command_queue.h"
 #include "command.h"
-#include "core/util.h"
+#include "core/util/util.h"
 
 namespace ocarina {
 

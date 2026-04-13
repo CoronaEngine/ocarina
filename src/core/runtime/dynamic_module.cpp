@@ -3,8 +3,8 @@
 //
 
 #include "dynamic_module.h"
-#include "core/platform.h"
-#include "core/logging.h"
+#include "core/runtime/platform.h"
+#include "core/util/logging.h"
 
 namespace ocarina {
 

@@ -9,7 +9,7 @@
 #include "dsl/dsl.h"
 #include "rhi/common.h"
 #include "math/base.h"
-#include "core/platform.h"
+#include "core/runtime/platform.h"
 #include "rhi/context.h"
 
 using namespace ocarina;

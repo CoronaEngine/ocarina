@@ -7,7 +7,7 @@
 #include <source_location>
 #include <utility>
 #include "core/stl.h"
-#include "core/hash.h"
+#include "core/util/hash.h"
 #include "core/type.h"
 
 namespace ocarina {

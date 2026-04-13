@@ -6,9 +6,9 @@
 
 #include <algorithm>
 
-#include "core/precision_policy.h"
+#include "core/type_system/precision_policy.h"
 #include "core/stl.h"
-#include "core/type_desc.h"
+#include "core/type_system/type_desc.h"
 
 namespace ocarina {
 

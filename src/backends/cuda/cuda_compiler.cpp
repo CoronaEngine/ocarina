@@ -7,7 +7,7 @@
 #include "ast/function.h"
 #include "cuda_codegen.h"
 #include "rhi/context.h"
-#include "core/util.h"
+#include "core/util/util.h"
 #include "dsl/dsl.h"
 
 #ifndef OCARINA_CUDA_USE_FLOAT32

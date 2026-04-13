@@ -5,7 +5,7 @@
 #include "dynamic_buffer_layout_plan.h"
 
 #include "core/dynamic_buffer/dynamic_buffer_layout_common.h"
-#include "core/type_desc.h"
+#include "core/type_system/type_desc.h"
 
 namespace ocarina {
 

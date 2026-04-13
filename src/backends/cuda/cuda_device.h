@@ -7,7 +7,7 @@
 #include "core/header.h"
 #include "core/stl.h"
 #include "rhi/resources/resource.h"
-#include "core/thread_safety.h"
+#include "core/concurrency/thread_safety.h"
 #include <cuda.h>
 #include "util.h"
 #include "cuda_compiler.h"

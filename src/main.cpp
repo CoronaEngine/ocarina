@@ -6,9 +6,9 @@
 #include "core/concepts.h"
 #include "math/basic_traits.h"
 #include "typeinfo"
-#include "core/hash.h"
-#include "core/string_util.h"
-#include "core/type_desc.h"
+#include "core/util/hash.h"
+#include "core/util/string_util.h"
+#include "core/type_system/type_desc.h"
 #include "dsl/dsl.h"
 
 using namespace ocarina;

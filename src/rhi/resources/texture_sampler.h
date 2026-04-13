@@ -5,7 +5,7 @@
 #pragma once
 
 #include "math/basic_types.h"
-#include "core/hash.h"
+#include "core/util/hash.h"
 
 namespace ocarina {
 

@@ -14,9 +14,9 @@
 
 #include <core/stl.h>
 #include "math/basic_types.h"
-#include "header.h"
+#include "core/header.h"
 
-/// reference :https://github.com/LuisaGroup/LuisaCompute/src/core/thread_pool.h
+/// reference :https://github.com/LuisaGroup/LuisaCompute/src/core/concurrency/thread_pool.h
 namespace ocarina {
 
 class Barrier;

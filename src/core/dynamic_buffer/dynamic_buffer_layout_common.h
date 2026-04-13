@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/precision_policy.h"
+#include "core/type_system/precision_policy.h"
 #include "core/type.h"
 #include "math/half.h"
 #include "math/real.h"

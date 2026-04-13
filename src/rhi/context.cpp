@@ -3,9 +3,9 @@
 //
 
 #include "context.h"
-#include "core/dynamic_module.h"
+#include "core/runtime/dynamic_module.h"
 #include "rhi/device.h"
-#include "core/platform.h"
+#include "core/runtime/platform.h"
 
 namespace ocarina {
 

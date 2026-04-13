@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/pool.h"
+#include "core/concurrency/pool.h"
 #include "graphics_descriptions.h"
 
 namespace ocarina {

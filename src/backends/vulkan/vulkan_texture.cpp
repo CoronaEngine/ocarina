@@ -6,7 +6,7 @@
 #include "util.h"
 #include "vulkan_device.h"
 #include "vulkan_driver.h"
-#include "core/image.h"
+#include "core/image/image.h"
 #include "vulkan_buffer.h"
 
 namespace ocarina {

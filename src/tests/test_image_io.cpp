@@ -5,8 +5,8 @@
 #include <iostream>
 #include <system_error>
 
-#include "core/image.h"
-#include "core/logging.h"
+#include "core/image/image.h"
+#include "core/util/logging.h"
 #include "core/stl.h"
 #include "math/base.h"
 

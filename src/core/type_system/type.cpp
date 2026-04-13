@@ -2,14 +2,14 @@
 // Created by Zero on 30/04/2022.
 //
 
-#include "type.h"
+#include "core/type.h"
 
 #include <cctype>
 #include <mutex>
 #include <utility>
 
-#include "core/logging.h"
-#include "core/string_util.h"
+#include "core/util/logging.h"
+#include "core/util/string_util.h"
 
 namespace ocarina {
 

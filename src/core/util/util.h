@@ -5,9 +5,9 @@
 #pragma once
 
 #include "math/basic_traits.h"
-#include "concepts.h"
+#include "core/concepts.h"
 #include "math/base.h"
-#include "logging.h"
+#include "core/util/logging.h"
 
 namespace ocarina {
 

@@ -10,8 +10,8 @@
 #include <cstddef>
 #include <tuple>
 #include <type_traits>
-#include "macro_map.h"
-#include "oc_windows.h"
+#include "core/util/macro_map.h"
+#include "core/runtime/oc_windows.h"
 
 #ifdef OC_AST_EXPORT_DLL
 #define OC_AST_API __declspec(dllexport)

@@ -7,7 +7,7 @@
 #include "core/header.h"
 #include "core/stl.h"
 #include "core/concepts.h"
-#include "core/dynamic_module.h"
+#include "core/runtime/dynamic_module.h"
 #include "graphics_descriptions.h"
 
 namespace ocarina {

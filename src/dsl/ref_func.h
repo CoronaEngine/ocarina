@@ -10,7 +10,7 @@
 #include "type_trait.h"
 #include "ast/function.h"
 #include <utility>
-#include "core/platform.h"
+#include "core/runtime/platform.h"
 
 namespace ocarina {
 

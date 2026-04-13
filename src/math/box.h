@@ -8,7 +8,7 @@
 #include "interval.h"
 #include "math/base.h"
 #include "dsl/var.h"
-#include "core/type_desc.h"
+#include "core/type_system/type_desc.h"
 #include "dsl/struct.h"
 #include "dsl/builtin.h"
 

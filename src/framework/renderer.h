@@ -7,7 +7,7 @@
 #include "core/header.h"
 #include "core/stl.h"
 #include "core/concepts.h"
-#include "core/thread_pool.h"
+#include "core/concurrency/thread_pool.h"
 #include "rhi/params.h"
 #include "rhi/graphics_descriptions.h"
 

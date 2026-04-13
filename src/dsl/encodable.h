@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/util.h"
+#include "core/util/util.h"
 #include "dsl/type_trait.h"
 #include "dynamic_array.h"
 

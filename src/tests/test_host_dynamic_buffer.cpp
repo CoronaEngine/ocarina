@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "core/dynamic_buffer/host_dynamic_buffer.h"
-#include "core/type_desc.h"
+#include "core/type_system/type_desc.h"
 #include "math/real.h"
 
 using namespace ocarina;

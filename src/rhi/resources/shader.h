@@ -11,7 +11,7 @@
 #include "stream.h"
 #include "rhi/command.h"
 #include "core/concepts.h"
-#include "core/util.h"
+#include "core/util/util.h"
 
 namespace ocarina {
 

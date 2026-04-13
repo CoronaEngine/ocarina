@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "core/logging.h"
+#include "core/util/logging.h"
 #include <cuda.h>
 #include <nvrtc.h>
 #include <optix.h>

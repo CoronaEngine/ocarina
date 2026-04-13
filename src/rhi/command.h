@@ -6,8 +6,8 @@
 
 #include "core/stl.h"
 #include "resources/resource.h"
-#include "core/pool.h"
-#include "core/image_base.h"
+#include "core/concurrency/pool.h"
+#include "core/image/image_base.h"
 
 namespace ocarina {
 

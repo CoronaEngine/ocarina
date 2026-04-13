@@ -2,13 +2,13 @@
 // Created by Zero on 2024/9/26.
 //
 
-#include "core/image.h"
+#include "core/image/image.h"
 #include "core/stl.h"
 #include "dsl/dsl.h"
 #include "rhi/common.h"
 #include "math/base.h"
 #include "base/scattering/interaction.h"
-#include "core/platform.h"
+#include "core/runtime/platform.h"
 #include "rhi/context.h"
 
 using namespace ocarina;

@@ -2,7 +2,7 @@
 #include "core/header.h"
 #include "core/concepts.h"
 #include "core/stl.h"
-#include "core/singleton.h"
+#include "core/concurrency/singleton.h"
 #include "rhi/resources/buffer.h"
 #include <vulkan/vulkan.h>
 namespace ocarina {

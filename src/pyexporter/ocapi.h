@@ -8,7 +8,7 @@
 #include "ext/pybind11/include/pybind11/stl.h"
 #include "ext/pybind11/include/pybind11/operators.h"
 #include "core/stl.h"
-#include "core/type_desc.h"
+#include "core/type_system/type_desc.h"
 #include "rhi/common.h"
 #include "numpy.h"
 #include "base/using.h"

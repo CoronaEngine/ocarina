@@ -3,9 +3,9 @@
 //
 
 #pragma once
-#include "core/logging.h"
+#include "core/util/logging.h"
 #include <vulkan/vulkan.h>
-#include "core/image_base.h"
+#include "core/image/image_base.h"
 #include "rhi/graphics_descriptions.h"
 
 static std::string errorString(VkResult errorCode) {

@@ -5,7 +5,7 @@
 #pragma once
 
 #include "renderpass.h"
-#include "core/hash.h"
+#include "core/util/hash.h"
 
 namespace ocarina {
 

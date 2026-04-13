@@ -6,7 +6,7 @@
 
 #include "core/dynamic_buffer/dynamic_buffer_layout_common.h"
 #include "core/dynamic_buffer/host_byte_buffer.h"
-#include "core/precision_policy.h"
+#include "core/type_system/precision_policy.h"
 #include "core/type.h"
 #include "math/half.h"
 #include "math/real.h"

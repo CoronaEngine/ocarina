@@ -3,7 +3,7 @@
 //
 
 #include "thread_pool.h"
-#include "logging.h"
+#include "core/util/logging.h"
 
 #if (!defined(__clang_major__) || __clang_major__ >= 14) && defined(__cpp_lib_barrier)
 #define OC_USE_STD_BARRIER

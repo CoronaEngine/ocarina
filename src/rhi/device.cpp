@@ -10,7 +10,7 @@
 #include "resources/byte_buffer.h"
 #include "resources/dynamic_buffer.h"
 #include "context.h"
-#include "core/dynamic_module.h"
+#include "core/runtime/dynamic_module.h"
 
 namespace ocarina {
 

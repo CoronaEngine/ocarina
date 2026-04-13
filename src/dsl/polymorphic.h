@@ -7,9 +7,9 @@
 #include "type_trait.h"
 #include "stmt_builder.h"
 #include "core/stl.h"
-#include "core/util.h"
+#include "core/util/util.h"
 #include "encodable.h"
-#include "core/hash.h"
+#include "core/util/hash.h"
 #include "registrable.h"
 #include "env.h"
 

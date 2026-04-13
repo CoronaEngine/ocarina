@@ -3,8 +3,8 @@
 //
 
 #include "cpp_codegen.h"
-#include "core/type_desc.h"
-#include "core/util.h"
+#include "core/type_system/type_desc.h"
+#include "core/util/util.h"
 
 namespace ocarina {
 

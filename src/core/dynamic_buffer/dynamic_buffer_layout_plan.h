@@ -7,7 +7,7 @@
 #include <cstdint>
 
 #include "core/dynamic_buffer/dynamic_buffer_layout_codec.h"
-#include "core/precision_policy.h"
+#include "core/type_system/precision_policy.h"
 #include "core/type.h"
 
 namespace ocarina {

@@ -2,7 +2,7 @@
 // Created by Zero on 24/04/2022.
 //
 
-#include "logging.h"
+#include "core/util/logging.h"
 
 namespace ocarina {
 inline namespace core {

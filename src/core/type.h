@@ -5,10 +5,10 @@
 #pragma once
 
 #include "core/header.h"
-#include "core/hash.h"
-#include "core/image_base.h"
-#include "core/macro_map.h"
-#include "core/precision_policy.h"
+#include "core/util/hash.h"
+#include "core/image/image_base.h"
+#include "core/util/macro_map.h"
+#include "core/type_system/precision_policy.h"
 #include "core/stl.h"
 #include "math/basic_types.h"
 

@@ -6,8 +6,8 @@
 #include "oc_windows.h"
 #include <dbghelp.h>
 #include "fmt/format.h"
-#include "core/logging.h"
-#include "util.h"
+#include "core/util/logging.h"
+#include "core/util/util.h"
 
 namespace ocarina {
 

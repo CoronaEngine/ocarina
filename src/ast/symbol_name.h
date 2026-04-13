@@ -5,7 +5,7 @@
 #pragma once
 
 #include "variable.h"
-#include "core/string_util.h"
+#include "core/util/string_util.h"
 
 namespace ocarina::detail {
 

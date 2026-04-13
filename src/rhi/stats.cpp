@@ -4,8 +4,8 @@
 
 #include "core/stl.h"
 #include "stats.h"
-#include "core/util.h"
-#include "core/string_util.h"
+#include "core/util/util.h"
+#include "core/util/string_util.h"
 
 namespace ocarina {
 

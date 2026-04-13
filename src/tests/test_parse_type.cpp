@@ -4,7 +4,7 @@
 
 #include "ast/layout_resolver.h"
 #include "core/stl.h"
-#include "core/type_desc.h"
+#include "core/type_system/type_desc.h"
 
 using namespace ocarina;
 
