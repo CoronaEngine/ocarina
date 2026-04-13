@@ -24,6 +24,9 @@ template<typename T>
 class Buffer;
 
 class ByteBuffer;
+class RawDynamicBuffer;
+
+template<typename T>
 class DynamicBuffer;
 
 template<typename T, AccessMode mode = AOS, typename TBuffer = ByteBuffer>
@@ -147,14 +150,21 @@ public:
 
     [[nodiscard]] ByteBuffer create_byte_buffer(size_t size, const string &name = "") const noexcept;
 
-    [[nodiscard]] DynamicBuffer create_dynamic_buffer(const Type *logical_type,
-                                                      StoragePrecisionPolicy policy,
-                                                      size_t element_count = 0u,
-                                                      const string &name = "") const noexcept;
+    [[nodiscard]] RawDynamicBuffer create_raw_dynamic_buffer(const Type *logical_type,
+                                                             StoragePrecisionPolicy policy,
+                                                             size_t element_count = 0u,
+                                                             const string &name = "") const noexcept;
 
-    [[nodiscard]] DynamicBuffer create_dynamic_buffer_resolved(const Type *resolved_type,
-                                                               size_t element_count = 0u,
-                                                               const string &name = "") const noexcept;
+    [[nodiscard]] RawDynamicBuffer create_raw_dynamic_buffer_resolved(const Type *resolved_type,
+                                                                      size_t element_count = 0u,
+                                                                      const string &name = "") const noexcept;
+
+    template<typename T>
+    [[nodiscard]] DynamicBuffer<T> create_dynamic_buffer(StoragePrecisionPolicy policy,
+                                                         size_t element_count = 0u,
+                                                         const string &name = "") const noexcept {
+        return DynamicBuffer<T>{create_raw_dynamic_buffer(Type::of<T>(), policy, element_count, name)};
+    }
 
     template<typename T, AccessMode mode = AOS>
     [[nodiscard]] CountedBuffer<T, mode> create_list(size_t size, const string &name = "") const noexcept;// implement in byte_buffer.h

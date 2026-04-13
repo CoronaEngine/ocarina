@@ -10,15 +10,63 @@
 
 namespace ocarina {
 
+namespace detail {
+
+template<typename T>
+[[nodiscard]] shared_ptr<HostByteBuffer> encode_dynamic_buffer_values(span<const T> values,
+                                                                      StoragePrecisionPolicy policy,
+                                                                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) {
+    auto bytes = make_shared<HostByteBuffer>();
+    DynamicBufferLayoutCodec<T>::encode(values.data(),
+                                        values.size(),
+                                        *bytes,
+                                        policy,
+                                        layout);
+    return bytes;
+}
+
+template<typename T>
+[[nodiscard]] shared_ptr<HostByteBuffer> allocate_dynamic_buffer_bytes(size_t count,
+                                                                       StoragePrecisionPolicy policy,
+                                                                       DynamicBufferLayout layout = DynamicBufferLayout::AOS) {
+    auto bytes = make_shared<HostByteBuffer>();
+    bytes->resize(DynamicBufferLayoutCodec<T>::storage_bytes(count,
+                                                             policy,
+                                                             layout));
+    return bytes;
+}
+
+template<typename T>
+void decode_dynamic_buffer_values(const HostByteBuffer &bytes,
+                                  size_t count,
+                                  T *dst,
+                                  StoragePrecisionPolicy policy,
+                                  DynamicBufferLayout layout = DynamicBufferLayout::AOS) {
+    DynamicBufferLayoutCodec<T>::decode(bytes,
+                                        count,
+                                        dst,
+                                        policy,
+                                        layout);
+}
+
+}// namespace detail
+
 struct DynamicBufferUploadStats {
     size_t uploaded_segment_count{0u};
     size_t uploaded_bytes{0u};
     bool full_upload{false};
 };
 
+class RawDynamicBuffer;
+class RawDynamicBufferView;
+
+template<typename T>
 class DynamicBuffer;
 
-class DynamicBufferView {
+template<typename T>
+class DynamicBufferView;
+
+class RawDynamicBufferView {
 private:
     ByteBufferView byte_view_{};
     size_t element_offset_{0u};
@@ -27,20 +75,20 @@ private:
     size_t element_stride_{0u};
     size_t element_alignment_{0u};
     StoragePrecisionPolicy policy_{};
-    const Type *logical_type_{nullptr};
-    const Type *resolved_type_{nullptr};
+    const Type *type_{nullptr};
+    bool type_is_resolved_{false};
 
 public:
-    DynamicBufferView() = default;
-    DynamicBufferView(ByteBufferView byte_view,
-                      size_t element_offset,
-                      size_t element_count,
-                      size_t total_element_count,
-                      size_t element_stride,
-                      size_t element_alignment,
-                      const Type *logical_type,
-                      const Type *resolved_type,
-                      StoragePrecisionPolicy policy) noexcept
+    RawDynamicBufferView() = default;
+    RawDynamicBufferView(ByteBufferView byte_view,
+                         size_t element_offset,
+                         size_t element_count,
+                         size_t total_element_count,
+                         size_t element_stride,
+                         size_t element_alignment,
+                                                 const Type *type,
+                                                 bool type_is_resolved,
+                         StoragePrecisionPolicy policy) noexcept
         : byte_view_(byte_view),
           element_offset_(element_offset),
           element_count_(element_count),
@@ -48,10 +96,10 @@ public:
           element_stride_(element_stride),
           element_alignment_(element_alignment),
           policy_(policy),
-          logical_type_(logical_type),
-          resolved_type_(resolved_type) {}
+                    type_(type),
+                    type_is_resolved_(type_is_resolved) {}
 
-    explicit DynamicBufferView(const DynamicBuffer &buffer) noexcept;
+    explicit RawDynamicBufferView(const RawDynamicBuffer &buffer) noexcept;
 
     [[nodiscard]] handle_ty handle() const noexcept { return byte_view_.handle(); }
     [[nodiscard]] size_t size() const noexcept { return element_count_; }
@@ -63,8 +111,10 @@ public:
     [[nodiscard]] size_t element_stride() const noexcept { return element_stride_; }
     [[nodiscard]] size_t element_alignment() const noexcept { return element_alignment_; }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return policy_; }
-    [[nodiscard]] const Type *logical_type() const noexcept { return logical_type_; }
-    [[nodiscard]] const Type *resolved_type() const noexcept { return resolved_type_; }
+    [[nodiscard]] const Type *logical_type() const noexcept { return type_is_resolved_ ? nullptr : type_; }
+    [[nodiscard]] const Type *resolved_type() const noexcept {
+        return type_is_resolved_ ? type_ : Type::resolve(type_, policy_);
+    }
     [[nodiscard]] bool empty() const noexcept { return element_count_ == 0u; }
 
     [[nodiscard]] ByteBufferView byte_view() const noexcept {
@@ -73,25 +123,25 @@ public:
 
     template<typename T>
     [[nodiscard]] BufferView<T> aos_view() const noexcept {
-        OC_ASSERT(resolved_type_ == Type::of<T>());
+        OC_ASSERT(resolved_type() == Type::of<T>());
         OC_ASSERT(element_stride_ == sizeof(T));
         return byte_view().template view_as<T>();
     }
 
-    [[nodiscard]] DynamicBufferView subview(size_t offset, size_t size = 0u) const noexcept {
+    [[nodiscard]] RawDynamicBufferView subview(size_t offset, size_t size = 0u) const noexcept {
         size = size == 0u ? element_count_ - offset : size;
-        return DynamicBufferView{ByteBufferView(handle(),
-                                                offset_in_byte() + offset * element_stride_,
-                                                size * element_stride_,
-                                                total_size_in_byte()),
-                                 element_offset_ + offset,
-                                 size,
-                                 total_element_count_,
-                                 element_stride_,
-                                 element_alignment_,
-                                 logical_type_,
-                                 resolved_type_,
-                                 policy_};
+        return RawDynamicBufferView{ByteBufferView(handle(),
+                                                   offset_in_byte() + offset * element_stride_,
+                                                   size * element_stride_,
+                                                   total_size_in_byte()),
+                                    element_offset_ + offset,
+                                    size,
+                                    total_element_count_,
+                                    element_stride_,
+                                    element_alignment_,
+                                    type_,
+                                    type_is_resolved_,
+                                    policy_};
     }
 
     template<typename Arg>
@@ -137,12 +187,12 @@ public:
     }
 };
 
-class DynamicBuffer {
+class RawDynamicBuffer {
 private:
     Device::Impl *device_{nullptr};
     ByteBuffer byte_buffer_{};
-    const Type *logical_type_{nullptr};
-    const Type *resolved_type_{nullptr};
+    const Type *type_{nullptr};
+    bool type_is_resolved_{false};
     StoragePrecisionPolicy policy_{};
     size_t element_stride_{0u};
     size_t element_alignment_{0u};
@@ -152,16 +202,16 @@ private:
 
 private:
     void assign_layout_plan(const DynamicBufferLayoutPlan &layout_plan) noexcept {
-        logical_type_ = layout_plan.logical_type();
-        resolved_type_ = layout_plan.resolved_type();
+        type_ = layout_plan.logical_type();
+        type_is_resolved_ = false;
         policy_ = layout_plan.policy();
         element_stride_ = layout_plan.element_size_bytes();
         element_alignment_ = layout_plan.element_alignment();
     }
 
     void assign_resolved_layout(const Type *resolved_type) noexcept {
-        logical_type_ = nullptr;
-        resolved_type_ = resolved_type;
+        type_ = resolved_type;
+        type_is_resolved_ = true;
         policy_ = StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32, .allow_real_in_storage = true};
         element_stride_ = resolved_type->size();
         element_alignment_ = resolved_type->alignment();
@@ -191,38 +241,38 @@ private:
     }
 
 public:
-    DynamicBuffer() = default;
+    RawDynamicBuffer() = default;
 
-    DynamicBuffer(Device::Impl *device,
-                  const Type *logical_type,
-                  StoragePrecisionPolicy policy,
-                  size_t element_count,
-                  const string &name = "")
-        : DynamicBuffer(device, DynamicBufferLayoutPlan::create(logical_type, policy), element_count, name) {}
+    RawDynamicBuffer(Device::Impl *device,
+                     const Type *logical_type,
+                     StoragePrecisionPolicy policy,
+                     size_t element_count,
+                     const string &name = "")
+        : RawDynamicBuffer(device, DynamicBufferLayoutPlan::create(logical_type, policy), element_count, name) {}
 
-    DynamicBuffer(Device::Impl *device,
-                  const Type *resolved_type,
-                  size_t element_count,
-                  const string &name = "")
-                : device_(device),
-                    byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device, resolved_type->size() * element_count, name)),
+    RawDynamicBuffer(Device::Impl *device,
+                     const Type *resolved_type,
+                     size_t element_count,
+                     const string &name = "")
+        : device_(device),
+          byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device, resolved_type->size() * element_count, name)),
           element_count_(element_count),
           element_capacity_(element_count),
-                    name_(name) {
-                assign_resolved_layout(resolved_type);
-        }
+          name_(name) {
+        assign_resolved_layout(resolved_type);
+    }
 
-    DynamicBuffer(Device::Impl *device,
-                  const DynamicBufferLayoutPlan &layout_plan,
-                  size_t element_count,
-                  const string &name = "")
-                : device_(device),
-                    byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device, layout_plan.storage_bytes(element_count), name)),
+    RawDynamicBuffer(Device::Impl *device,
+                     const DynamicBufferLayoutPlan &layout_plan,
+                     size_t element_count,
+                     const string &name = "")
+        : device_(device),
+          byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device, layout_plan.storage_bytes(element_count), name)),
           element_count_(element_count),
           element_capacity_(element_count),
-                    name_(name) {
-                assign_layout_plan(layout_plan);
-        }
+          name_(name) {
+        assign_layout_plan(layout_plan);
+    }
 
     [[nodiscard]] bool valid() const noexcept { return byte_buffer_.valid(); }
     [[nodiscard]] handle_ty handle() const noexcept { return byte_buffer_.handle(); }
@@ -231,8 +281,10 @@ public:
     }
     [[nodiscard]] const string &name() const noexcept { return name_; }
     void set_name(string name) noexcept { name_ = std::move(name); }
-    [[nodiscard]] const Type *logical_type() const noexcept { return logical_type_; }
-    [[nodiscard]] const Type *resolved_type() const noexcept { return resolved_type_; }
+    [[nodiscard]] const Type *logical_type() const noexcept { return type_is_resolved_ ? nullptr : type_; }
+    [[nodiscard]] const Type *resolved_type() const noexcept {
+        return type_is_resolved_ ? type_ : Type::resolve(type_, policy_);
+    }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return policy_; }
     [[nodiscard]] size_t element_stride() const noexcept { return element_stride_; }
     [[nodiscard]] size_t element_alignment() const noexcept { return element_alignment_; }
@@ -265,20 +317,20 @@ public:
         return ByteBufferView(handle(), offset_in_byte, size_in_byte, this->size_in_byte());
     }
 
-    [[nodiscard]] DynamicBufferView view(size_t offset = 0u, size_t size = 0u) const noexcept {
+    [[nodiscard]] RawDynamicBufferView view(size_t offset = 0u, size_t size = 0u) const noexcept {
         size = size == 0u ? element_count_ - offset : size;
-        return DynamicBufferView{byte_view(offset * element_stride_, size * element_stride_),
-                                 offset,
-                                 size,
-                                 element_count_,
-                                 element_stride_,
-                                 element_alignment_,
-                                 logical_type_,
-                                 resolved_type_,
-                                 policy_};
+        return RawDynamicBufferView{byte_view(offset * element_stride_, size * element_stride_),
+                                    offset,
+                                    size,
+                                    element_count_,
+                                    element_stride_,
+                                    element_alignment_,
+                                    type_,
+                                    type_is_resolved_,
+                                    policy_};
     }
 
-    [[nodiscard]] DynamicBufferView subview(size_t offset, size_t size = 0u) const noexcept {
+    [[nodiscard]] RawDynamicBufferView subview(size_t offset, size_t size = 0u) const noexcept {
         return view().subview(offset, size);
     }
 
@@ -309,12 +361,22 @@ public:
 
     template<typename Elm, typename int_type = uint>
     [[nodiscard]] auto aos_view_var() const noexcept {
-        return byte_buffer_.template aos_view_var<Elm>(static_cast<int_type>(size()));
+        return byte_buffer_.template aos_view_var<Elm>();
+    }
+
+    template<typename Elm, typename int_type = uint>
+    [[nodiscard]] auto soa_view_var() const noexcept {
+        return byte_buffer_.template soa_view_var<Elm>();
     }
 
     template<typename Elm, typename int_type = uint>
     [[nodiscard]] auto aos_view_var(const Var<int_type> &view_size) const noexcept {
         return byte_buffer_.template aos_view_var<Elm>(view_size);
+    }
+
+    template<typename Elm, typename int_type = uint>
+    [[nodiscard]] auto soa_view_var(const Var<int_type> &view_size) const noexcept {
+        return byte_buffer_.template soa_view_var<Elm>(view_size);
     }
 
     [[nodiscard]] CommandBatch upload(const void *data, size_t byte_size, bool async = true) noexcept {
@@ -435,15 +497,285 @@ public:
     }
 };
 
-inline DynamicBufferView::DynamicBufferView(const DynamicBuffer &buffer) noexcept
-    : DynamicBufferView(buffer.byte_view(),
-                        0u,
-                        buffer.size(),
-                        buffer.size(),
-                        buffer.element_stride(),
-                        buffer.element_alignment(),
-                        buffer.logical_type(),
-                        buffer.resolved_type(),
-                        buffer.policy()) {}
+template<typename T>
+class DynamicBufferView {
+private:
+    RawDynamicBufferView view_{};
+
+public:
+    DynamicBufferView() = default;
+
+    explicit DynamicBufferView(RawDynamicBufferView view) noexcept
+        : view_(std::move(view)) {
+        OC_ASSERT(view_.logical_type() == nullptr || view_.logical_type() == Type::of<T>());
+    }
+
+    explicit DynamicBufferView(const RawDynamicBuffer &buffer) noexcept
+        : DynamicBufferView(RawDynamicBufferView{buffer}) {}
+
+    [[nodiscard]] handle_ty handle() const noexcept { return view_.handle(); }
+    [[nodiscard]] size_t size() const noexcept { return view_.size(); }
+    [[nodiscard]] size_t size_in_byte() const noexcept { return view_.size_in_byte(); }
+    [[nodiscard]] size_t offset() const noexcept { return view_.offset(); }
+    [[nodiscard]] size_t offset_in_byte() const noexcept { return view_.offset_in_byte(); }
+    [[nodiscard]] size_t total_size() const noexcept { return view_.total_size(); }
+    [[nodiscard]] size_t total_size_in_byte() const noexcept { return view_.total_size_in_byte(); }
+    [[nodiscard]] size_t element_stride() const noexcept { return view_.element_stride(); }
+    [[nodiscard]] size_t element_alignment() const noexcept { return view_.element_alignment(); }
+    [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return view_.policy(); }
+    [[nodiscard]] const Type *logical_type() const noexcept { return view_.logical_type(); }
+    [[nodiscard]] const Type *resolved_type() const noexcept { return view_.resolved_type(); }
+    [[nodiscard]] bool empty() const noexcept { return view_.empty(); }
+
+    [[nodiscard]] ByteBufferView byte_view() const noexcept { return view_.byte_view(); }
+    [[nodiscard]] const RawDynamicBufferView &raw() const noexcept { return view_; }
+    [[nodiscard]] DynamicBufferView subview(size_t offset, size_t size = 0u) const noexcept {
+        return DynamicBufferView{view_.subview(offset, size)};
+    }
+
+    template<typename Arg>
+    requires is_buffer_or_view_v<Arg>
+    [[nodiscard]] BufferCopyCommand *copy_from(const Arg &src, uint dst_offset = 0u) const noexcept {
+        return BufferCopyCommand::create(src.handle(), handle(),
+                                         src.offset_in_byte(),
+                                         offset_in_byte() + dst_offset * element_stride(),
+                                         src.size_in_byte(), true);
+    }
+
+    template<typename Arg>
+    requires is_buffer_or_view_v<Arg>
+    [[nodiscard]] BufferCopyCommand *copy_to(Arg &dst, uint src_offset = 0u) const noexcept {
+        return BufferCopyCommand::create(handle(), dst.handle(),
+                                         offset_in_byte() + src_offset * element_stride(),
+                                         dst.offset_in_byte(),
+                                         dst.size_in_byte(), true);
+    }
+
+    [[nodiscard]] CommandBatch upload(const T *data,
+                                      bool async = true,
+                                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) const {
+        return upload(span<const T>{data, size()}, async, layout);
+    }
+
+    [[nodiscard]] CommandBatch upload(span<const T> values,
+                                      bool async = true,
+                                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) const {
+        OC_ASSERT(values.size() == size());
+        auto bytes = detail::encode_dynamic_buffer_values(values, policy(), layout);
+        CommandBatch commands;
+        commands << view_.upload(bytes->data(), async);
+        if (async) {
+            commands << [bytes] {};
+        }
+        return commands;
+    }
+
+    [[nodiscard]] CommandBatch download(T *data,
+                                        bool async = true,
+                                        DynamicBufferLayout layout = DynamicBufferLayout::AOS) const {
+        auto bytes = detail::allocate_dynamic_buffer_bytes<T>(size(), policy(), layout);
+        CommandBatch commands;
+        commands << view_.download(bytes->data(), async);
+        commands << HostFunctionCommand::create(async, [bytes, data, count = size(), policy = policy(), layout] {
+            detail::decode_dynamic_buffer_values<T>(*bytes, count, data, policy, layout);
+        });
+        return commands;
+    }
+
+    [[nodiscard]] BufferByteSetCommand *byte_set(uchar value, bool async = true) const noexcept {
+        return view_.byte_set(value, async);
+    }
+
+    [[nodiscard]] BufferByteSetCommand *reset(bool async = true) const noexcept {
+        return view_.reset(async);
+    }
+};
+
+template<typename T>
+class DynamicBuffer {
+private:
+    RawDynamicBuffer buffer_{};
+
+public:
+    DynamicBuffer() = default;
+
+    explicit DynamicBuffer(RawDynamicBuffer buffer) noexcept
+        : buffer_(std::move(buffer)) {
+        OC_ASSERT(buffer_.logical_type() == nullptr || buffer_.logical_type() == Type::of<T>());
+    }
+
+    [[nodiscard]] RawDynamicBuffer &raw() noexcept { return buffer_; }
+    [[nodiscard]] const RawDynamicBuffer &raw() const noexcept { return buffer_; }
+    [[nodiscard]] bool valid() const noexcept { return buffer_.valid(); }
+    [[nodiscard]] handle_ty handle() const noexcept { return buffer_.handle(); }
+    [[nodiscard]] Device::Impl *device() const noexcept { return buffer_.device(); }
+    [[nodiscard]] const string &name() const noexcept { return buffer_.name(); }
+    void set_name(string name) noexcept { buffer_.set_name(std::move(name)); }
+    [[nodiscard]] const Type *logical_type() const noexcept { return buffer_.logical_type(); }
+    [[nodiscard]] const Type *resolved_type() const noexcept { return buffer_.resolved_type(); }
+    [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return buffer_.policy(); }
+    [[nodiscard]] size_t element_stride() const noexcept { return buffer_.element_stride(); }
+    [[nodiscard]] size_t element_alignment() const noexcept { return buffer_.element_alignment(); }
+    [[nodiscard]] size_t size() const noexcept { return buffer_.size(); }
+    [[nodiscard]] size_t capacity() const noexcept { return buffer_.capacity(); }
+    [[nodiscard]] bool empty() const noexcept { return buffer_.empty(); }
+    [[nodiscard]] size_t size_in_byte() const noexcept { return buffer_.size_in_byte(); }
+    [[nodiscard]] size_t capacity_in_byte() const noexcept { return buffer_.capacity_in_byte(); }
+    [[nodiscard]] uint offset_in_byte() const noexcept { return buffer_.offset_in_byte(); }
+
+    void destroy() noexcept { buffer_.destroy(); }
+    void reserve(size_t element_capacity) noexcept { buffer_.reserve(element_capacity); }
+
+    [[nodiscard]] ByteBufferView byte_view(size_t offset_in_byte = 0u, size_t size_in_byte = 0u) const noexcept {
+        return buffer_.byte_view(offset_in_byte, size_in_byte);
+    }
+
+    [[nodiscard]] DynamicBufferView<T> view(size_t offset = 0u, size_t size = 0u) const noexcept {
+        return DynamicBufferView<T>{buffer_.view(offset, size)};
+    }
+
+    [[nodiscard]] DynamicBufferView<T> subview(size_t offset, size_t size = 0u) const noexcept {
+        return DynamicBufferView<T>{buffer_.subview(offset, size)};
+    }
+
+    [[nodiscard]] const Expression *expression() const noexcept { return buffer_.expression(); }
+    [[nodiscard]] Expr<ByteBuffer> expr() const noexcept { return buffer_.expr(); }
+
+    template<typename Target, typename Offset>
+    requires is_integral_expr_v<Offset>
+    [[nodiscard]] Var<Target> load_as(Offset &&offset) const noexcept {
+        return buffer_.template load_as<Target>(OC_FORWARD(offset));
+    }
+
+    template<typename Elm, typename Offset>
+    requires is_integral_expr_v<Offset>
+    void store(Offset &&offset, const Elm &val) noexcept {
+        buffer_.store(OC_FORWARD(offset), val);
+    }
+
+    template<typename Elm, typename int_type = uint>
+    [[nodiscard]] auto aos_view_var() const noexcept {
+        return buffer_.template aos_view_var<Elm, int_type>();
+    }
+
+    template<typename Elm, typename int_type = uint>
+    [[nodiscard]] auto soa_view_var() const noexcept {
+        return buffer_.template soa_view_var<Elm, int_type>();
+    }
+
+    template<typename Elm, typename int_type = uint>
+    [[nodiscard]] auto aos_view_var(const Var<int_type> &view_size) const noexcept {
+        return buffer_.template aos_view_var<Elm, int_type>(view_size);
+    }
+
+    template<typename Elm, typename int_type = uint>
+    [[nodiscard]] auto soa_view_var(const Var<int_type> &view_size) const noexcept {
+        return buffer_.template soa_view_var<Elm, int_type>(view_size);
+    }
+
+    [[nodiscard]] CommandBatch upload(const T *data,
+                                      size_t count,
+                                      bool async = true,
+                                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) {
+        return upload(span<const T>{data, count}, async, layout);
+    }
+
+    [[nodiscard]] CommandBatch upload(span<const T> values,
+                                      bool async = true,
+                                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) {
+        auto bytes = detail::encode_dynamic_buffer_values(values, policy(), layout);
+        CommandBatch commands = buffer_.upload(bytes->data(), bytes->size(), async);
+        if (async) {
+            commands << [bytes] {};
+        }
+        return commands;
+    }
+
+    void upload_immediately(const T *data,
+                            size_t count,
+                            DynamicBufferLayout layout = DynamicBufferLayout::AOS) noexcept {
+        upload_immediately(span<const T>{data, count}, layout);
+    }
+
+    void upload_immediately(span<const T> values,
+                            DynamicBufferLayout layout = DynamicBufferLayout::AOS) noexcept {
+        HostByteBuffer bytes;
+        DynamicBufferLayoutCodec<T>::encode(values.data(),
+                                            values.size(),
+                                            bytes,
+                                            policy(),
+                                            layout);
+        buffer_.upload_immediately(bytes.bytes_span());
+    }
+
+    [[nodiscard]] CommandBatch download(T *data,
+                                        bool async = true,
+                                        DynamicBufferLayout layout = DynamicBufferLayout::AOS) const {
+        auto bytes = detail::allocate_dynamic_buffer_bytes<T>(size(), policy(), layout);
+        CommandBatch commands;
+        commands << buffer_.download(bytes->data(), async);
+        commands << HostFunctionCommand::create(async, [bytes, data, count = size(), policy = policy(), layout] {
+            detail::decode_dynamic_buffer_values<T>(*bytes, count, data, policy, layout);
+        });
+        return commands;
+    }
+
+    void download_immediately(T *data,
+                              DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept {
+        HostByteBuffer bytes;
+        bytes.resize(DynamicBufferLayoutCodec<T>::storage_bytes(size(),
+                                                                policy(),
+                                                                layout));
+        buffer_.download_immediately(bytes.data());
+        detail::decode_dynamic_buffer_values<T>(bytes, size(), data, policy(), layout);
+    }
+
+    [[nodiscard]] DynamicBufferUploadStats sync_immediately(const HostDynamicBufferUploadView &view,
+                                                            bool force_full_upload = false) noexcept {
+        return buffer_.sync_immediately(view, force_full_upload);
+    }
+
+    [[nodiscard]] DynamicBufferUploadStats sync_immediately(RawHostDynamicBuffer &host_buffer,
+                                                            bool force_full_upload = false) noexcept {
+        return buffer_.sync_immediately(host_buffer, force_full_upload);
+    }
+
+    template<typename U>
+    [[nodiscard]] DynamicBufferUploadStats sync_immediately(HostDynamicBuffer<U> &host_buffer,
+                                                            bool force_full_upload = false) noexcept {
+        return buffer_.sync_immediately(host_buffer, force_full_upload);
+    }
+
+    [[nodiscard]] BufferByteSetCommand *byte_set(uchar value, bool async = true) const noexcept {
+        return buffer_.byte_set(value, async);
+    }
+
+    [[nodiscard]] BufferByteSetCommand *reset(bool async = true) const noexcept {
+        return buffer_.reset(async);
+    }
+
+    template<typename Arg>
+    requires is_buffer_or_view_v<Arg> && std::is_same_v<buffer_element_t<Arg>, std::byte>
+    [[nodiscard]] BufferCopyCommand *copy_from(const Arg &src, uint dst_offset = 0u) const noexcept {
+        return buffer_.copy_from(src, dst_offset);
+    }
+
+    template<typename Arg>
+    requires is_buffer_or_view_v<Arg> && std::is_same_v<buffer_element_t<Arg>, std::byte>
+    [[nodiscard]] BufferCopyCommand *copy_to(Arg &dst, uint src_offset = 0u) const noexcept {
+        return buffer_.copy_to(dst, src_offset);
+    }
+};
+
+inline RawDynamicBufferView::RawDynamicBufferView(const RawDynamicBuffer &buffer) noexcept
+    : RawDynamicBufferView(buffer.byte_view(),
+                           0u,
+                           buffer.size(),
+                           buffer.size(),
+                           buffer.element_stride(),
+                           buffer.element_alignment(),
+                           buffer.logical_type() != nullptr ? buffer.logical_type() : buffer.resolved_type(),
+                           buffer.logical_type() == nullptr,
+                           buffer.policy()) {}
 
 }// namespace ocarina

@@ -96,13 +96,16 @@ namespace {
 }
 
 [[nodiscard]] bool test_layout_plan_reports_expected_types() {
+    auto policy = make_policy(PrecisionPolicy::force_f16);
     auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
-                                                make_policy(PrecisionPolicy::force_f16));
+                                                policy);
     auto codec_bytes = DynamicBufferLayoutCodec<HostDynamicRecord>::storage_bytes(1u,
-                                                                                  make_policy(PrecisionPolicy::force_f16),
+                                                                                  policy,
                                                                                   DynamicBufferLayout::AOS);
     CHECK(plan.logical_type() == Type::of<HostDynamicRecord>());
     CHECK(plan.resolved_type() != nullptr);
+    CHECK(plan.resolved_type() == Type::resolve(Type::of<HostDynamicRecord>(), policy));
+    CHECK(Type::resolve(Type::of<real>(), policy) == Type::of<half>());
     CHECK(plan.contains_real());
     CHECK(plan.has_precision_lowering());
     CHECK(plan.element_size_bytes() == codec_bytes);

@@ -31,6 +31,26 @@ namespace {
 struct TypeDatabase {
     ocarina::vector<ocarina::unique_ptr<Type>> types;
     ocarina::unordered_map<uint64_t, const Type *> by_hash;
+    struct ResolvedTypeKey {
+        const Type *logical_type{nullptr};
+        PrecisionPolicy policy{PrecisionPolicy::force_f32};
+        bool allow_real_in_storage{false};
+
+        [[nodiscard]] bool operator==(const ResolvedTypeKey &rhs) const noexcept {
+            return logical_type == rhs.logical_type &&
+                   policy == rhs.policy &&
+                   allow_real_in_storage == rhs.allow_real_in_storage;
+        }
+    };
+    struct ResolvedTypeKeyHash {
+        [[nodiscard]] size_t operator()(const ResolvedTypeKey &key) const noexcept {
+            size_t seed = reinterpret_cast<size_t>(key.logical_type);
+            seed ^= static_cast<size_t>(key.policy) + 0x9e3779b97f4a7c15ull + (seed << 6u) + (seed >> 2u);
+            seed ^= static_cast<size_t>(key.allow_real_in_storage) + 0x9e3779b97f4a7c15ull + (seed << 6u) + (seed >> 2u);
+            return seed;
+        }
+    };
+    ocarina::unordered_map<ResolvedTypeKey, const Type *, ResolvedTypeKeyHash> resolved_types;
     std::recursive_mutex mutex;
 };
 
@@ -43,10 +63,132 @@ struct TypeDatabase {
     return Hashable::compute_hash<Type>(hash64(desc));
 }
 
+void notify_type_access(const Type *type) noexcept;
+
+[[nodiscard]] string resolve_real_description(StoragePrecisionPolicy policy) noexcept {
+    if (!policy.allow_real_in_storage) {
+        return {};
+    }
+    switch (policy.policy) {
+        case PrecisionPolicy::force_f16:
+            return "half";
+        case PrecisionPolicy::force_f32:
+        default:
+            return "float";
+    }
+}
+
+[[nodiscard]] const Type *resolve_type_locked(const Type *type,
+                                              StoragePrecisionPolicy policy) noexcept;
+
+[[nodiscard]] size_t resolved_alignment_locked(const Type *type,
+                                               StoragePrecisionPolicy policy) noexcept {
+    if (type == nullptr) {
+        return 0u;
+    }
+    if (type->tag() == Type::Tag::REAL) {
+        const auto *resolved = resolve_type_locked(type, policy);
+        return resolved == nullptr ? 0u : resolved->alignment();
+    }
+    if (type->is_scalar() || type->is_byte_buffer() || type->is_texture() ||
+        type->is_bindless_array() || type->is_accel()) {
+        return type->alignment();
+    }
+    if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
+        const auto *elem = resolve_type_locked(type->element(), policy);
+        return elem == nullptr ? 0u : elem->alignment();
+    }
+    if (type->is_structure()) {
+        size_t align = 0u;
+        for (const auto *member : type->members()) {
+            align = std::max(align, resolved_alignment_locked(member, policy));
+        }
+        return align == 0u ? type->alignment() : align;
+    }
+    return type->alignment();
+}
+
+[[nodiscard]] string resolve_type_description_locked(const Type *type,
+                                                     StoragePrecisionPolicy policy) noexcept {
+    if (type == nullptr) {
+        return {};
+    }
+    if (type->tag() == Type::Tag::REAL) {
+        return resolve_real_description(policy);
+    }
+    if (type->is_scalar()) {
+        return string(type->description());
+    }
+    if (type->is_vector()) {
+        const auto *elem = resolve_type_locked(type->element(), policy);
+        return elem == nullptr ? string{} : ocarina::format("vector<{},{}>", elem->description(), type->dimension());
+    }
+    if (type->is_matrix()) {
+        const auto *col = resolve_type_locked(type->element(), policy);
+        if (col == nullptr || !col->is_vector()) {
+            return {};
+        }
+        const auto *scalar = col->element();
+        return scalar == nullptr ? string{} : ocarina::format("matrix<{},{},{}>",
+                                                               scalar->description(),
+                                                               type->dimension(),
+                                                               col->dimension());
+    }
+    if (type->is_array()) {
+        const auto *elem = resolve_type_locked(type->element(), policy);
+        return elem == nullptr ? string{} : ocarina::format("array<{},{}>", elem->description(), type->dimension());
+    }
+    if (type->is_buffer()) {
+        const auto *elem = resolve_type_locked(type->element(), policy);
+        return elem == nullptr ? string{} : ocarina::format("buffer<{}>", elem->description());
+    }
+    if (type->is_structure()) {
+        string ret = ocarina::format("struct<{},{},{},{}",
+                                     type->cname(),
+                                     resolved_alignment_locked(type, policy),
+                                     type->is_builtin_struct(),
+                                     type->is_param_struct());
+        for (const auto *member : type->members()) {
+            const auto desc = resolve_type_description_locked(member, policy);
+            if (desc.empty()) {
+                return {};
+            }
+            ret.append(",").append(desc);
+        }
+        ret.push_back('>');
+        return ret;
+    }
+    if (type->is_byte_buffer() || type->is_texture() || type->is_bindless_array() || type->is_accel()) {
+        return string(type->description());
+    }
+    return {};
+}
+
+[[nodiscard]] const Type *resolve_type_locked(const Type *type,
+                                              StoragePrecisionPolicy policy) noexcept {
+    if (type == nullptr) {
+        return nullptr;
+    }
+    auto &database = type_database();
+    TypeDatabase::ResolvedTypeKey key{.logical_type = type,
+                                      .policy = policy.policy,
+                                      .allow_real_in_storage = policy.allow_real_in_storage};
+    if (auto iter = database.resolved_types.find(key); iter != database.resolved_types.cend()) {
+        // Cache hits bypass Type::from/TypeParser, so notify callbacks here explicitly.
+        notify_type_access(iter->second);
+        return iter->second;
+    }
+    const auto desc = resolve_type_description_locked(type, policy);
+    const auto *resolved = desc.empty() ? nullptr : Type::from(desc);
+    database.resolved_types.emplace(key, resolved);
+    return resolved;
+}
+
 void notify_type_access(const Type *type) noexcept {
     if (type == nullptr) {
         return;
     }
+    // Bridge internal type lookups to optional external observers, such as the AST type callback layer.
     auto &callbacks = detail::type_system_callbacks();
     if (callbacks.on_type_access != nullptr) {
         callbacks.on_type_access(type);
@@ -402,6 +544,13 @@ const Type *Type::from(std::string_view description) noexcept {
     auto &database = type_database();
     std::unique_lock lock{database.mutex};
     return detail::TypeParser::parse_type_locked(description);
+}
+
+const Type *Type::resolve(const Type *type,
+                         StoragePrecisionPolicy policy) noexcept {
+    auto &database = type_database();
+    std::unique_lock lock{database.mutex};
+    return resolve_type_locked(type, policy);
 }
 
 const Type *Type::at(uint32_t uid) noexcept {

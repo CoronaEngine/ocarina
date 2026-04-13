@@ -738,6 +738,12 @@ public:
 
     template<typename T>
     [[nodiscard]] static auto of(T &&) noexcept { return of<std::remove_cvref_t<T>>(); }
+    [[nodiscard]] static const Type *resolve(const Type *type,
+                                             StoragePrecisionPolicy policy) noexcept;
+    template<typename T>
+    [[nodiscard]] static const Type *resolve(StoragePrecisionPolicy policy) noexcept {
+        return resolve(of<T>(), policy);
+    }
     [[nodiscard]] static const Type *from(ocarina::string_view description) noexcept;
     [[nodiscard]] static const Type *at(uint32_t uid) noexcept;
     [[nodiscard]] static size_t count() noexcept;

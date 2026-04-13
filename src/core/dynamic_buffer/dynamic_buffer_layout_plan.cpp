@@ -479,7 +479,7 @@ TypedFieldPath TypedFieldPath::member(uint32_t member_index) noexcept {
 DynamicBufferLayoutPlan DynamicBufferLayoutPlan::create(const Type *logical_type,
                                                         StoragePrecisionPolicy policy) {
     OC_ASSERT(logical_type != nullptr);
-    const auto *resolved_type = resolve_type_description(logical_type, policy);
+    const auto *resolved_type = Type::resolve(logical_type, policy);
     OC_ASSERT(resolved_type != nullptr);
     return DynamicBufferLayoutPlan{logical_type,
                                    resolved_type,
