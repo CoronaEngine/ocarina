@@ -6,6 +6,20 @@
 
 namespace ocarina {
 
+namespace {
+
+template<typename Func>
+void for_each_non_empty_segment(span<const ByteSegment> segments, Func &&func) noexcept {
+    for (const auto &segment : segments) {
+        if (segment.empty()) {
+            continue;
+        }
+        func(segment);
+    }
+}
+
+}// namespace
+
 HostDynamicBuffer::HostDynamicBuffer(DynamicBufferLayoutPlan layout_plan,
                                      size_t initial_count)
     : layout_plan_(std::move(layout_plan)),
@@ -40,28 +54,22 @@ void HostDynamicBuffer::mark_dirty(ByteRegion region) noexcept {
 
 void HostDynamicBuffer::gather_segments(span<const ByteSegment> segments,
                                         HostByteBuffer &dst) const noexcept {
-    for (const auto &segment : segments) {
-        if (segment.empty()) {
-            continue;
-        }
+    for_each_non_empty_segment(segments, [&](const ByteSegment &segment) {
         dst.copy_from(storage_.data() + segment.storage_begin_byte,
                       segment.size_in_bytes,
                       segment.staging_begin_byte);
-    }
+    });
 }
 
 void HostDynamicBuffer::scatter_segments(const HostByteBuffer &src,
                                         span<const ByteSegment> segments) noexcept {
-    for (const auto &segment : segments) {
-        if (segment.empty()) {
-            continue;
-        }
+    for_each_non_empty_segment(segments, [&](const ByteSegment &segment) {
         storage_.copy_from(src.data() + segment.staging_begin_byte,
                            segment.size_in_bytes,
                            segment.storage_begin_byte);
         mark_dirty(ByteRegion{segment.storage_begin_byte,
                               segment.storage_begin_byte + segment.size_in_bytes});
-    }
+    });
 }
 
 void HostDynamicBuffer::reserve(size_t element_capacity) {
