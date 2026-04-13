@@ -70,6 +70,7 @@ private:
     void ensure_capacity(size_t required_capacity);
     void validate_index(size_t index) const noexcept;
     void mark_dirty(ByteRegion region) noexcept;
+    void validate_aos_record_access() const noexcept;
 
 public:
     HostDynamicBuffer() = default;
@@ -86,6 +87,12 @@ public:
     [[nodiscard]] size_t element_capacity() const noexcept { return element_capacity_; }
     [[nodiscard]] size_t storage_size_bytes() const noexcept { return storage_.size(); }
     [[nodiscard]] bool empty() const noexcept { return element_count_ == 0u; }
+    [[nodiscard]] bool supports_record_access() const noexcept {
+        return layout_plan_.layout() == DynamicBufferLayout::aos;
+    }
+    [[nodiscard]] bool supports_field_patch() const noexcept {
+        return layout_plan_.layout() == DynamicBufferLayout::aos;
+    }
 
     void reserve(size_t element_capacity);
     void resize(size_t element_count);
@@ -167,7 +174,7 @@ public:
 
 template<typename T>
 T HostDynamicBuffer::read(size_t index) const {
-    OC_ASSERT(layout_plan_.layout() == DynamicBufferLayout::aos);
+    validate_aos_record_access();
     OC_ASSERT(layout_plan_.is_compatible_with(Type::of<T>()));
     validate_index(index);
     T value{};
@@ -185,7 +192,7 @@ T HostDynamicBuffer::read(size_t index) const {
 
 template<typename T>
 void HostDynamicBuffer::write(size_t index, const T &value) {
-    OC_ASSERT(layout_plan_.layout() == DynamicBufferLayout::aos);
+    validate_aos_record_access();
     OC_ASSERT(layout_plan_.is_compatible_with(Type::of<T>()));
     validate_index(index);
     HostByteBuffer encoded_record;
@@ -203,7 +210,7 @@ void HostDynamicBuffer::write(size_t index, const T &value) {
 
 template<typename T>
 void HostDynamicBuffer::append(span<const T> values) {
-    OC_ASSERT(layout_plan_.layout() == DynamicBufferLayout::aos);
+    validate_aos_record_access();
     OC_ASSERT(layout_plan_.is_compatible_with(Type::of<T>()));
     if (values.empty()) {
         return;
@@ -243,7 +250,7 @@ void HostDynamicBuffer::write_all(span<const T> values) {
 
 template<typename TField>
 void HostDynamicBuffer::patch(size_t index, const TypedFieldPath &path, const TField &value) {
-    OC_ASSERT(layout_plan_.layout() == DynamicBufferLayout::aos);
+    validate_aos_record_access();
     validate_index(index);
     OC_ASSERT(layout_plan_.field_logical_type(path) == Type::of<TField>());
     HostByteBuffer encoded_field;

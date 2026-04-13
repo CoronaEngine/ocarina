@@ -37,6 +37,10 @@ void HostDynamicBuffer::mark_dirty(ByteRegion region) noexcept {
     dirty_range_.merge(region);
 }
 
+void HostDynamicBuffer::validate_aos_record_access() const noexcept {
+    OC_ASSERT(layout_plan_.layout() == DynamicBufferLayout::aos);
+}
+
 void HostDynamicBuffer::reserve(size_t element_capacity) {
     ensure_capacity(element_capacity);
 }

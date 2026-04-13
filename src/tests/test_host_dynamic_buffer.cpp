@@ -216,6 +216,35 @@ namespace {
     return true;
 }
 
+[[nodiscard]] bool test_soa_write_all_and_upload_view() {
+    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
+                                                         make_policy(PrecisionPolicy::force_f16),
+                                                         DynamicBufferLayout::soa,
+                                                         0u);
+    vector<HostDynamicRecord> values{make_record(4.0f), make_record(12.0f)};
+    buffer.write_all<HostDynamicRecord>(values);
+
+    CHECK(!buffer.supports_record_access());
+    CHECK(!buffer.supports_field_patch());
+    CHECK(buffer.element_count() == values.size());
+    CHECK(buffer.dirty_range().dirty);
+    CHECK(buffer.dirty_range().begin_byte == 0u);
+    CHECK(buffer.dirty_range().end_byte == buffer.storage_size_bytes());
+
+    auto expected_bytes = DynamicBufferLayoutCodec<HostDynamicRecord>::storage_bytes(values.size(),
+                                                                                     make_policy(PrecisionPolicy::force_f16),
+                                                                                     DynamicBufferLayout::soa);
+    CHECK(buffer.storage_size_bytes() == expected_bytes);
+
+    auto upload = buffer.upload_view();
+    CHECK(upload.layout == DynamicBufferLayout::soa);
+    CHECK(upload.element_count == values.size());
+    CHECK(upload.bytes.size() == expected_bytes);
+    CHECK(upload.logical_type == Type::of<HostDynamicRecord>());
+    CHECK(upload.resolved_type != nullptr);
+    return true;
+}
+
 }// namespace
 
 int main() {
@@ -226,6 +255,7 @@ int main() {
     passed = test_typed_view_single_element_read_write_usage() && passed;
     passed = test_field_patch_updates_target_bytes() && passed;
     passed = test_append_and_upload_view() && passed;
+    passed = test_soa_write_all_and_upload_view() && passed;
     if (!passed) {
         std::cerr << "host dynamic buffer test failed" << std::endl;
         return 1;
