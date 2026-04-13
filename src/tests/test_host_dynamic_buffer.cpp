@@ -105,10 +105,10 @@ namespace {
 [[nodiscard]] bool test_layout_plan_reports_expected_types() {
     auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
                                                 make_policy(PrecisionPolicy::force_f16),
-                                                DynamicBufferLayout::aos);
+                                                DynamicBufferLayout::AOS);
     auto codec_bytes = DynamicBufferLayoutCodec<HostDynamicRecord>::storage_bytes(1u,
                                                                                   make_policy(PrecisionPolicy::force_f16),
-                                                                                  DynamicBufferLayout::aos);
+                                                                                  DynamicBufferLayout::AOS);
     CHECK(plan.logical_type() == Type::of<HostDynamicRecord>());
     CHECK(plan.resolved_type() != nullptr);
     CHECK(plan.contains_real());
@@ -120,7 +120,7 @@ namespace {
 [[nodiscard]] bool test_aos_record_and_field_regions_report_expected_offsets() {
     auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
                                                 make_policy(PrecisionPolicy::force_f16),
-                                                DynamicBufferLayout::aos);
+                                                DynamicBufferLayout::AOS);
 
     auto record_region = plan.record_region(1u);
     CHECK(record_region.begin_byte == 40u);
@@ -159,7 +159,7 @@ namespace {
 [[nodiscard]] bool test_soa_dirty_segments_preserve_disjoint_field_segments() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::soa,
+                                                         DynamicBufferLayout::SOA,
                                                          2u);
     buffer.write(0u, make_record(0.0f));
     buffer.write(1u, make_record(10.0f));
@@ -193,13 +193,13 @@ namespace {
 [[nodiscard]] bool test_soa_record_segments_follow_expected_layout() {
     auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
                                                 make_policy(PrecisionPolicy::force_f16),
-                                                DynamicBufferLayout::soa);
+                                                DynamicBufferLayout::SOA);
     auto segments = plan.record_segments(2u, 1u);
     CHECK(segments.size() == 9u);
     CHECK(total_segment_bytes(segments) == DynamicBufferLayoutCodec<HostDynamicRecord>::storage_bytes(
                                              1u,
                                              make_policy(PrecisionPolicy::force_f16),
-                                             DynamicBufferLayout::soa));
+                                             DynamicBufferLayout::SOA));
 
     CHECK(segments[0].storage_begin_byte == 2u);
     CHECK(segments[0].staging_begin_byte == 0u);
@@ -242,7 +242,7 @@ namespace {
 [[nodiscard]] bool test_soa_field_segments_report_expected_offsets() {
     auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
                                                 make_policy(PrecisionPolicy::force_f16),
-                                                DynamicBufferLayout::soa);
+                                                DynamicBufferLayout::SOA);
 
     auto roughness_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
     auto roughness_segments = plan.field_segments(2u, 1u, roughness_path);
@@ -280,7 +280,7 @@ namespace {
 [[nodiscard]] bool test_host_buffer_record_round_trip() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::aos,
+                                                         DynamicBufferLayout::AOS,
                                                          2u);
     const auto lhs = make_record(0.0f);
     const auto rhs = make_record(16.0f);
@@ -298,7 +298,7 @@ namespace {
 [[nodiscard]] bool test_single_element_external_read_write_usage() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f32),
-                                                         DynamicBufferLayout::aos,
+                                                         DynamicBufferLayout::AOS,
                                                          1u);
     const auto input = make_record(3.0f);
     buffer.write<HostDynamicRecord>(0u, input);
@@ -317,7 +317,7 @@ namespace {
 [[nodiscard]] bool test_typed_view_single_element_read_write_usage() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f32),
-                                                         DynamicBufferLayout::aos,
+                                                         DynamicBufferLayout::AOS,
                                                          0u);
     buffer.resize(1u);
     TypedHostDynamicBufferView<HostDynamicRecord> view{buffer};
@@ -335,7 +335,7 @@ namespace {
 [[nodiscard]] bool test_field_patch_updates_target_bytes() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::aos,
+                                                         DynamicBufferLayout::AOS,
                                                          1u);
     buffer.write(0u, make_record(0.0f));
     buffer.clear_dirty();
@@ -384,7 +384,7 @@ namespace {
 [[nodiscard]] bool test_append_and_upload_view() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f32),
-                                                         DynamicBufferLayout::aos,
+                                                         DynamicBufferLayout::AOS,
                                                          0u);
     vector<HostDynamicRecord> values{make_record(1.0f), make_record(2.0f)};
     buffer.append<HostDynamicRecord>(values);
@@ -393,7 +393,7 @@ namespace {
     CHECK(equal_record(buffer.read<HostDynamicRecord>(1u), values[1], 1e-6f));
     auto upload = buffer.upload_view();
     CHECK(upload.element_count == 2u);
-    CHECK(upload.layout == DynamicBufferLayout::aos);
+    CHECK(upload.layout == DynamicBufferLayout::AOS);
     CHECK(upload.logical_type == Type::of<HostDynamicRecord>());
     CHECK(upload.resolved_type != nullptr);
     CHECK(upload.bytes.size() == buffer.storage_size_bytes());
@@ -404,7 +404,7 @@ namespace {
 [[nodiscard]] bool test_soa_write_all_and_upload_view() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::soa,
+                                                         DynamicBufferLayout::SOA,
                                                          0u);
     vector<HostDynamicRecord> values{make_record(4.0f), make_record(12.0f)};
     buffer.write_all<HostDynamicRecord>(values);
@@ -419,11 +419,11 @@ namespace {
 
     auto expected_bytes = DynamicBufferLayoutCodec<HostDynamicRecord>::storage_bytes(values.size(),
                                                                                      make_policy(PrecisionPolicy::force_f16),
-                                                                                     DynamicBufferLayout::soa);
+                                                                                     DynamicBufferLayout::SOA);
     CHECK(buffer.storage_size_bytes() == expected_bytes);
 
     auto upload = buffer.upload_view();
-    CHECK(upload.layout == DynamicBufferLayout::soa);
+    CHECK(upload.layout == DynamicBufferLayout::SOA);
     CHECK(upload.element_count == values.size());
     CHECK(upload.bytes.size() == expected_bytes);
     CHECK(upload.logical_type == Type::of<HostDynamicRecord>());
@@ -435,7 +435,7 @@ namespace {
 [[nodiscard]] bool test_soa_record_round_trip() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::soa,
+                                                         DynamicBufferLayout::SOA,
                                                          2u);
     const auto lhs = make_record(20.0f);
     const auto rhs = make_record(36.0f);
@@ -450,7 +450,7 @@ namespace {
 [[nodiscard]] bool test_soa_field_patch_updates_target_value() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::soa,
+                                                         DynamicBufferLayout::SOA,
                                                          1u);
     buffer.write(0u, make_record(0.0f));
     buffer.clear_dirty();
@@ -481,7 +481,7 @@ namespace {
 [[nodiscard]] bool test_soa_field_patch_is_isolated_per_record() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::soa,
+                                                         DynamicBufferLayout::SOA,
                                                          2u);
     const auto lhs = make_record(2.0f);
     const auto rhs = make_record(18.0f);
@@ -507,7 +507,7 @@ namespace {
 [[nodiscard]] bool test_soa_append_round_trip() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f32),
-                                                         DynamicBufferLayout::soa,
+                                                         DynamicBufferLayout::SOA,
                                                          0u);
     vector<HostDynamicRecord> first{make_record(1.0f), make_record(2.0f)};
     vector<HostDynamicRecord> second{make_record(50.0f)};
@@ -523,7 +523,7 @@ namespace {
 [[nodiscard]] bool test_typed_view_soa_read_write_patch_usage() {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
                                                          make_policy(PrecisionPolicy::force_f32),
-                                                         DynamicBufferLayout::soa,
+                                                         DynamicBufferLayout::SOA,
                                                          0u);
     buffer.resize(2u);
     TypedHostDynamicBufferView<HostDynamicRecord> view{buffer};

@@ -113,7 +113,7 @@ private:
     const Type *logical_type_{nullptr};
     const Type *resolved_type_{nullptr};
     StoragePrecisionPolicy policy_{};
-    DynamicBufferLayout layout_{DynamicBufferLayout::aos};
+    DynamicBufferLayout layout_{DynamicBufferLayout::AOS};
     size_t element_size_bytes_{0u};
     size_t element_alignment_{0u};
     bool contains_real_{false};

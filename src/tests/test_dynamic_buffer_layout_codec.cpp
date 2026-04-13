@@ -129,7 +129,7 @@ template<typename T>
     LayoutResolver resolver(policy);
     const Type *resolved = resolver.resolve(Type::of<T>());
     CHECK(resolved != nullptr);
-    CHECK(DynamicBufferLayoutCodec<T>::storage_bytes(3u, policy, DynamicBufferLayout::aos) == resolved->size() * 3u);
+    CHECK(DynamicBufferLayoutCodec<T>::storage_bytes(3u, policy, DynamicBufferLayout::AOS) == resolved->size() * 3u);
     return true;
 }
 
@@ -137,7 +137,7 @@ template<typename T>
     StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
     HostByteBuffer bytes;
     CodecRealArray value = make_real_array(0u);
-    DynamicBufferLayoutCodec<CodecRealArray>::encode(&value, 1u, bytes, policy, DynamicBufferLayout::aos);
+    DynamicBufferLayoutCodec<CodecRealArray>::encode(&value, 1u, bytes, policy, DynamicBufferLayout::AOS);
     CHECK(bytes.size() == 20u);
     CHECK(close_float(bytes.load<float>(0u), 0.25f, 1e-6f));
     CHECK(close_float(bytes.load<float>(4u), 1.25f, 1e-6f));
@@ -187,8 +187,8 @@ template<typename T>
         src[index] = make_nested(index);
     }
     HostByteBuffer bytes;
-    DynamicBufferLayoutCodec<CodecRealNested>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::aos);
-    DynamicBufferLayoutCodec<CodecRealNested>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::aos);
+    DynamicBufferLayoutCodec<CodecRealNested>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::AOS);
+    DynamicBufferLayoutCodec<CodecRealNested>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::AOS);
     for (size_t index = 0; index < src.size(); ++index) {
         CHECK(equal_nested(src[index], dst[index]));
     }
@@ -203,8 +203,8 @@ template<typename T>
         src[index] = make_leaf(index);
     }
     HostByteBuffer bytes;
-    DynamicBufferLayoutCodec<CodecRealLeaf>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::aos);
-    DynamicBufferLayoutCodec<CodecRealLeaf>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::aos);
+    DynamicBufferLayoutCodec<CodecRealLeaf>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::AOS);
+    DynamicBufferLayoutCodec<CodecRealLeaf>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::AOS);
     for (size_t index = 0; index < src.size(); ++index) {
         CHECK(equal_leaf(src[index], dst[index], 1e-6f));
     }
@@ -219,9 +219,9 @@ template<typename T>
         src[index] = make_nested(index);
     }
     HostByteBuffer bytes;
-    DynamicBufferLayoutCodec<CodecRealNested>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::soa);
+    DynamicBufferLayoutCodec<CodecRealNested>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::SOA);
     CHECK(bytes.size() == 60u);
-    DynamicBufferLayoutCodec<CodecRealNested>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::soa);
+    DynamicBufferLayoutCodec<CodecRealNested>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::SOA);
     for (size_t index = 0; index < src.size(); ++index) {
         CHECK(equal_nested(src[index], dst[index]));
     }
@@ -236,12 +236,12 @@ template<typename T>
         src[index] = make_real_array(index);
     }
     HostByteBuffer bytes;
-    DynamicBufferLayoutCodec<CodecRealArray>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::soa);
+    DynamicBufferLayoutCodec<CodecRealArray>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::SOA);
     CHECK(bytes.size() == 60u);
     CHECK(close_float(bytes.load<float>(0u), 0.25f, 1e-6f));
     CHECK(close_float(bytes.load<float>(4u), 1.25f, 1e-6f));
     CHECK(close_float(bytes.load<float>(8u), 2.25f, 1e-6f));
-    DynamicBufferLayoutCodec<CodecRealArray>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::soa);
+    DynamicBufferLayoutCodec<CodecRealArray>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::SOA);
     for (size_t index = 0; index < src.size(); ++index) {
         CHECK(equal_real_array(src[index], dst[index], 1e-6f));
     }

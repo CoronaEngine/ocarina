@@ -226,8 +226,8 @@ struct FieldStorageInfo {
 };
 
 enum class FieldOffsetMode : uint8_t {
-    aos,
-    soa,
+    AOS,
+    SOA,
 };
 
 struct FieldAccessInfo {
@@ -249,7 +249,7 @@ struct FieldAccessInfo {
     size_t offset = 0u;
     for (uint32_t index = 0u; index < member_index; ++index) {
         const auto *member = resolved_type->members()[index];
-        if (mode == FieldOffsetMode::aos) {
+        if (mode == FieldOffsetMode::AOS) {
             offset = align_up_size(offset, resolved_runtime_alignment(member));
             offset += resolved_runtime_size(member);
         } else {
@@ -263,7 +263,7 @@ struct FieldAccessInfo {
                                           uint32_t element_index,
                                           FieldOffsetMode mode,
                                           size_t element_count) noexcept {
-    if (mode == FieldOffsetMode::aos) {
+    if (mode == FieldOffsetMode::AOS) {
         return element_index * resolved_runtime_size(resolved_elem);
     }
     return element_index * soa_storage_bytes(resolved_elem, element_count);
@@ -293,7 +293,7 @@ struct FieldAccessInfo {
             }
             current_offset += field_member_offset(resolved_type, step.value, mode, element_count);
             const auto *resolved_member = resolved_members[step.value];
-            if (mode == FieldOffsetMode::aos) {
+            if (mode == FieldOffsetMode::AOS) {
                 current_offset = align_up_size(current_offset, resolved_runtime_alignment(resolved_member));
             }
             logical_type = logical_members[step.value];
@@ -317,7 +317,7 @@ struct FieldAccessInfo {
             const auto *logical_elem = logical_type->element();
             const auto *resolved_elem = resolved_type->element();
             current_offset += step.value * resolved_runtime_size(resolved_elem);
-            if (mode == FieldOffsetMode::soa && steps.empty()) {
+            if (mode == FieldOffsetMode::SOA && steps.empty()) {
                 record_stride = resolved_runtime_size(resolved_type);
             }
             logical_type = logical_elem;
@@ -351,7 +351,7 @@ struct FieldAccessInfo {
     auto info = resolve_field_access_info(logical_type,
                                           resolved_type,
                                           steps,
-                                          FieldOffsetMode::aos,
+                                          FieldOffsetMode::AOS,
                                           1u,
                                           current_offset);
     if (!info.valid()) {
@@ -368,7 +368,7 @@ struct FieldAccessInfo {
     auto info = resolve_field_access_info(logical_type,
                                           resolved_type,
                                           steps,
-                                          FieldOffsetMode::soa,
+                                          FieldOffsetMode::SOA,
                                           element_count,
                                           current_offset);
     if (!info.valid()) {
@@ -494,9 +494,9 @@ DynamicBufferLayoutPlan DynamicBufferLayoutPlan::create(const Type *logical_type
 
 size_t DynamicBufferLayoutPlan::storage_bytes(size_t element_count) const noexcept {
     switch (layout_) {
-        case DynamicBufferLayout::aos:
+        case DynamicBufferLayout::AOS:
             return element_size_bytes_ * element_count;
-        case DynamicBufferLayout::soa:
+        case DynamicBufferLayout::SOA:
             return soa_storage_bytes(resolved_type_, element_count);
         default:
             return 0u;
@@ -504,14 +504,14 @@ size_t DynamicBufferLayoutPlan::storage_bytes(size_t element_count) const noexce
 }
 
 ByteRegion DynamicBufferLayoutPlan::record_region(size_t index) const noexcept {
-    OC_ASSERT(layout_ == DynamicBufferLayout::aos);
+    OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
     const auto begin = index * element_size_bytes_;
     return ByteRegion{begin, begin + element_size_bytes_};
 }
 
 ByteRegion DynamicBufferLayoutPlan::field_region(size_t index,
                                                  const TypedFieldPath &path) const noexcept {
-    OC_ASSERT(layout_ == DynamicBufferLayout::aos);
+    OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
     auto info = resolve_field_region_info(logical_type_, resolved_type_, path.steps(), 0u);
     OC_ASSERT(info.valid());
     const auto record = record_region(index);
@@ -523,7 +523,7 @@ vector<ByteSegment> DynamicBufferLayoutPlan::record_segments(size_t element_coun
                                                              size_t index) const noexcept {
     vector<ByteSegment> segments;
     switch (layout_) {
-        case DynamicBufferLayout::aos: {
+        case DynamicBufferLayout::AOS: {
             const auto region = record_region(index);
             segments.emplace_back(ByteSegment{
                 .storage_begin_byte = region.begin_byte,
@@ -531,7 +531,7 @@ vector<ByteSegment> DynamicBufferLayoutPlan::record_segments(size_t element_coun
                 .size_in_bytes = region.size()});
             break;
         }
-        case DynamicBufferLayout::soa:
+        case DynamicBufferLayout::SOA:
             collect_soa_segments(resolved_type_, element_count, index, 0u, 0u, segments);
             break;
         default:
@@ -545,7 +545,7 @@ vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t element_count
                                                             const TypedFieldPath &path) const noexcept {
     vector<ByteSegment> segments;
     switch (layout_) {
-        case DynamicBufferLayout::aos: {
+        case DynamicBufferLayout::AOS: {
             const auto region = field_region(index, path);
             segments.emplace_back(ByteSegment{
                 .storage_begin_byte = region.begin_byte,
@@ -553,7 +553,7 @@ vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t element_count
                 .size_in_bytes = region.size()});
             break;
         }
-        case DynamicBufferLayout::soa: {
+        case DynamicBufferLayout::SOA: {
             auto info = resolve_field_storage_info(logical_type_, resolved_type_, path.steps(), 0u, element_count);
             OC_ASSERT(info.valid());
             collect_soa_field_segments(info, element_count, index, segments);

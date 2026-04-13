@@ -85,7 +85,7 @@ namespace {
 [[nodiscard]] bool test_aos_upload_immediately_round_trips_full_buffer(Device &device) {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<GpuBridgeRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::aos);
+                                                         DynamicBufferLayout::AOS);
     vector<GpuBridgeRecord> records = {make_record(0.f), make_record(20.f)};
     buffer.write_all(span<const GpuBridgeRecord>(records.data(), records.size()));
 
@@ -107,7 +107,7 @@ namespace {
 [[nodiscard]] bool test_soa_dirty_segments_upload_only_changed_columns(Device &device) {
     HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<GpuBridgeRecord>(),
                                                          make_policy(PrecisionPolicy::force_f16),
-                                                         DynamicBufferLayout::soa);
+                                                         DynamicBufferLayout::SOA);
     vector<GpuBridgeRecord> records = {make_record(3.f), make_record(30.f), make_record(60.f)};
     buffer.write_all(span<const GpuBridgeRecord>(records.data(), records.size()));
 

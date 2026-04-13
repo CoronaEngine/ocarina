@@ -111,7 +111,7 @@ public:
 struct HostDynamicBufferUploadView {
     span<const std::byte> bytes{};
     size_t element_count{0u};
-    DynamicBufferLayout layout{DynamicBufferLayout::aos};
+    DynamicBufferLayout layout{DynamicBufferLayout::AOS};
     const Type *logical_type{nullptr};
     const Type *resolved_type{nullptr};
     /// Dirty export exposes precise byte segments and also keeps one merged range for compatibility.
@@ -296,7 +296,7 @@ void HostDynamicBuffer::append(span<const T> values) {
     if (values.empty()) {
         return;
     }
-    if (layout_plan_.layout() == DynamicBufferLayout::soa) {
+    if (layout_plan_.layout() == DynamicBufferLayout::SOA) {
         const auto old_count = element_count_;
         const auto new_count = old_count + values.size();
         ensure_capacity(new_count);
@@ -306,7 +306,7 @@ void HostDynamicBuffer::append(span<const T> values) {
                                                 old_count,
                                                 merged.data(),
                                                 layout_plan_.policy(),
-                                                DynamicBufferLayout::soa);
+                                                DynamicBufferLayout::SOA);
         }
         std::copy(values.begin(), values.end(), merged.begin() + static_cast<ptrdiff_t>(old_count));
         element_count_ = new_count;
@@ -314,7 +314,7 @@ void HostDynamicBuffer::append(span<const T> values) {
                                             merged.size(),
                                             storage_,
                                             layout_plan_.policy(),
-                                            DynamicBufferLayout::soa);
+                                            DynamicBufferLayout::SOA);
         if (!storage_.empty()) {
             mark_dirty(ByteRegion{0u, storage_.size()});
         }
@@ -331,7 +331,7 @@ void HostDynamicBuffer::append(span<const T> values) {
                                         values.size(),
                                         encoded,
                                         layout_plan_.policy(),
-                                        DynamicBufferLayout::aos);
+                                        DynamicBufferLayout::AOS);
     auto begin = layout_plan_.record_region(old_count).begin_byte;
     storage_.copy_from(encoded.data(), encoded.size(), begin);
     mark_dirty(ByteRegion{begin, begin + encoded.size()});

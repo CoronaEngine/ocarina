@@ -13,7 +13,7 @@ struct DynamicBufferGpuState {
     ByteBuffer device_buffer{};
     size_t byte_capacity{0u};
     uint64_t uploaded_generation{0u};
-    DynamicBufferLayout layout{DynamicBufferLayout::aos};
+    DynamicBufferLayout layout{DynamicBufferLayout::AOS};
     const Type *logical_type{nullptr};
     const Type *resolved_type{nullptr};
     size_t last_upload_segment_count{0u};
