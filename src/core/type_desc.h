@@ -247,7 +247,7 @@ const Type *Type::of() noexcept {
             const_cast<Type *>(ret)->update_member_name(arr, num);
         }
         using member_tuple = typename ocarina::struct_member_tuple<raw_type>::type;
-        traverse_tuple(member_tuple{}, [&](auto elm) {
+        for_each_struct_member_type<raw_type>([&](auto elm) {
             using elm_t = decltype(elm);
             auto t = Type::of<elm_t>();
         });
@@ -278,12 +278,8 @@ template<typename T>
         }
     } else if constexpr (is_struct_v<T>) {
         string ret = ocarina::format("{}[", struct_member_tuple<T>::struct_name);
-        traverse_tuple(struct_member_tuple_t<T>{}, [&]<typename Elm>(const Elm &_, uint index) {
-            constexpr auto offset_array = struct_member_tuple<T>::offset_array;
-            auto head = reinterpret_cast<const std::byte *>(addressof(val));
-            auto addr = head + offset_array[index];
-            const Elm &elm = reinterpret_cast<const Elm &>(*addr);
-            if (index == offset_array.size() - 1) {
+        for_each_struct_member(val, [&](const auto &elm, uint index) {
+            if (index == struct_member_tuple<T>::offset_array.size() - 1) {
                 ret += to_str(elm);
             } else {
                 ret += to_str(elm) + ",";

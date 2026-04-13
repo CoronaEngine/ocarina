@@ -44,6 +44,43 @@ template<typename T>
 [[nodiscard]] size_t resolved_alignment_in_context(StoragePrecisionPolicy policy,
                                                    bool direct_array_element) noexcept;
 
+template<typename T, typename Func, size_t... Indices>
+void for_each_array_element_impl(Func &&func,
+                                 std::index_sequence<Indices...>) noexcept {
+    (func(std::integral_constant<size_t, Indices>{}), ...);
+}
+
+template<typename T, typename Func>
+void for_each_array_element(Func &&func) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    constexpr size_t element_count = array_dimension_v<raw_t>;
+    for_each_array_element_impl<raw_t>(std::forward<Func>(func),
+                                       std::make_index_sequence<element_count>{});
+}
+
+template<typename T>
+[[nodiscard]] size_t resolved_struct_size(StoragePrecisionPolicy policy) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    size_t size = 0u;
+    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t) {
+        using member_t = std::remove_cvref_t<decltype(member_tag)>;
+        size = align_up_size(size, resolved_alignment<member_t>(policy));
+        size += resolved_size<member_t>(policy);
+    });
+    return align_up_size(size, resolved_alignment<raw_t>(policy));
+}
+
+template<typename T>
+[[nodiscard]] size_t resolved_struct_alignment(StoragePrecisionPolicy policy) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    size_t align = 0u;
+    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t) {
+        using member_t = std::remove_cvref_t<decltype(member_tag)>;
+        align = std::max(align, resolved_alignment<member_t>(policy));
+    });
+    return align;
+}
+
 template<typename T>
 [[nodiscard]] size_t resolved_scalar_size(StoragePrecisionPolicy policy,
                                           bool direct_array_element = false) noexcept {
@@ -120,15 +157,7 @@ template<typename T>
         constexpr size_t dim = array_dimension_v<raw_t>;
         return resolved_size_in_context<element_t>(policy, true) * dim;
     } else if constexpr (is_struct_v<raw_t>) {
-        size_t size = 0u;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            (([&] {
-                using member_t = tuple_element_t<I, struct_member_tuple_t<raw_t>>;
-                size = align_up_size(size, resolved_alignment<member_t>(policy));
-                size += resolved_size<member_t>(policy);
-            }()), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return align_up_size(size, resolved_alignment<raw_t>(policy));
+        return resolved_struct_size<raw_t>(policy);
     } else {
         static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::resolved_size");
     }
@@ -147,14 +176,7 @@ template<typename T>
         using element_t = array_element_t<raw_t>;
         return resolved_alignment_in_context<element_t>(policy, true);
     } else if constexpr (is_struct_v<raw_t>) {
-        size_t align = 0u;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            (([&] {
-                using member_t = tuple_element_t<I, struct_member_tuple_t<raw_t>>;
-                align = std::max(align, resolved_alignment<member_t>(policy));
-            }()), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return align;
+        return resolved_struct_alignment<raw_t>(policy);
     } else {
         static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::resolved_alignment");
     }
@@ -209,6 +231,46 @@ template<size_t I, typename T>
 template<typename T>
 [[nodiscard]] constexpr bool is_soa_atomic_v = is_scalar_v<T> || is_vector_v<T>;
 
+template<typename Member, typename T>
+[[nodiscard]] decltype(auto) runtime_member_ref(T &value, size_t index) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    if constexpr (is_array_v<raw_t> || is_vector_v<raw_t> || is_matrix_v<raw_t>) {
+        return value[index];
+    } else {
+        return struct_member_at<Member>(value, index);
+    }
+}
+
+template<typename Member, typename Getter>
+struct ConstStructMemberGetter {
+    Getter *getter{nullptr};
+    size_t member_index{0u};
+
+    [[nodiscard]] decltype(auto) operator()(size_t record_index) const noexcept {
+        return runtime_member_ref<Member>((*getter)(record_index), member_index);
+    }
+};
+
+template<typename Member, typename Getter>
+struct StructMemberGetter {
+    Getter *getter{nullptr};
+    size_t member_index{0u};
+
+    [[nodiscard]] decltype(auto) operator()(size_t record_index) const noexcept {
+        return runtime_member_ref<Member>((*getter)(record_index), member_index);
+    }
+};
+
+template<typename Member, typename Getter>
+[[nodiscard]] auto make_const_struct_member_getter(Getter &getter, size_t member_index) noexcept {
+    return ConstStructMemberGetter<Member, Getter>{addressof(getter), member_index};
+}
+
+template<typename Member, typename Getter>
+[[nodiscard]] auto make_struct_member_getter(Getter &getter, size_t member_index) noexcept {
+    return StructMemberGetter<Member, Getter>{addressof(getter), member_index};
+}
+
 template<typename T>
 void encode_aos_value(HostByteBuffer &dst,
                       size_t offset,
@@ -222,10 +284,60 @@ template<typename T>
                                  StoragePrecisionPolicy policy,
                                  bool direct_array_element = false) noexcept;
 
+template<typename T, typename Getter>
+[[nodiscard]] size_t encode_soa_from_getter(size_t count,
+                                            HostByteBuffer &dst,
+                                            size_t offset,
+                                            StoragePrecisionPolicy policy,
+                                            Getter &&getter,
+                                            bool direct_array_element = false) noexcept;
+
+template<typename T, typename Getter>
+[[nodiscard]] size_t decode_soa_to_getter(size_t count,
+                                          const HostByteBuffer &src,
+                                          size_t offset,
+                                          StoragePrecisionPolicy policy,
+                                          Getter &&getter,
+                                          bool direct_array_element = false) noexcept;
+
+template<typename T>
+[[nodiscard]] size_t soa_storage_bytes(size_t count,
+                                       StoragePrecisionPolicy policy,
+                                       bool direct_array_element = false) noexcept;
+
 template<typename T>
 void zero_bytes(HostByteBuffer &dst, size_t offset, size_t size) noexcept {
     auto out = dst.subspan(offset, size);
     std::fill(out.begin(), out.end(), std::byte{0});
+}
+
+template<typename T>
+void encode_aos_struct_members(HostByteBuffer &dst,
+                               size_t offset,
+                               const T &value,
+                               StoragePrecisionPolicy policy) noexcept {
+    size_t current = offset;
+    for_each_struct_member(value, [&](const auto &member, size_t) {
+        using member_t = std::remove_cvref_t<decltype(member)>;
+        current = align_up_size(current, resolved_alignment<member_t>(policy));
+        encode_aos_value<member_t>(dst, current, member, policy, false);
+        current += resolved_size<member_t>(policy);
+    });
+}
+
+template<typename T>
+[[nodiscard]] T decode_aos_struct_members(const HostByteBuffer &src,
+                                          size_t offset,
+                                          StoragePrecisionPolicy policy) noexcept {
+    T value{};
+    size_t current = offset;
+    for_each_struct_member(value, [&](auto &member, size_t) {
+        using member_t = std::remove_cvref_t<decltype(member)>;
+        current = align_up_size(current, resolved_alignment<member_t>(policy));
+        member = decode_aos_value<member_t>(src, current, policy, false);
+        current += resolved_size<member_t>(policy);
+    });
+    return value;
 }
 
 template<typename T>
@@ -300,15 +412,7 @@ void encode_aos_value(HostByteBuffer &dst,
         }
     } else if constexpr (is_struct_v<raw_t>) {
         zero_bytes<raw_t>(dst, offset, resolved_size<raw_t>(policy));
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            (([&] {
-                using member_t = tuple_element_t<I, struct_member_tuple_t<raw_t>>;
-                current = align_up_size(current, resolved_alignment<member_t>(policy));
-                encode_aos_value<member_t>(dst, current, member_ref<I>(value), policy, false);
-                current += resolved_size<member_t>(policy);
-            }()), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
+        encode_aos_struct_members(dst, offset, value, policy);
     } else {
         static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::encode_aos_value");
     }
@@ -350,20 +454,92 @@ template<typename T>
         }
         return value;
     } else if constexpr (is_struct_v<raw_t>) {
-        raw_t value{};
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            (([&] {
-                using member_t = tuple_element_t<I, struct_member_tuple_t<raw_t>>;
-                current = align_up_size(current, resolved_alignment<member_t>(policy));
-                member_ref<I>(value) = decode_aos_value<member_t>(src, current, policy, false);
-                current += resolved_size<member_t>(policy);
-            }()), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return value;
+        return decode_aos_struct_members<raw_t>(src, offset, policy);
     } else {
         static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::decode_aos_value");
     }
+}
+
+template<typename T, typename Getter>
+[[nodiscard]] size_t encode_soa_struct_like(size_t count,
+                                            HostByteBuffer &dst,
+                                            size_t offset,
+                                            StoragePrecisionPolicy policy,
+                                            Getter &&getter) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    auto &getter_ref = getter;
+    size_t current = offset;
+    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t member_index) {
+        using member_t = std::remove_cvref_t<decltype(member_tag)>;
+        current += encode_soa_from_getter<member_t>(
+            count, dst, current, policy, make_const_struct_member_getter<member_t>(getter_ref, member_index));
+    });
+    return current - offset;
+}
+
+template<typename T, typename Getter>
+[[nodiscard]] size_t encode_soa_array_like(size_t count,
+                                           HostByteBuffer &dst,
+                                           size_t offset,
+                                           StoragePrecisionPolicy policy,
+                                           Getter &&getter) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    auto &getter_ref = getter;
+    size_t current = offset;
+    for_each_array_element<raw_t>([&]<size_t Index>(std::integral_constant<size_t, Index>) {
+        current += encode_soa_from_getter<array_element_t<raw_t>>(
+            count, dst, current, policy,
+            make_const_struct_member_getter<array_element_t<raw_t>>(getter_ref, Index),
+            true);
+    });
+    return current - offset;
+}
+
+template<typename T, typename Getter>
+[[nodiscard]] size_t decode_soa_struct_like(size_t count,
+                                            const HostByteBuffer &src,
+                                            size_t offset,
+                                            StoragePrecisionPolicy policy,
+                                            Getter &&getter) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    auto &getter_ref = getter;
+    size_t current = offset;
+    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t member_index) {
+        using member_t = std::remove_cvref_t<decltype(member_tag)>;
+        current += decode_soa_to_getter<member_t>(
+            count, src, current, policy, make_struct_member_getter<member_t>(getter_ref, member_index));
+    });
+    return current - offset;
+}
+
+template<typename T, typename Getter>
+[[nodiscard]] size_t decode_soa_array_like(size_t count,
+                                           const HostByteBuffer &src,
+                                           size_t offset,
+                                           StoragePrecisionPolicy policy,
+                                           Getter &&getter) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    auto &getter_ref = getter;
+    size_t current = offset;
+    for_each_array_element<raw_t>([&]<size_t Index>(std::integral_constant<size_t, Index>) {
+        current += decode_soa_to_getter<array_element_t<raw_t>>(
+            count, src, current, policy,
+            make_struct_member_getter<array_element_t<raw_t>>(getter_ref, Index),
+            true);
+    });
+    return current - offset;
+}
+
+template<typename T>
+[[nodiscard]] size_t soa_struct_like_storage_bytes(size_t count,
+                                                   StoragePrecisionPolicy policy) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    size_t total = 0u;
+    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t) {
+        using member_t = std::remove_cvref_t<decltype(member_tag)>;
+        total += soa_storage_bytes<member_t>(count, policy);
+    });
+    return total;
 }
 
 template<typename T, typename Getter>
@@ -372,7 +548,7 @@ template<typename T, typename Getter>
                                             size_t offset,
                                             StoragePrecisionPolicy policy,
                                             Getter &&getter,
-                                            bool direct_array_element = false) noexcept {
+                                            bool direct_array_element) noexcept {
     using raw_t = std::remove_cvref_t<T>;
     if constexpr (is_soa_atomic_v<raw_t>) {
         size_t stride = resolved_size_in_context<raw_t>(policy, direct_array_element);
@@ -381,35 +557,11 @@ template<typename T, typename Getter>
         }
         return count * stride;
     } else if constexpr (is_matrix_v<raw_t>) {
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((current += encode_soa_from_getter<tuple_element_t<I, struct_member_tuple_t<raw_t>>>(
-                  count, dst, current, policy,
-                  [&getter](size_t record_index) -> const auto & {
-                      return member_ref<I>(getter(record_index));
-                  })), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return current - offset;
+        return encode_soa_struct_like<raw_t>(count, dst, offset, policy, std::forward<Getter>(getter));
     } else if constexpr (is_array_v<raw_t>) {
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((current += encode_soa_from_getter<array_element_t<raw_t>>(
-                  count, dst, current, policy,
-                  [&getter](size_t record_index) -> const auto & {
-                      return member_ref<I>(getter(record_index));
-                  }, true)), ...);
-        }(std::make_index_sequence<array_dimension_v<raw_t>>{});
-        return current - offset;
+        return encode_soa_array_like<raw_t>(count, dst, offset, policy, std::forward<Getter>(getter));
     } else if constexpr (is_struct_v<raw_t>) {
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((current += encode_soa_from_getter<tuple_element_t<I, struct_member_tuple_t<raw_t>>>(
-                  count, dst, current, policy,
-                  [&getter](size_t record_index) -> const auto & {
-                      return member_ref<I>(getter(record_index));
-                  })), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return current - offset;
+        return encode_soa_struct_like<raw_t>(count, dst, offset, policy, std::forward<Getter>(getter));
     } else {
         static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::encode_soa_from_getter");
     }
@@ -421,7 +573,7 @@ template<typename T, typename Getter>
                                           size_t offset,
                                           StoragePrecisionPolicy policy,
                                           Getter &&getter,
-                                          bool direct_array_element = false) noexcept {
+                                          bool direct_array_element) noexcept {
     using raw_t = std::remove_cvref_t<T>;
     if constexpr (is_soa_atomic_v<raw_t>) {
         size_t stride = resolved_size_in_context<raw_t>(policy, direct_array_element);
@@ -430,35 +582,11 @@ template<typename T, typename Getter>
         }
         return count * stride;
     } else if constexpr (is_matrix_v<raw_t>) {
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((current += decode_soa_to_getter<tuple_element_t<I, struct_member_tuple_t<raw_t>>>(
-                  count, src, current, policy,
-                  [&getter](size_t record_index) -> auto & {
-                      return member_ref<I>(getter(record_index));
-                  })), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return current - offset;
+        return decode_soa_struct_like<raw_t>(count, src, offset, policy, std::forward<Getter>(getter));
     } else if constexpr (is_array_v<raw_t>) {
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((current += decode_soa_to_getter<array_element_t<raw_t>>(
-                  count, src, current, policy,
-                  [&getter](size_t record_index) -> auto & {
-                      return member_ref<I>(getter(record_index));
-                  }, true)), ...);
-        }(std::make_index_sequence<array_dimension_v<raw_t>>{});
-        return current - offset;
+        return decode_soa_array_like<raw_t>(count, src, offset, policy, std::forward<Getter>(getter));
     } else if constexpr (is_struct_v<raw_t>) {
-        size_t current = offset;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((current += decode_soa_to_getter<tuple_element_t<I, struct_member_tuple_t<raw_t>>>(
-                  count, src, current, policy,
-                  [&getter](size_t record_index) -> auto & {
-                      return member_ref<I>(getter(record_index));
-                  })), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return current - offset;
+        return decode_soa_struct_like<raw_t>(count, src, offset, policy, std::forward<Getter>(getter));
     } else {
         static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::decode_soa_to_getter");
     }
@@ -467,24 +595,16 @@ template<typename T, typename Getter>
 template<typename T>
 [[nodiscard]] size_t soa_storage_bytes(size_t count,
                                        StoragePrecisionPolicy policy,
-                                       bool direct_array_element = false) noexcept {
+                                       bool direct_array_element) noexcept {
     using raw_t = std::remove_cvref_t<T>;
     if constexpr (is_soa_atomic_v<raw_t>) {
         return count * resolved_size_in_context<raw_t>(policy, direct_array_element);
     } else if constexpr (is_matrix_v<raw_t>) {
-        size_t total = 0;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((total += soa_storage_bytes<tuple_element_t<I, struct_member_tuple_t<raw_t>>>(count, policy)), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return total;
+        return soa_struct_like_storage_bytes<raw_t>(count, policy);
     } else if constexpr (is_array_v<raw_t>) {
         return array_dimension_v<raw_t> * soa_storage_bytes<array_element_t<raw_t>>(count, policy, true);
     } else if constexpr (is_struct_v<raw_t>) {
-        size_t total = 0;
-        [&]<size_t... I>(std::index_sequence<I...>) {
-            ((total += soa_storage_bytes<tuple_element_t<I, struct_member_tuple_t<raw_t>>>(count, policy)), ...);
-        }(std::make_index_sequence<tuple_size_v<struct_member_tuple_t<raw_t>>>{});
-        return total;
+        return soa_struct_like_storage_bytes<raw_t>(count, policy);
     } else {
         static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::soa_storage_bytes");
     }

@@ -197,6 +197,37 @@ struct struct_member_tuple<Matrix<T, N, M>> {
     using type = typename struct_member_tuple<ocarina::array<Vector<T, M>, N>>::type;
 };
 
+template<typename T, typename Func>
+void for_each_struct_member_type(Func &&func) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    traverse_tuple(struct_member_tuple_t<raw_t>{}, std::forward<Func>(func));
+}
+
+template<typename Member, typename T>
+[[nodiscard]] decltype(auto) struct_member_at(T &value, size_t index) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    using value_t = std::remove_reference_t<T>;
+    using qualified_member_t = std::conditional_t<std::is_const_v<value_t>, const Member, Member>;
+    constexpr auto offset_array = struct_member_tuple<raw_t>::offset_array;
+    using byte_ptr_t = std::conditional_t<std::is_const_v<value_t>, const std::byte *, std::byte *>;
+    auto *head = reinterpret_cast<byte_ptr_t>(addressof(value));
+    auto *addr = head + offset_array[index];
+    return *std::launder(reinterpret_cast<qualified_member_t *>(addr));
+}
+
+template<typename T, typename Func>
+void for_each_struct_member(T &&value, Func &&func) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    for_each_struct_member_type<raw_t>([&]<typename Member>(const Member &, size_t index) {
+        decltype(auto) member = struct_member_at<Member>(value, index);
+        if constexpr (std::invocable<Func, decltype(member), size_t>) {
+            func(member, index);
+        } else {
+            func(member);
+        }
+    });
+}
+
 #define OC_MEMBER_TYPE_MAP(member) std::remove_cvref_t<decltype(this_type::member)>
 #define OC_TYPE_OFFSET_OF(member) OC_OFFSET_OF(this_type, member)
 #define OC_TYPE_SIZE(member) sizeof(this_type::member)
