@@ -252,6 +252,17 @@ struct FieldRegionInfo {
     }
 };
 
+struct FieldStorageInfo {
+    const Type *logical_type{nullptr};
+    const Type *resolved_type{nullptr};
+    size_t storage_offset{0u};
+    size_t record_stride{0u};
+
+    [[nodiscard]] bool valid() const noexcept {
+        return logical_type != nullptr && resolved_type != nullptr;
+    }
+};
+
 [[nodiscard]] FieldRegionInfo resolve_field_region_info(const Type *logical_type,
                                                         const Type *resolved_type,
                                                         span<const TypedFieldPath::Step> steps,
@@ -321,6 +332,163 @@ struct FieldRegionInfo {
     return {};
 }
 
+[[nodiscard]] FieldStorageInfo resolve_field_storage_info(const Type *logical_type,
+                                                          const Type *resolved_type,
+                                                          span<const TypedFieldPath::Step> steps,
+                                                          size_t current_offset,
+                                                          size_t element_count) noexcept {
+    if (logical_type == nullptr || resolved_type == nullptr) {
+        return {};
+    }
+    if (steps.empty()) {
+        return FieldStorageInfo{logical_type,
+                                resolved_type,
+                                current_offset,
+                                resolved_runtime_size(resolved_type)};
+    }
+    const auto step = steps.front();
+    const auto rest = steps.subspan(1u);
+    if (logical_type->is_structure()) {
+        if (step.kind != TypedFieldPath::StepKind::member) {
+            return {};
+        }
+        const auto logical_members = logical_type->members();
+        const auto resolved_members = resolved_type->members();
+        if (logical_members.size() != resolved_members.size() || step.value >= logical_members.size()) {
+            return {};
+        }
+        size_t offset = current_offset;
+        for (uint32_t index = 0u; index < step.value; ++index) {
+            offset += soa_storage_bytes(resolved_members[index], element_count);
+        }
+        return resolve_field_storage_info(logical_members[step.value],
+                                          resolved_members[step.value],
+                                          rest,
+                                          offset,
+                                          element_count);
+    }
+    if (logical_type->is_array()) {
+        if (step.kind != TypedFieldPath::StepKind::index || step.value >= logical_type->dimension()) {
+            return {};
+        }
+        const auto *logical_elem = logical_type->element();
+        const auto *resolved_elem = resolved_type->element();
+        const auto offset = current_offset + step.value * soa_storage_bytes(resolved_elem, element_count);
+        return resolve_field_storage_info(logical_elem,
+                                          resolved_elem,
+                                          rest,
+                                          offset,
+                                          element_count);
+    }
+    if (logical_type->is_vector()) {
+        if (step.kind != TypedFieldPath::StepKind::component || step.value >= logical_type->dimension()) {
+            return {};
+        }
+        const auto *logical_elem = logical_type->element();
+        const auto *resolved_elem = resolved_type->element();
+        const auto offset = current_offset + step.value * resolved_runtime_size(resolved_elem);
+        if (rest.empty()) {
+            return FieldStorageInfo{logical_elem,
+                                    resolved_elem,
+                                    offset,
+                                    resolved_runtime_size(resolved_type)};
+        }
+        return resolve_field_storage_info(logical_elem,
+                                          resolved_elem,
+                                          rest,
+                                          offset,
+                                          element_count);
+    }
+    if (logical_type->is_matrix()) {
+        if ((step.kind != TypedFieldPath::StepKind::index && step.kind != TypedFieldPath::StepKind::component) ||
+            step.value >= logical_type->dimension()) {
+            return {};
+        }
+        const auto *logical_elem = logical_type->element();
+        const auto *resolved_elem = resolved_type->element();
+        const auto offset = current_offset + step.value * soa_storage_bytes(resolved_elem, element_count);
+        return resolve_field_storage_info(logical_elem,
+                                          resolved_elem,
+                                          rest,
+                                          offset,
+                                          element_count);
+    }
+    return {};
+}
+
+void collect_soa_segments(const Type *resolved_type,
+                          size_t element_count,
+                          size_t index,
+                          size_t storage_offset,
+                          size_t staging_offset,
+                          vector<ByteSegment> &segments) noexcept {
+    if (resolved_type == nullptr) {
+        return;
+    }
+    if (resolved_type->is_scalar() || resolved_type->is_vector()) {
+        const auto stride = resolved_runtime_size(resolved_type);
+        segments.emplace_back(ByteSegment{
+            .storage_begin_byte = storage_offset + index * stride,
+            .staging_begin_byte = staging_offset,
+            .size_in_bytes = stride});
+        return;
+    }
+    if (resolved_type->is_matrix() || resolved_type->is_array()) {
+        const auto *resolved_elem = resolved_type->element();
+        size_t current_storage = storage_offset;
+        size_t current_staging = staging_offset;
+        for (uint32_t element_index = 0u; element_index < resolved_type->dimension(); ++element_index) {
+            collect_soa_segments(resolved_elem,
+                                 element_count,
+                                 index,
+                                 current_storage,
+                                 current_staging,
+                                 segments);
+            current_storage += soa_storage_bytes(resolved_elem, element_count);
+            current_staging += soa_storage_bytes(resolved_elem, 1u);
+        }
+        return;
+    }
+    if (resolved_type->is_structure()) {
+        size_t current_storage = storage_offset;
+        size_t current_staging = staging_offset;
+        for (const auto *member : resolved_type->members()) {
+            collect_soa_segments(member,
+                                 element_count,
+                                 index,
+                                 current_storage,
+                                 current_staging,
+                                 segments);
+            current_storage += soa_storage_bytes(member, element_count);
+            current_staging += soa_storage_bytes(member, 1u);
+        }
+        return;
+    }
+    const auto size = resolved_runtime_size(resolved_type);
+    segments.emplace_back(ByteSegment{
+        .storage_begin_byte = storage_offset + index * size,
+        .staging_begin_byte = staging_offset,
+        .size_in_bytes = size});
+}
+
+void collect_soa_field_segments(const FieldStorageInfo &info,
+                                size_t element_count,
+                                size_t index,
+                                vector<ByteSegment> &segments) noexcept {
+    if (!info.valid()) {
+        return;
+    }
+    if (info.resolved_type->is_scalar()) {
+        const auto size = resolved_runtime_size(info.resolved_type);
+        segments.emplace_back(ByteSegment{
+            .storage_begin_byte = info.storage_offset + index * info.record_stride,
+            .staging_begin_byte = 0u,
+            .size_in_bytes = size});
+        return;
+    }
+    collect_soa_segments(info.resolved_type, element_count, index, info.storage_offset, 0u, segments);
+}
+
 }// namespace
 
 TypedFieldPath TypedFieldPath::append_member(uint32_t member_index) const {
@@ -388,6 +556,52 @@ ByteRegion DynamicBufferLayoutPlan::field_region(size_t index,
     const auto record = record_region(index);
     return ByteRegion{record.begin_byte + info.offset_in_record,
                       record.begin_byte + info.offset_in_record + info.size_in_bytes};
+}
+
+vector<ByteSegment> DynamicBufferLayoutPlan::record_segments(size_t element_count,
+                                                             size_t index) const noexcept {
+    vector<ByteSegment> segments;
+    switch (layout_) {
+        case DynamicBufferLayout::aos: {
+            const auto region = record_region(index);
+            segments.emplace_back(ByteSegment{
+                .storage_begin_byte = region.begin_byte,
+                .staging_begin_byte = 0u,
+                .size_in_bytes = region.size()});
+            break;
+        }
+        case DynamicBufferLayout::soa:
+            collect_soa_segments(resolved_type_, element_count, index, 0u, 0u, segments);
+            break;
+        default:
+            break;
+    }
+    return segments;
+}
+
+vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t element_count,
+                                                            size_t index,
+                                                            const TypedFieldPath &path) const noexcept {
+    vector<ByteSegment> segments;
+    switch (layout_) {
+        case DynamicBufferLayout::aos: {
+            const auto region = field_region(index, path);
+            segments.emplace_back(ByteSegment{
+                .storage_begin_byte = region.begin_byte,
+                .staging_begin_byte = 0u,
+                .size_in_bytes = region.size()});
+            break;
+        }
+        case DynamicBufferLayout::soa: {
+            auto info = resolve_field_storage_info(logical_type_, resolved_type_, path.steps(), 0u, element_count);
+            OC_ASSERT(info.valid());
+            collect_soa_field_segments(info, element_count, index, segments);
+            break;
+        }
+        default:
+            break;
+    }
+    return segments;
 }
 
 const Type *DynamicBufferLayoutPlan::field_logical_type(const TypedFieldPath &path) const noexcept {

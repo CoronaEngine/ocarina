@@ -25,6 +25,16 @@ struct ByteRegion {
     }
 };
 
+struct ByteSegment {
+    size_t storage_begin_byte{0u};
+    size_t staging_begin_byte{0u};
+    size_t size_in_bytes{0u};
+
+    [[nodiscard]] bool empty() const noexcept {
+        return size_in_bytes == 0u;
+    }
+};
+
 class TypedFieldPath {
 public:
     enum class StepKind : uint8_t {
@@ -150,6 +160,11 @@ public:
     [[nodiscard]] ByteRegion record_region(size_t index) const noexcept;
     [[nodiscard]] ByteRegion field_region(size_t index,
                                           const TypedFieldPath &path) const noexcept;
+    [[nodiscard]] vector<ByteSegment> record_segments(size_t element_count,
+                                                      size_t index) const noexcept;
+    [[nodiscard]] vector<ByteSegment> field_segments(size_t element_count,
+                                                     size_t index,
+                                                     const TypedFieldPath &path) const noexcept;
     [[nodiscard]] const Type *field_logical_type(const TypedFieldPath &path) const noexcept;
     [[nodiscard]] const Type *field_resolved_type(const TypedFieldPath &path) const noexcept;
 };

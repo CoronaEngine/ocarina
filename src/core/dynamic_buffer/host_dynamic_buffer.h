@@ -70,7 +70,9 @@ private:
     void ensure_capacity(size_t required_capacity);
     void validate_index(size_t index) const noexcept;
     void mark_dirty(ByteRegion region) noexcept;
-    void validate_aos_record_access() const noexcept;
+    void gather_segments(span<const ByteSegment> segments, HostByteBuffer &dst) const noexcept;
+    void scatter_segments(const HostByteBuffer &src,
+                          span<const ByteSegment> segments) noexcept;
 
 public:
     HostDynamicBuffer() = default;
@@ -87,11 +89,15 @@ public:
     [[nodiscard]] size_t element_capacity() const noexcept { return element_capacity_; }
     [[nodiscard]] size_t storage_size_bytes() const noexcept { return storage_.size(); }
     [[nodiscard]] bool empty() const noexcept { return element_count_ == 0u; }
+
+    /// Record-level random access is available for both AoS and SoA.
     [[nodiscard]] bool supports_record_access() const noexcept {
-        return layout_plan_.layout() == DynamicBufferLayout::aos;
+        return true;
     }
+
+    /// Field-level patching is available for both AoS and SoA.
     [[nodiscard]] bool supports_field_patch() const noexcept {
-        return layout_plan_.layout() == DynamicBufferLayout::aos;
+        return true;
     }
 
     void reserve(size_t element_capacity);
@@ -106,6 +112,7 @@ public:
 
     [[nodiscard]] uint64_t generation() const noexcept { return generation_; }
 
+    /// Upload view is available for both AoS and SoA.
     [[nodiscard]] HostDynamicBufferUploadView upload_view() const noexcept {
         return HostDynamicBufferUploadView{
             .bytes = storage_.bytes_span(),
@@ -116,18 +123,24 @@ public:
             .dirty = dirty_range_};
     }
 
+    /// Read one logical record.
     template<typename T>
     [[nodiscard]] T read(size_t index) const;
 
+    /// Write one logical record.
     template<typename T>
     void write(size_t index, const T &value);
 
+    /// Append records at the end of the buffer.
     template<typename T>
     void append(span<const T> values);
 
+    /// Replace the full buffer contents in the active layout.
+    /// This is the currently supported write path for SoA layout.
     template<typename T>
     void write_all(span<const T> values);
 
+    /// Patch one logical subfield inside one record.
     template<typename TField>
     void patch(size_t index, const TypedFieldPath &path, const TField &value);
 };
@@ -162,6 +175,7 @@ public:
         buffer_->template append<T>(values);
     }
 
+    /// This path is available for both AoS and SoA.
     void write_all(span<const T> values) {
         buffer_->template write_all<T>(values);
     }
@@ -174,45 +188,69 @@ public:
 
 template<typename T>
 T HostDynamicBuffer::read(size_t index) const {
-    validate_aos_record_access();
     OC_ASSERT(layout_plan_.is_compatible_with(Type::of<T>()));
     validate_index(index);
     T value{};
     HostByteBuffer encoded_record;
-    auto region = layout_plan_.record_region(index);
-    encoded_record.resize(region.size());
-    encoded_record.copy_from(storage_.data() + region.begin_byte, region.size());
+    const auto layout = layout_plan_.layout();
+    encoded_record.resize(DynamicBufferLayoutCodec<T>::storage_bytes(1u,
+                                                                     layout_plan_.policy(),
+                                                                     layout));
+    const auto segments = layout_plan_.record_segments(element_count_, index);
+    gather_segments(segments, encoded_record);
     DynamicBufferLayoutCodec<T>::decode(encoded_record,
                                         1u,
                                         addressof(value),
                                         layout_plan_.policy(),
-                                        DynamicBufferLayout::aos);
+                                        layout);
     return value;
 }
 
 template<typename T>
 void HostDynamicBuffer::write(size_t index, const T &value) {
-    validate_aos_record_access();
     OC_ASSERT(layout_plan_.is_compatible_with(Type::of<T>()));
     validate_index(index);
     HostByteBuffer encoded_record;
+    const auto layout = layout_plan_.layout();
     DynamicBufferLayoutCodec<T>::encode(addressof(value),
                                         1u,
                                         encoded_record,
                                         layout_plan_.policy(),
-                                        DynamicBufferLayout::aos);
-    auto region = layout_plan_.record_region(index);
-    OC_ASSERT(encoded_record.size() == region.size());
-    storage_.copy_from(encoded_record.data(), encoded_record.size(), region.begin_byte);
-    mark_dirty(region);
+                                        layout);
+    const auto segments = layout_plan_.record_segments(element_count_, index);
+    scatter_segments(encoded_record, segments);
     generation_++;
 }
 
 template<typename T>
 void HostDynamicBuffer::append(span<const T> values) {
-    validate_aos_record_access();
     OC_ASSERT(layout_plan_.is_compatible_with(Type::of<T>()));
     if (values.empty()) {
+        return;
+    }
+    if (layout_plan_.layout() == DynamicBufferLayout::soa) {
+        const auto old_count = element_count_;
+        const auto new_count = old_count + values.size();
+        ensure_capacity(new_count);
+        vector<T> merged(new_count);
+        if (old_count != 0u) {
+            DynamicBufferLayoutCodec<T>::decode(storage_,
+                                                old_count,
+                                                merged.data(),
+                                                layout_plan_.policy(),
+                                                DynamicBufferLayout::soa);
+        }
+        std::copy(values.begin(), values.end(), merged.begin() + static_cast<ptrdiff_t>(old_count));
+        element_count_ = new_count;
+        DynamicBufferLayoutCodec<T>::encode(merged.data(),
+                                            merged.size(),
+                                            storage_,
+                                            layout_plan_.policy(),
+                                            DynamicBufferLayout::soa);
+        if (!storage_.empty()) {
+            mark_dirty(ByteRegion{0u, storage_.size()});
+        }
+        generation_++;
         return;
     }
     const auto old_count = element_count_;
@@ -236,7 +274,7 @@ template<typename T>
 void HostDynamicBuffer::write_all(span<const T> values) {
     OC_ASSERT(layout_plan_.is_compatible_with(Type::of<T>()));
     element_count_ = values.size();
-    element_capacity_ = std::max(element_capacity_, element_count_);
+    ensure_capacity(element_count_);
     DynamicBufferLayoutCodec<T>::encode(values.data(),
                                         values.size(),
                                         storage_,
@@ -250,19 +288,17 @@ void HostDynamicBuffer::write_all(span<const T> values) {
 
 template<typename TField>
 void HostDynamicBuffer::patch(size_t index, const TypedFieldPath &path, const TField &value) {
-    validate_aos_record_access();
     validate_index(index);
     OC_ASSERT(layout_plan_.field_logical_type(path) == Type::of<TField>());
     HostByteBuffer encoded_field;
+    const auto layout = layout_plan_.layout();
     DynamicBufferLayoutCodec<TField>::encode(addressof(value),
                                              1u,
                                              encoded_field,
                                              layout_plan_.policy(),
-                                             DynamicBufferLayout::aos);
-    auto region = layout_plan_.field_region(index, path);
-    OC_ASSERT(encoded_field.size() == region.size());
-    storage_.copy_from(encoded_field.data(), encoded_field.size(), region.begin_byte);
-    mark_dirty(region);
+                                             layout);
+    const auto segments = layout_plan_.field_segments(element_count_, index, path);
+    scatter_segments(encoded_field, segments);
     generation_++;
 }
 

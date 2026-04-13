@@ -50,6 +50,14 @@ namespace {
     return std::abs(lhs - rhs) <= eps;
 }
 
+[[nodiscard]] size_t total_segment_bytes(span<const ByteSegment> segments) {
+    size_t total = 0u;
+    for (const auto &segment : segments) {
+        total += segment.size_in_bytes;
+    }
+    return total;
+}
+
 [[nodiscard]] HostDynamicRecord make_record(float base) {
     return {
         .leaf = HostDynamicLeaf{
@@ -96,6 +104,132 @@ namespace {
     CHECK(plan.contains_real());
     CHECK(plan.has_precision_lowering());
     CHECK(plan.element_size_bytes() == codec_bytes);
+    return true;
+}
+
+[[nodiscard]] bool test_aos_record_and_field_regions_report_expected_offsets() {
+    auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
+                                                make_policy(PrecisionPolicy::force_f16),
+                                                DynamicBufferLayout::aos);
+
+    auto record_region = plan.record_region(1u);
+    CHECK(record_region.begin_byte == 40u);
+    CHECK(record_region.end_byte == 80u);
+    CHECK(record_region.size() == 40u);
+
+    auto roughness_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
+    auto roughness_region = plan.field_region(1u, roughness_path);
+    CHECK(roughness_region.begin_byte == 40u);
+    CHECK(roughness_region.end_byte == 42u);
+    CHECK(roughness_region.size() == 2u);
+
+    auto direction_z_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<1u>, FieldComponentStep<2u>>();
+    auto direction_z_region = plan.field_region(1u, direction_z_path);
+    CHECK(direction_z_region.begin_byte == 52u);
+    CHECK(direction_z_region.end_byte == 54u);
+    CHECK(direction_z_region.size() == 2u);
+
+    auto weight_path = make_typed_field_path<FieldMemberStep<1u>, FieldIndexStep<2u>>();
+    auto weight_region = plan.field_region(1u, weight_path);
+    CHECK(weight_region.begin_byte == 60u);
+    CHECK(weight_region.end_byte == 62u);
+    CHECK(weight_region.size() == 2u);
+
+    auto matrix_path = make_typed_field_path<FieldMemberStep<2u>, FieldIndexStep<1u>, FieldComponentStep<0u>>();
+    auto matrix_region = plan.field_region(1u, matrix_path);
+    CHECK(matrix_region.begin_byte == 68u);
+    CHECK(matrix_region.end_byte == 70u);
+    CHECK(matrix_region.size() == 2u);
+
+    CHECK(plan.field_logical_type(direction_z_path) == Type::of<real>());
+    CHECK(plan.field_resolved_type(direction_z_path) == Type::of<half>());
+    return true;
+}
+
+[[nodiscard]] bool test_soa_record_segments_follow_expected_layout() {
+    auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
+                                                make_policy(PrecisionPolicy::force_f16),
+                                                DynamicBufferLayout::soa);
+    auto segments = plan.record_segments(2u, 1u);
+    CHECK(segments.size() == 9u);
+    CHECK(total_segment_bytes(segments) == DynamicBufferLayoutCodec<HostDynamicRecord>::storage_bytes(
+                                             1u,
+                                             make_policy(PrecisionPolicy::force_f16),
+                                             DynamicBufferLayout::soa));
+
+    CHECK(segments[0].storage_begin_byte == 2u);
+    CHECK(segments[0].staging_begin_byte == 0u);
+    CHECK(segments[0].size_in_bytes == 2u);
+
+    CHECK(segments[1].storage_begin_byte == 12u);
+    CHECK(segments[1].staging_begin_byte == 2u);
+    CHECK(segments[1].size_in_bytes == 8u);
+
+    CHECK(segments[2].storage_begin_byte == 22u);
+    CHECK(segments[2].staging_begin_byte == 10u);
+    CHECK(segments[2].size_in_bytes == 2u);
+
+    CHECK(segments[3].storage_begin_byte == 26u);
+    CHECK(segments[3].staging_begin_byte == 12u);
+    CHECK(segments[3].size_in_bytes == 2u);
+
+    CHECK(segments[4].storage_begin_byte == 30u);
+    CHECK(segments[4].staging_begin_byte == 14u);
+    CHECK(segments[4].size_in_bytes == 2u);
+
+    CHECK(segments[5].storage_begin_byte == 34u);
+    CHECK(segments[5].staging_begin_byte == 16u);
+    CHECK(segments[5].size_in_bytes == 2u);
+
+    CHECK(segments[6].storage_begin_byte == 40u);
+    CHECK(segments[6].staging_begin_byte == 18u);
+    CHECK(segments[6].size_in_bytes == 4u);
+
+    CHECK(segments[7].storage_begin_byte == 48u);
+    CHECK(segments[7].staging_begin_byte == 22u);
+    CHECK(segments[7].size_in_bytes == 4u);
+
+    CHECK(segments[8].storage_begin_byte == 56u);
+    CHECK(segments[8].staging_begin_byte == 26u);
+    CHECK(segments[8].size_in_bytes == 4u);
+    return true;
+}
+
+[[nodiscard]] bool test_soa_field_segments_report_expected_offsets() {
+    auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
+                                                make_policy(PrecisionPolicy::force_f16),
+                                                DynamicBufferLayout::soa);
+
+    auto roughness_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
+    auto roughness_segments = plan.field_segments(2u, 1u, roughness_path);
+    CHECK(roughness_segments.size() == 1u);
+    CHECK(roughness_segments[0].storage_begin_byte == 2u);
+    CHECK(roughness_segments[0].staging_begin_byte == 0u);
+    CHECK(roughness_segments[0].size_in_bytes == 2u);
+
+    auto direction_z_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<1u>, FieldComponentStep<2u>>();
+    auto direction_z_segments = plan.field_segments(2u, 1u, direction_z_path);
+    CHECK(direction_z_segments.size() == 1u);
+    CHECK(direction_z_segments[0].storage_begin_byte == 16u);
+    CHECK(direction_z_segments[0].staging_begin_byte == 0u);
+    CHECK(direction_z_segments[0].size_in_bytes == 2u);
+
+    auto weight_path = make_typed_field_path<FieldMemberStep<1u>, FieldIndexStep<2u>>();
+    auto weight_segments = plan.field_segments(2u, 1u, weight_path);
+    CHECK(weight_segments.size() == 1u);
+    CHECK(weight_segments[0].storage_begin_byte == 30u);
+    CHECK(weight_segments[0].staging_begin_byte == 0u);
+    CHECK(weight_segments[0].size_in_bytes == 2u);
+
+    auto matrix_path = make_typed_field_path<FieldMemberStep<2u>, FieldIndexStep<1u>, FieldComponentStep<0u>>();
+    auto matrix_segments = plan.field_segments(2u, 1u, matrix_path);
+    CHECK(matrix_segments.size() == 1u);
+    CHECK(matrix_segments[0].storage_begin_byte == 48u);
+    CHECK(matrix_segments[0].staging_begin_byte == 0u);
+    CHECK(matrix_segments[0].size_in_bytes == 2u);
+
+    CHECK(plan.field_logical_type(direction_z_path) == Type::of<real>());
+    CHECK(plan.field_resolved_type(direction_z_path) == Type::of<half>());
     return true;
 }
 
@@ -224,8 +358,8 @@ namespace {
     vector<HostDynamicRecord> values{make_record(4.0f), make_record(12.0f)};
     buffer.write_all<HostDynamicRecord>(values);
 
-    CHECK(!buffer.supports_record_access());
-    CHECK(!buffer.supports_field_patch());
+    CHECK(buffer.supports_record_access());
+    CHECK(buffer.supports_field_patch());
     CHECK(buffer.element_count() == values.size());
     CHECK(buffer.dirty_range().dirty);
     CHECK(buffer.dirty_range().begin_byte == 0u);
@@ -245,17 +379,133 @@ namespace {
     return true;
 }
 
+[[nodiscard]] bool test_soa_record_round_trip() {
+    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
+                                                         make_policy(PrecisionPolicy::force_f16),
+                                                         DynamicBufferLayout::soa,
+                                                         2u);
+    const auto lhs = make_record(20.0f);
+    const auto rhs = make_record(36.0f);
+    buffer.write(0u, lhs);
+    buffer.write(1u, rhs);
+    CHECK(equal_record(buffer.read<HostDynamicRecord>(0u), lhs, 1e-2f));
+    CHECK(equal_record(buffer.read<HostDynamicRecord>(1u), rhs, 1e-2f));
+    CHECK(buffer.dirty_range().dirty);
+    return true;
+}
+
+[[nodiscard]] bool test_soa_field_patch_updates_target_value() {
+    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
+                                                         make_policy(PrecisionPolicy::force_f16),
+                                                         DynamicBufferLayout::soa,
+                                                         1u);
+    buffer.write(0u, make_record(0.0f));
+    buffer.clear_dirty();
+
+    auto roughness_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
+    buffer.patch(0u, roughness_path, real{11.25f});
+    auto record = buffer.read<HostDynamicRecord>(0u);
+    CHECK(close_float(static_cast<float>(record.leaf.roughness), 11.25f));
+
+    buffer.clear_dirty();
+    auto weight_path = make_typed_field_path<FieldMemberStep<1u>, FieldIndexStep<2u>>();
+    buffer.patch(0u, weight_path, real{6.5f});
+    record = buffer.read<HostDynamicRecord>(0u);
+    CHECK(close_float(static_cast<float>(record.weights[2u]), 6.5f));
+
+    buffer.clear_dirty();
+    auto matrix_path = make_typed_field_path<FieldMemberStep<2u>, FieldIndexStep<1u>, FieldComponentStep<0u>>();
+    buffer.patch(0u, matrix_path, real{17.0f});
+    record = buffer.read<HostDynamicRecord>(0u);
+    CHECK(close_float(static_cast<float>(record.basis[1u][0u]), 17.0f));
+    CHECK(buffer.dirty_range().dirty);
+    return true;
+}
+
+[[nodiscard]] bool test_soa_field_patch_is_isolated_per_record() {
+    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
+                                                         make_policy(PrecisionPolicy::force_f16),
+                                                         DynamicBufferLayout::soa,
+                                                         2u);
+    const auto lhs = make_record(2.0f);
+    const auto rhs = make_record(18.0f);
+    buffer.write(0u, lhs);
+    buffer.write(1u, rhs);
+    buffer.clear_dirty();
+
+    auto weight_path = make_typed_field_path<FieldMemberStep<1u>, FieldIndexStep<1u>>();
+    buffer.patch(1u, weight_path, real{33.5f});
+
+    const auto updated_lhs = buffer.read<HostDynamicRecord>(0u);
+    const auto updated_rhs = buffer.read<HostDynamicRecord>(1u);
+    CHECK(equal_record(updated_lhs, lhs, 1e-2f));
+    CHECK(close_float(static_cast<float>(updated_rhs.weights[1u]), 33.5f));
+    CHECK(close_float(static_cast<float>(updated_rhs.weights[0u]), static_cast<float>(rhs.weights[0u]), 1e-2f));
+    CHECK(close_float(static_cast<float>(updated_rhs.weights[2u]), static_cast<float>(rhs.weights[2u]), 1e-2f));
+    CHECK(close_float(static_cast<float>(updated_rhs.weights[3u]), static_cast<float>(rhs.weights[3u]), 1e-2f));
+    CHECK(buffer.dirty_range().dirty);
+    return true;
+}
+
+[[nodiscard]] bool test_soa_append_round_trip() {
+    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
+                                                         make_policy(PrecisionPolicy::force_f32),
+                                                         DynamicBufferLayout::soa,
+                                                         0u);
+    vector<HostDynamicRecord> first{make_record(1.0f), make_record(2.0f)};
+    vector<HostDynamicRecord> second{make_record(50.0f)};
+    buffer.append<HostDynamicRecord>(first);
+    buffer.append<HostDynamicRecord>(second);
+    CHECK(buffer.element_count() == 3u);
+    CHECK(equal_record(buffer.read<HostDynamicRecord>(0u), first[0], 1e-6f));
+    CHECK(equal_record(buffer.read<HostDynamicRecord>(1u), first[1], 1e-6f));
+    CHECK(equal_record(buffer.read<HostDynamicRecord>(2u), second[0], 1e-6f));
+    return true;
+}
+
+[[nodiscard]] bool test_typed_view_soa_read_write_patch_usage() {
+    HostDynamicBuffer buffer = HostDynamicBuffer::create(Type::of<HostDynamicRecord>(),
+                                                         make_policy(PrecisionPolicy::force_f32),
+                                                         DynamicBufferLayout::soa,
+                                                         0u);
+    buffer.resize(2u);
+    TypedHostDynamicBufferView<HostDynamicRecord> view{buffer};
+
+    const auto lhs = make_record(7.0f);
+    const auto rhs = make_record(27.0f);
+    view.write(0u, lhs);
+    view.write(1u, rhs);
+    auto direction_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<1u>, FieldComponentStep<2u>>();
+    view.patch(1u, direction_path, real{88.0f});
+
+    const auto read_lhs = view.read(0u);
+    const auto read_rhs = view.read(1u);
+    CHECK(equal_record(read_lhs, lhs, 1e-6f));
+    CHECK(close_float(static_cast<float>(read_rhs.leaf.direction[2u]), 88.0f));
+    CHECK(close_float(static_cast<float>(read_rhs.leaf.direction[0u]), static_cast<float>(rhs.leaf.direction[0u]), 1e-6f));
+    CHECK(close_float(static_cast<float>(read_rhs.leaf.direction[1u]), static_cast<float>(rhs.leaf.direction[1u]), 1e-6f));
+    return true;
+}
+
 }// namespace
 
 int main() {
     bool passed = true;
     passed = test_layout_plan_reports_expected_types() && passed;
+    passed = test_aos_record_and_field_regions_report_expected_offsets() && passed;
+    passed = test_soa_record_segments_follow_expected_layout() && passed;
+    passed = test_soa_field_segments_report_expected_offsets() && passed;
     passed = test_host_buffer_record_round_trip() && passed;
     passed = test_single_element_external_read_write_usage() && passed;
     passed = test_typed_view_single_element_read_write_usage() && passed;
     passed = test_field_patch_updates_target_bytes() && passed;
     passed = test_append_and_upload_view() && passed;
     passed = test_soa_write_all_and_upload_view() && passed;
+    passed = test_soa_record_round_trip() && passed;
+    passed = test_soa_field_patch_updates_target_value() && passed;
+    passed = test_soa_field_patch_is_isolated_per_record() && passed;
+    passed = test_soa_append_round_trip() && passed;
+    passed = test_typed_view_soa_read_write_patch_usage() && passed;
     if (!passed) {
         std::cerr << "host dynamic buffer test failed" << std::endl;
         return 1;

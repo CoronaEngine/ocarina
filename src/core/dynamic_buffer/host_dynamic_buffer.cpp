@@ -37,8 +37,30 @@ void HostDynamicBuffer::mark_dirty(ByteRegion region) noexcept {
     dirty_range_.merge(region);
 }
 
-void HostDynamicBuffer::validate_aos_record_access() const noexcept {
-    OC_ASSERT(layout_plan_.layout() == DynamicBufferLayout::aos);
+void HostDynamicBuffer::gather_segments(span<const ByteSegment> segments,
+                                        HostByteBuffer &dst) const noexcept {
+    for (const auto &segment : segments) {
+        if (segment.empty()) {
+            continue;
+        }
+        dst.copy_from(storage_.data() + segment.storage_begin_byte,
+                      segment.size_in_bytes,
+                      segment.staging_begin_byte);
+    }
+}
+
+void HostDynamicBuffer::scatter_segments(const HostByteBuffer &src,
+                                        span<const ByteSegment> segments) noexcept {
+    for (const auto &segment : segments) {
+        if (segment.empty()) {
+            continue;
+        }
+        storage_.copy_from(src.data() + segment.staging_begin_byte,
+                           segment.size_in_bytes,
+                           segment.storage_begin_byte);
+        mark_dirty(ByteRegion{segment.storage_begin_byte,
+                              segment.storage_begin_byte + segment.size_in_bytes});
+    }
 }
 
 void HostDynamicBuffer::reserve(size_t element_capacity) {
