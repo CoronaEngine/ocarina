@@ -4,6 +4,7 @@
 
 #include "dynamic_buffer_layout_plan.h"
 
+#include "core/dynamic_buffer/dynamic_buffer_layout_common.h"
 #include "core/type_desc.h"
 
 namespace ocarina {
@@ -15,50 +16,20 @@ namespace {
     return (value + alignment - 1u) / alignment * alignment;
 }
 
-[[nodiscard]] size_t resolved_runtime_alignment(const Type *type) noexcept;
-
 [[nodiscard]] size_t resolved_runtime_size(const Type *type) noexcept {
     OC_ASSERT(type != nullptr);
-    if (type->is_scalar()) {
-        return type->size();
-    }
-    if (type->is_vector()) {
-        return resolved_runtime_size(type->element()) *
-               (type->dimension() == 3 ? 4u : static_cast<size_t>(type->dimension()));
-    }
-    if (type->is_matrix() || type->is_array()) {
-        return resolved_runtime_size(type->element()) * static_cast<size_t>(type->dimension());
-    }
-    if (type->is_structure()) {
-        size_t size = 0u;
-        for (const auto *member : type->members()) {
-            size = align_up_size(size, resolved_runtime_alignment(member));
-            size += resolved_runtime_size(member);
-        }
-        return align_up_size(size, resolved_runtime_alignment(type));
-    }
-    return type->size();
+    return detail::recursive_resolved_size<detail::RuntimeTypeLayoutAdapter>(
+        type,
+        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
+                               .allow_real_in_storage = true});
 }
 
 [[nodiscard]] size_t resolved_runtime_alignment(const Type *type) noexcept {
     OC_ASSERT(type != nullptr);
-    if (type->is_scalar()) {
-        return type->alignment();
-    }
-    if (type->is_vector()) {
-        return resolved_runtime_size(type);
-    }
-    if (type->is_matrix() || type->is_array()) {
-        return resolved_runtime_alignment(type->element());
-    }
-    if (type->is_structure()) {
-        size_t align = 0u;
-        for (const auto *member : type->members()) {
-            align = std::max(align, resolved_runtime_alignment(member));
-        }
-        return align;
-    }
-    return type->alignment();
+    return detail::recursive_resolved_alignment<detail::RuntimeTypeLayoutAdapter>(
+        type,
+        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
+                               .allow_real_in_storage = true});
 }
 
 [[nodiscard]] string resolve_real_description(StoragePrecisionPolicy policy) noexcept {
@@ -222,23 +193,14 @@ namespace {
 }
 
 [[nodiscard]] size_t soa_storage_bytes(const Type *type, size_t count) noexcept {
-    if (type == nullptr || count == 0u) {
+    if (type == nullptr) {
         return 0u;
     }
-    if (type->is_scalar() || type->is_vector()) {
-        return resolved_runtime_size(type) * count;
-    }
-    if (type->is_matrix() || type->is_array()) {
-        return type->dimension() * soa_storage_bytes(type->element(), count);
-    }
-    if (type->is_structure()) {
-        size_t total = 0u;
-        for (const auto *member : type->members()) {
-            total += soa_storage_bytes(member, count);
-        }
-        return total;
-    }
-    return type->size() * count;
+    return detail::recursive_soa_storage_bytes<detail::RuntimeTypeLayoutAdapter>(
+        type,
+        count,
+        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
+                               .allow_real_in_storage = true});
 }
 
 struct FieldRegionInfo {

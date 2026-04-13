@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "core/dynamic_buffer/dynamic_buffer_layout_common.h"
 #include "core/dynamic_buffer/host_byte_buffer.h"
 #include "core/precision_policy.h"
 #include "core/type.h"
@@ -59,136 +60,21 @@ void for_each_array_element(Func &&func) noexcept {
 }
 
 template<typename T>
-[[nodiscard]] size_t resolved_struct_size(StoragePrecisionPolicy policy) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    size_t size = 0u;
-    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t) {
-        using member_t = std::remove_cvref_t<decltype(member_tag)>;
-        size = align_up_size(size, resolved_alignment<member_t>(policy));
-        size += resolved_size<member_t>(policy);
-    });
-    return align_up_size(size, resolved_alignment<raw_t>(policy));
-}
-
-template<typename T>
-[[nodiscard]] size_t resolved_struct_alignment(StoragePrecisionPolicy policy) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    size_t align = 0u;
-    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t) {
-        using member_t = std::remove_cvref_t<decltype(member_tag)>;
-        align = std::max(align, resolved_alignment<member_t>(policy));
-    });
-    return align;
-}
-
-template<typename T>
-[[nodiscard]] size_t resolved_scalar_size(StoragePrecisionPolicy policy,
-                                          bool direct_array_element = false) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    if constexpr (is_real_v<raw_t>) {
-        return store_real_as_f32(policy, direct_array_element) ? sizeof(float) : sizeof(uint16_t);
-    } else if constexpr (is_half_v<raw_t>) {
-        return sizeof(uint16_t);
-    } else {
-        return sizeof(raw_t);
-    }
-}
-
-template<typename T>
-[[nodiscard]] size_t resolved_scalar_alignment(StoragePrecisionPolicy policy,
-                                               bool direct_array_element = false) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    if constexpr (is_real_v<raw_t>) {
-        return store_real_as_f32(policy, direct_array_element) ? alignof(float) : alignof(uint16_t);
-    } else if constexpr (is_half_v<raw_t>) {
-        return alignof(uint16_t);
-    } else {
-        return alignof(raw_t);
-    }
-}
-
-template<typename T>
-[[nodiscard]] size_t resolved_matrix_size(StoragePrecisionPolicy policy) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    constexpr size_t rows = matrix_dimension_v<raw_t>;
-    using column_t = tuple_element_t<0, struct_member_tuple_t<raw_t>>;
-    constexpr size_t cols = vector_dimension_v<column_t>;
-    using scalar_t = type_element_t<column_t>;
-    if constexpr (is_real_v<scalar_t>) {
-        if (policy.policy == PrecisionPolicy::force_f16) {
-            return sizeof(Matrix<half, rows, cols>);
-        }
-        return sizeof(Matrix<float, rows, cols>);
-    } else {
-        return sizeof(Matrix<scalar_t, rows, cols>);
-    }
-}
-
-template<typename T>
-[[nodiscard]] size_t resolved_matrix_alignment(StoragePrecisionPolicy policy) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    constexpr size_t rows = matrix_dimension_v<raw_t>;
-    using column_t = tuple_element_t<0, struct_member_tuple_t<raw_t>>;
-    constexpr size_t cols = vector_dimension_v<column_t>;
-    using scalar_t = type_element_t<column_t>;
-    if constexpr (is_real_v<scalar_t>) {
-        if (policy.policy == PrecisionPolicy::force_f16) {
-            return alignof(Matrix<half, rows, cols>);
-        }
-        return alignof(Matrix<float, rows, cols>);
-    } else {
-        return alignof(Matrix<scalar_t, rows, cols>);
-    }
-}
-
-template<typename T>
 [[nodiscard]] size_t resolved_size(StoragePrecisionPolicy policy) noexcept {
     using raw_t = std::remove_cvref_t<T>;
-    if constexpr (is_scalar_v<raw_t>) {
-        return resolved_scalar_size<raw_t>(policy, false);
-    } else if constexpr (is_vector_v<raw_t>) {
-        using element_t = type_element_t<raw_t>;
-        constexpr size_t dim = vector_dimension_v<raw_t>;
-        return resolved_scalar_size<element_t>(policy, false) * (dim == 3 ? 4 : dim);
-    } else if constexpr (is_matrix_v<raw_t>) {
-        return resolved_matrix_size<raw_t>(policy);
-    } else if constexpr (is_array_v<raw_t>) {
-        using element_t = array_element_t<raw_t>;
-        constexpr size_t dim = array_dimension_v<raw_t>;
-        return resolved_size_in_context<element_t>(policy, true) * dim;
-    } else if constexpr (is_struct_v<raw_t>) {
-        return resolved_struct_size<raw_t>(policy);
-    } else {
-        static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::resolved_size");
-    }
+    return recursive_resolved_size<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, policy);
 }
 
 template<typename T>
 [[nodiscard]] size_t resolved_alignment(StoragePrecisionPolicy policy) noexcept {
     using raw_t = std::remove_cvref_t<T>;
-    if constexpr (is_scalar_v<raw_t>) {
-        return resolved_scalar_alignment<raw_t>(policy, false);
-    } else if constexpr (is_vector_v<raw_t>) {
-        return resolved_size<raw_t>(policy);
-    } else if constexpr (is_matrix_v<raw_t>) {
-        return resolved_matrix_alignment<raw_t>(policy);
-    } else if constexpr (is_array_v<raw_t>) {
-        using element_t = array_element_t<raw_t>;
-        return resolved_alignment_in_context<element_t>(policy, true);
-    } else if constexpr (is_struct_v<raw_t>) {
-        return resolved_struct_alignment<raw_t>(policy);
-    } else {
-        static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::resolved_alignment");
-    }
+    return recursive_resolved_alignment<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, policy);
 }
 
 template<typename T>
 [[nodiscard]] size_t resolved_size_in_context(StoragePrecisionPolicy policy,
                                               bool direct_array_element) noexcept {
     (void)direct_array_element;
-    if constexpr (is_real_v<T>) {
-        return resolved_scalar_size<T>(policy, false);
-    }
     return resolved_size<T>(policy);
 }
 
@@ -196,9 +82,6 @@ template<typename T>
 [[nodiscard]] size_t resolved_alignment_in_context(StoragePrecisionPolicy policy,
                                                    bool direct_array_element) noexcept {
     (void)direct_array_element;
-    if constexpr (is_real_v<T>) {
-        return resolved_scalar_alignment<T>(policy, false);
-    }
     return resolved_alignment<T>(policy);
 }
 
@@ -534,12 +417,7 @@ template<typename T>
 [[nodiscard]] size_t soa_struct_like_storage_bytes(size_t count,
                                                    StoragePrecisionPolicy policy) noexcept {
     using raw_t = std::remove_cvref_t<T>;
-    size_t total = 0u;
-    for_each_struct_member_type<raw_t>([&](auto member_tag, size_t) {
-        using member_t = std::remove_cvref_t<decltype(member_tag)>;
-        total += soa_storage_bytes<member_t>(count, policy);
-    });
-    return total;
+    return recursive_soa_storage_bytes<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, count, policy);
 }
 
 template<typename T, typename Getter>
@@ -597,17 +475,8 @@ template<typename T>
                                        StoragePrecisionPolicy policy,
                                        bool direct_array_element) noexcept {
     using raw_t = std::remove_cvref_t<T>;
-    if constexpr (is_soa_atomic_v<raw_t>) {
-        return count * resolved_size_in_context<raw_t>(policy, direct_array_element);
-    } else if constexpr (is_matrix_v<raw_t>) {
-        return soa_struct_like_storage_bytes<raw_t>(count, policy);
-    } else if constexpr (is_array_v<raw_t>) {
-        return array_dimension_v<raw_t> * soa_storage_bytes<array_element_t<raw_t>>(count, policy, true);
-    } else if constexpr (is_struct_v<raw_t>) {
-        return soa_struct_like_storage_bytes<raw_t>(count, policy);
-    } else {
-        static_assert(always_false_v<raw_t>, "Unsupported type for DynamicBufferLayoutCodec::soa_storage_bytes");
-    }
+    (void)direct_array_element;
+    return recursive_soa_storage_bytes<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, count, policy);
 }
 
 }// namespace detail
