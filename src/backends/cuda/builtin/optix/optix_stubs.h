@@ -210,7 +210,7 @@ inline OptixResult optixInitWithHandle( void** handlePtr )
     if( !*handlePtr )
         return OPTIX_ERROR_LIBRARY_NOT_FOUND;
 
-    void* symbol = GetProcAddress( (HMODULE)*handlePtr, "optixQueryFunctionTable" );
+    auto symbol = GetProcAddress( (HMODULE)*handlePtr, "optixQueryFunctionTable" );
     if( !symbol )
         return OPTIX_ERROR_ENTRY_SYMBOL_NOT_FOUND;
 #else
@@ -223,7 +223,7 @@ inline OptixResult optixInitWithHandle( void** handlePtr )
         return OPTIX_ERROR_ENTRY_SYMBOL_NOT_FOUND;
 #endif
 
-    OptixQueryFunctionTable_t* optixQueryFunctionTable = (OptixQueryFunctionTable_t*)symbol;
+    auto optixQueryFunctionTable = reinterpret_cast<OptixQueryFunctionTable_t*>(symbol);
 
     return optixQueryFunctionTable( OPTIX_ABI_VERSION, 0, 0, 0, &g_optixFunctionTable, sizeof( g_optixFunctionTable ) );
 }

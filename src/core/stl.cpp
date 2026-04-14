@@ -31,17 +31,12 @@ void clear_directory(const std::filesystem::path &dir_path) {
 }
 
 std::string wstring_to_string(const wchar_t *source) {
-    size_t len = std::wcstombs(nullptr, source, 0) + 1;
-    // Creating a buffer to hold the multibyte string
-    char *buffer = new char[len];
-
-    // Converting wstring to string
-    std::wcstombs(buffer, source, len);
-
-    // Creating std::string from char buffer
-    std::string str(buffer);
-
-    delete[] buffer;
+    size_t len = 0;
+    wcstombs_s(&len, nullptr, 0, source, 0);
+    std::string str(len > 0 ? len - 1 : 0, '\0');
+    if (len > 0) {
+        wcstombs_s(&len, str.data(), str.size() + 1, source, str.size());
+    }
     return str;
 }
 

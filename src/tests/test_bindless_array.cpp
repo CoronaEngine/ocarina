@@ -303,8 +303,8 @@ int test_bindless_buffer_inline_retrieve_regression(Device &device, Stream &stre
         src.upload_immediately(host_src.data());
 
         BindlessArray bindless = device.create_bindless_array();
-        bindless.emplace(src);
-        bindless.emplace(dst);
+        (void)bindless.emplace(src);
+        (void)bindless.emplace(dst);
 
         vector<CapturedLog> logs;
         Env::printer().reset();

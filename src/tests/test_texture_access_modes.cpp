@@ -253,7 +253,7 @@ int test_bindless_texture_param(Device &device, Stream &stream) {
     tex.upload_immediately(host_src.data());
 
     BindlessArray bindless = device.create_bindless_array();
-    bindless.emplace(tex);
+    (void)bindless.emplace(tex);
 
     Kernel kernel = [&](BindlessArrayVar ba, BufferVar<float4> output, Uint n) {
         Uint index = dispatch_id();

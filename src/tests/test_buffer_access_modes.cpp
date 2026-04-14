@@ -168,8 +168,8 @@ int test_bindless_buffer_param(Device &device, Stream &stream) {
     src.upload_immediately(host_src.data());
 
     BindlessArray bindless = device.create_bindless_array();
-    bindless.emplace(src);
-    bindless.emplace(dst);
+    (void)bindless.emplace(src);
+    (void)bindless.emplace(dst);
 
     Kernel kernel = [&](BindlessArrayVar ba, Uint n) {
         Uint index = dispatch_id();

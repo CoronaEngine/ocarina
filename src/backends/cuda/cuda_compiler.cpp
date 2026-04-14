@@ -24,7 +24,7 @@ std::string get_cuda_path() {
     }
 
     std::string defaultPath = "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA";
-    if (access(defaultPath.c_str(), 0) == 0) {
+    if (_access(defaultPath.c_str(), 0) == 0) {
         return defaultPath;
     }
     return "";
