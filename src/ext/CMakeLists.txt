@@ -37,8 +37,6 @@ set_target_properties(spdlog PROPERTIES
         UNITY_BUILD FALSE)
 target_link_libraries(spdlog PUBLIC fmt::fmt-header-only)
 target_link_libraries(ocarina-ext PUBLIC spdlog)
-
-add_subdirectory(glfw)
 add_subdirectory(stblib)
 
 add_subdirectory(SDL)
