@@ -21,9 +21,8 @@ struct DynamicLogicalLeaf {
     Vector<real, 3> direction;
 };
 
-OC_MAKE_STRUCT_REFLECTION(DynamicLogicalLeaf, roughness, direction)
-OC_MAKE_STRUCT_DESC(DynamicLogicalLeaf, roughness, direction)
-OC_MAKE_STRUCT_IS_DYNAMIC(DynamicLogicalLeaf, roughness, direction)
+OC_STRUCT(, DynamicLogicalLeaf, roughness, direction) {
+};
 
 struct DynamicLogicalRecord {
     DynamicLogicalLeaf leaf;
@@ -32,9 +31,25 @@ struct DynamicLogicalRecord {
     float extra;
 };
 
-OC_MAKE_STRUCT_REFLECTION(DynamicLogicalRecord, leaf, weights, basis, extra)
-OC_MAKE_STRUCT_DESC(DynamicLogicalRecord, leaf, weights, basis, extra)
-OC_MAKE_STRUCT_IS_DYNAMIC(DynamicLogicalRecord, leaf, weights, basis, extra)
+OC_STRUCT(, DynamicLogicalRecord, leaf, weights, basis, extra) {
+};
+
+struct DynamicKernelLogicalRecord {
+    Vector<real, 4> lhs;
+    Vector<real, 4> rhs;
+};
+
+OC_STRUCT(, DynamicKernelLogicalRecord, lhs, rhs) {
+};
+
+using DynamicKernelRecordF16 = storage_t<DynamicKernelLogicalRecord, PrecisionPolicy::force_f16>;
+using DynamicKernelRecordF32 = storage_t<DynamicKernelLogicalRecord, PrecisionPolicy::force_f32>;
+
+OC_STRUCT(, DynamicKernelRecordF16, lhs, rhs) {
+};
+
+OC_STRUCT(, DynamicKernelRecordF32, lhs, rhs) {
+};
 
 struct DynamicResolvedRecord {
     float4 lhs{};
@@ -89,6 +104,46 @@ namespace {
     value.lhs += make_float4(2.f, 4.f, 6.f, 8.f);
     value.rhs -= make_float4(1.f, 3.f, 5.f, 7.f);
     return value;
+}
+
+[[nodiscard]] DynamicKernelLogicalRecord make_kernel_logical_record(uint index) {
+    float base = static_cast<float>(index * 8u);
+    return {
+        .lhs = Vector<real, 4>{real{base + 1.0f}, real{base + 2.0f}, real{base + 3.0f}, real{base + 4.0f}},
+        .rhs = Vector<real, 4>{real{base + 5.0f}, real{base + 6.0f}, real{base + 7.0f}, real{base + 8.0f}}};
+}
+
+[[nodiscard]] DynamicKernelLogicalRecord transform_kernel_logical_record(DynamicKernelLogicalRecord value) {
+    value.lhs[0] = real{static_cast<float>(value.lhs[0]) + 2.0f};
+    value.lhs[1] = real{static_cast<float>(value.lhs[1]) + 4.0f};
+    value.lhs[2] = real{static_cast<float>(value.lhs[2]) + 6.0f};
+    value.lhs[3] = real{static_cast<float>(value.lhs[3]) + 8.0f};
+    value.rhs[0] = real{static_cast<float>(value.rhs[0]) - 1.0f};
+    value.rhs[1] = real{static_cast<float>(value.rhs[1]) - 3.0f};
+    value.rhs[2] = real{static_cast<float>(value.rhs[2]) - 5.0f};
+    value.rhs[3] = real{static_cast<float>(value.rhs[3]) - 7.0f};
+    return value;
+}
+
+[[nodiscard]] float precision_epsilon(PrecisionPolicy policy) {
+    return policy == PrecisionPolicy::force_f16 ? 1e-2f : 1e-5f;
+}
+
+[[nodiscard]] const char *precision_suffix(PrecisionPolicy policy) {
+    return policy == PrecisionPolicy::force_f16 ? "f16" : "f32";
+}
+
+template<PrecisionPolicy policy>
+using kernel_record_t = storage_t<DynamicKernelLogicalRecord, policy>;
+
+[[nodiscard]] bool equal_kernel_logical_record(const DynamicKernelLogicalRecord &lhs,
+                                               const DynamicKernelLogicalRecord &rhs,
+                                               float eps) {
+    for (size_t index = 0; index < 4u; ++index) {
+        CHECK(std::abs(static_cast<float>(lhs.lhs[index]) - static_cast<float>(rhs.lhs[index])) <= eps);
+        CHECK(std::abs(static_cast<float>(lhs.rhs[index]) - static_cast<float>(rhs.rhs[index])) <= eps);
+    }
+    return true;
 }
 
 [[nodiscard]] bool close_float(float lhs, float rhs, float eps = 1e-5f) {
@@ -264,20 +319,23 @@ namespace {
     return true;
 }
 
-[[nodiscard]] bool test_dynamic_buffer_bindless_aos_access(Device &device) {
+template<PrecisionPolicy precision>
+[[nodiscard]] bool test_dynamic_buffer_bindless_aos_access_impl(Device &device) {
     constexpr uint count = 12u;
-    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
-    auto src = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
-                                                                   count,
-                                                                   "test_dynamic_buffer_bindless_src");
-    auto dst = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
-                                                                   count,
-                                                                   "test_dynamic_buffer_bindless_dst");
+    using ResolvedRecord = kernel_record_t<precision>;
+    StoragePrecisionPolicy policy = make_policy(precision);
+    string suffix = precision_suffix(precision);
+    auto src = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_bindless_src_" + suffix);
+    auto dst = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_bindless_dst_" + suffix);
 
-    vector<DynamicResolvedRecord> host_src(count);
-    vector<DynamicResolvedRecord> host_dst(count);
+    vector<DynamicKernelLogicalRecord> host_src(count);
+    vector<DynamicKernelLogicalRecord> host_dst(count);
     for (uint index = 0u; index < count; ++index) {
-        host_src[index] = make_resolved_record(index);
+        host_src[index] = make_kernel_logical_record(index);
     }
     src.upload_immediately(host_src.data(), host_src.size());
 
@@ -288,9 +346,9 @@ namespace {
     Kernel kernel = [&](Uint n) {
         Uint index = dispatch_id();
         $if(index < n) {
-            auto src_view = bindless.byte_buffer_var(src_slot).template aos_view_var<DynamicResolvedRecord>();
-            auto dst_view = bindless.byte_buffer_var(dst_slot).template aos_view_var<DynamicResolvedRecord>();
-            Var<DynamicResolvedRecord> value = src_view.read(index);
+            auto src_view = bindless.byte_buffer_var(src_slot).template aos_view_var<ResolvedRecord>();
+            auto dst_view = bindless.byte_buffer_var(dst_slot).template aos_view_var<ResolvedRecord>();
+            Var<ResolvedRecord> value = src_view.read(index);
             value.lhs += make_float4(2.f, 4.f, 6.f, 8.f);
             value.rhs -= make_float4(1.f, 3.f, 5.f, 7.f);
             dst_view.write(index, value);
@@ -298,7 +356,7 @@ namespace {
     };
 
     Stream stream = device.create_stream();
-    auto shader = device.compile(kernel, "test_dynamic_buffer_bindless_aos_access");
+    auto shader = device.compile(kernel, string{"test_dynamic_buffer_bindless_aos_access_"} + suffix);
     stream << bindless->upload_buffer_handles(false)
            << shader(count).dispatch(count)
            << dst.download(host_dst.data())
@@ -306,34 +364,49 @@ namespace {
            << commit();
 
     for (uint index = 0u; index < count; ++index) {
-        CHECK(equal_resolved_record(host_dst[index], transform_resolved_record(host_src[index])));
+        CHECK(equal_kernel_logical_record(host_dst[index],
+                                          transform_kernel_logical_record(host_src[index]),
+                                          precision_epsilon(precision)));
     }
     return true;
 }
 
-[[nodiscard]] bool test_dynamic_buffer_capture_aos_access(Device &device) {
-    constexpr uint count = 8u;
-    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
-    auto src = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
-                                                                   count,
-                                                                   "test_dynamic_buffer_capture_aos_src");
-    auto dst = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
-                                                                   count,
-                                                                   "test_dynamic_buffer_capture_aos_dst");
+[[nodiscard]] bool test_dynamic_buffer_bindless_aos_access(Device &device, PrecisionPolicy precision) {
+    switch (precision) {
+        case PrecisionPolicy::force_f16:
+            return test_dynamic_buffer_bindless_aos_access_impl<PrecisionPolicy::force_f16>(device);
+        case PrecisionPolicy::force_f32:
+            return test_dynamic_buffer_bindless_aos_access_impl<PrecisionPolicy::force_f32>(device);
+    }
+    return false;
+}
 
-    vector<DynamicResolvedRecord> host_src(count);
-    vector<DynamicResolvedRecord> host_dst(count);
+template<PrecisionPolicy precision>
+[[nodiscard]] bool test_dynamic_buffer_capture_aos_access_impl(Device &device) {
+    constexpr uint count = 8u;
+    using ResolvedRecord = kernel_record_t<precision>;
+    StoragePrecisionPolicy policy = make_policy(precision);
+    string suffix = precision_suffix(precision);
+    auto src = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_capture_aos_src_" + suffix);
+    auto dst = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_capture_aos_dst_" + suffix);
+
+    vector<DynamicKernelLogicalRecord> host_src(count);
+    vector<DynamicKernelLogicalRecord> host_dst(count);
     for (uint index = 0u; index < count; ++index) {
-        host_src[index] = make_resolved_record(index + 10u);
+        host_src[index] = make_kernel_logical_record(index + 10u);
     }
     src.upload_immediately(host_src.data(), host_src.size());
 
     Kernel kernel = [&]() {
         Uint index = dispatch_id();
         $if(index < count) {
-            auto src_view = src.aos_view_var<DynamicResolvedRecord>();
-            auto dst_view = dst.aos_view_var<DynamicResolvedRecord>();
-            Var<DynamicResolvedRecord> value = src_view.read(index);
+            auto src_view = src.aos_view_var<ResolvedRecord>();
+            auto dst_view = dst.aos_view_var<ResolvedRecord>();
+            Var<ResolvedRecord> value = src_view.read(index);
             value.lhs += make_float4(2.f, 4.f, 6.f, 8.f);
             value.rhs -= make_float4(1.f, 3.f, 5.f, 7.f);
             dst_view.write(index, value);
@@ -341,41 +414,56 @@ namespace {
     };
 
     Stream stream = device.create_stream();
-    auto shader = device.compile(kernel, "test_dynamic_buffer_capture_aos_access");
+    auto shader = device.compile(kernel, string{"test_dynamic_buffer_capture_aos_access_"} + suffix);
     stream << shader().dispatch(count)
            << dst.download(host_dst.data())
            << synchronize()
            << commit();
 
     for (uint index = 0u; index < count; ++index) {
-        CHECK(equal_resolved_record(host_dst[index], transform_resolved_record(host_src[index])));
+        CHECK(equal_kernel_logical_record(host_dst[index],
+                                          transform_kernel_logical_record(host_src[index]),
+                                          precision_epsilon(precision)));
     }
     return true;
 }
 
-[[nodiscard]] bool test_dynamic_buffer_capture_soa_access(Device &device) {
-    constexpr uint count = 8u;
-    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
-    auto src = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
-                                                                   count,
-                                                                   "test_dynamic_buffer_capture_soa_src");
-    auto dst = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
-                                                                   count,
-                                                                   "test_dynamic_buffer_capture_soa_dst");
+[[nodiscard]] bool test_dynamic_buffer_capture_aos_access(Device &device, PrecisionPolicy precision) {
+    switch (precision) {
+        case PrecisionPolicy::force_f16:
+            return test_dynamic_buffer_capture_aos_access_impl<PrecisionPolicy::force_f16>(device);
+        case PrecisionPolicy::force_f32:
+            return test_dynamic_buffer_capture_aos_access_impl<PrecisionPolicy::force_f32>(device);
+    }
+    return false;
+}
 
-    vector<DynamicResolvedRecord> host_src(count);
-    vector<DynamicResolvedRecord> host_dst(count);
+template<PrecisionPolicy precision>
+[[nodiscard]] bool test_dynamic_buffer_capture_soa_access_impl(Device &device) {
+    constexpr uint count = 8u;
+    using ResolvedRecord = kernel_record_t<precision>;
+    StoragePrecisionPolicy policy = make_policy(precision);
+    string suffix = precision_suffix(precision);
+    auto src = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_capture_soa_src_" + suffix);
+    auto dst = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_capture_soa_dst_" + suffix);
+
+    vector<DynamicKernelLogicalRecord> host_src(count);
+    vector<DynamicKernelLogicalRecord> host_dst(count);
     for (uint index = 0u; index < count; ++index) {
-        host_src[index] = make_resolved_record(index + 20u);
+        host_src[index] = make_kernel_logical_record(index + 20u);
     }
     src.upload_immediately(host_src.data(), host_src.size(), DynamicBufferLayout::SOA);
 
     Kernel kernel = [&]() {
         Uint index = dispatch_id();
         $if(index < count) {
-            auto src_view = src.soa_view_var<DynamicResolvedRecord>();
-            auto dst_view = dst.soa_view_var<DynamicResolvedRecord>();
-            Var<DynamicResolvedRecord> value = src_view.read(index);
+            auto src_view = src.soa_view_var<ResolvedRecord>();
+            auto dst_view = dst.soa_view_var<ResolvedRecord>();
+            Var<ResolvedRecord> value = src_view.read(index);
             value.lhs += make_float4(2.f, 4.f, 6.f, 8.f);
             value.rhs -= make_float4(1.f, 3.f, 5.f, 7.f);
             dst_view.write(index, value);
@@ -383,16 +471,28 @@ namespace {
     };
 
     Stream stream = device.create_stream();
-    auto shader = device.compile(kernel, "test_dynamic_buffer_capture_soa_access");
+    auto shader = device.compile(kernel, string{"test_dynamic_buffer_capture_soa_access_"} + suffix);
     stream << shader().dispatch(count)
            << dst.download(host_dst.data(), true, DynamicBufferLayout::SOA)
            << synchronize()
            << commit();
 
     for (uint index = 0u; index < count; ++index) {
-        CHECK(equal_resolved_record(host_dst[index], transform_resolved_record(host_src[index])));
+        CHECK(equal_kernel_logical_record(host_dst[index],
+                                          transform_kernel_logical_record(host_src[index]),
+                                          precision_epsilon(precision)));
     }
     return true;
+}
+
+[[nodiscard]] bool test_dynamic_buffer_capture_soa_access(Device &device, PrecisionPolicy precision) {
+    switch (precision) {
+        case PrecisionPolicy::force_f16:
+            return test_dynamic_buffer_capture_soa_access_impl<PrecisionPolicy::force_f16>(device);
+        case PrecisionPolicy::force_f32:
+            return test_dynamic_buffer_capture_soa_access_impl<PrecisionPolicy::force_f32>(device);
+    }
+    return false;
 }
 
 [[nodiscard]] bool test_dynamic_buffer_async_upload_round_trip(Device &device) {
@@ -465,15 +565,18 @@ namespace {
 int main() {
     RHIContext &context = RHIContext::instance();
     Device device = context.create_device("cuda");
+    constexpr auto kernel_precisions = std::array{PrecisionPolicy::force_f16, PrecisionPolicy::force_f32};
 
     bool passed = true;
     passed = test_dynamic_buffer_matches_host_bytes(device) && passed;
     passed = test_typed_dynamic_buffer_logical_round_trip(device) && passed;
     passed = test_typed_dynamic_buffer_view_aos_round_trip(device) && passed;
     passed = test_typed_dynamic_buffer_view_soa_round_trip(device) && passed;
-    passed = test_dynamic_buffer_capture_aos_access(device) && passed;
-    passed = test_dynamic_buffer_capture_soa_access(device) && passed;
-    passed = test_dynamic_buffer_bindless_aos_access(device) && passed;
+    for (auto precision : kernel_precisions) {
+        passed = test_dynamic_buffer_capture_aos_access(device, precision) && passed;
+        passed = test_dynamic_buffer_capture_soa_access(device, precision) && passed;
+        passed = test_dynamic_buffer_bindless_aos_access(device, precision) && passed;
+    }
     passed = test_dynamic_buffer_async_upload_round_trip(device) && passed;
     passed = test_dynamic_buffer_direct_host_sync(device) && passed;
 

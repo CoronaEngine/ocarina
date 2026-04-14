@@ -2,8 +2,6 @@
 // Created by Zero on 06/08/2022.
 //
 
-#pragma once
-
 #include "vulkan_rendertarget.h"
 #include "vulkan_device.h"
 #include "util.h"

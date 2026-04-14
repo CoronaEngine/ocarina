@@ -2,8 +2,6 @@
 // Created by Zero on 06/06/2022.
 //
 
-#pragma once
-
 #include "vertex_buffer.h"
 #include "device.h"
 
@@ -21,7 +19,7 @@ VertexBuffer *VertexBuffer::create_vertex_buffer(Device::Impl *device) {
 
 void VertexBuffer::add_vertex_stream(VertexAttributeType::Enum type, uint32_t count, uint32_t stride, const void *data) {
     if (vertex_streams_[(uint8_t)type].data) {
-        delete[] vertex_streams_[(uint8_t)type].data;
+        delete[] static_cast<uint8_t *>(vertex_streams_[(uint8_t)type].data);
     }
 
     if (data != nullptr)

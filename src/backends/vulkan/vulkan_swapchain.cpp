@@ -1,4 +1,3 @@
-#pragma once
 #include "vulkan_swapchain.h"
 #include "vulkan_device.h"
 #include "util.h"

@@ -5,6 +5,7 @@ target_include_directories(ocarina-include INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
 
 add_subdirectory(ext)
 add_subdirectory(core)
+add_subdirectory(math)
 add_subdirectory(ast)
 add_subdirectory(dsl)
 add_subdirectory(generator)
@@ -19,6 +20,7 @@ endif ()
 add_library(ocarina-native INTERFACE)
 target_link_libraries(ocarina-native INTERFACE
         ocarina-ext
+    ocarina-math
         ocarina-dsl
         ocarina-ast
         ocarina-generator

@@ -2,8 +2,6 @@
 // Created by Zero on 06/06/2022.
 //
 
-#pragma once
-
 #include "primitive.h"
 #include "rhi/vertex_buffer.h"
 #include "rhi/index_buffer.h"

@@ -9,4 +9,4 @@ set_target_properties(ocarina-generator PROPERTIES
         WINDOWS_EXPORT_ALL_SYMBOLS ON
         FOLDER "ocarina")
 target_compile_definitions(ocarina-generator PRIVATE OC_GENERATOR_EXPORT_DLL=1)
-target_link_libraries(ocarina-generator PUBLIC ocarina-ast)
+target_link_libraries(ocarina-generator PUBLIC ocarina-ast ocarina-math)

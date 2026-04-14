@@ -120,7 +120,7 @@ static constexpr float cast_to_float(T val) {
     }
 }
 
-class half {
+class OC_MATH_API half {
 private:
     uint16_t bits_;
 
@@ -141,7 +141,7 @@ public:
     OC_HALF_CAST_OP(double)
     OC_HALF_CAST_OP(bool)
 #undef OC_HALF_CAST_OP
-
+    operator real() const;
     constexpr half &operator=(const half &other) {
         if (this != &other) {
             bits_ = other.bits_;

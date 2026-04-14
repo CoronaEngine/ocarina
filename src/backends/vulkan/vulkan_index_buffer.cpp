@@ -1,4 +1,3 @@
-#pragma once
 #include "vulkan_index_buffer.h"
 #include "vulkan_device.h"
 #include "vulkan_driver.h"

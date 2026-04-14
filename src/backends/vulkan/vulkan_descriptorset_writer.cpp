@@ -2,8 +2,6 @@
 // Created by Zero on 06/08/2022.
 //
 
-#pragma once
-
 #include "vulkan_descriptorset_writer.h"
 #include "vulkan_shader.h"
 #include "vulkan_buffer.h"

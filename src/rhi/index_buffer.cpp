@@ -2,8 +2,6 @@
 // Created by Zero on 06/06/2022.
 //
 
-#pragma once
-
 #include "index_buffer.h"
 #include "device.h"
 

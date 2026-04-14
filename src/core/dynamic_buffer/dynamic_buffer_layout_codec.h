@@ -112,7 +112,7 @@ template<size_t I, typename T>
 }
 
 template<typename T>
-[[nodiscard]] constexpr bool is_soa_atomic_v = is_scalar_v<T> || is_vector_v<T>;
+constexpr bool is_soa_atomic_v = is_scalar_v<T> || is_vector_v<T>;
 
 template<typename Member, typename T>
 [[nodiscard]] decltype(auto) runtime_member_ref(T &value, size_t index) noexcept {

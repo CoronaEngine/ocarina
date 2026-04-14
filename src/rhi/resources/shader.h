@@ -233,7 +233,7 @@ public:
     [[nodiscard]] bool has_function() const noexcept { return function_ != nullptr; }
     [[nodiscard]] ShaderInvoke operator()(prototype_to_shader_invocation_t<Args> &&...args) const noexcept {
         auto argument_list = make_shared<ShaderArgumentPack>(function_.get());
-        (*argument_list << ... << OC_FORWARD(args));
+        ((void)(*argument_list << OC_FORWARD(args)), ...);
         for (const auto &var : function_->captured_resources()) {
             argument_list->push_memory_block(var.block());
         }

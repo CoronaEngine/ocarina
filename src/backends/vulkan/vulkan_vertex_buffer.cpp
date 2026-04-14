@@ -1,4 +1,3 @@
-#pragma once
 #include "vulkan_vertex_buffer.h"
 #include "vulkan_shader.h"
 #include "vulkan_device.h"

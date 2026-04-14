@@ -6,6 +6,7 @@
 
 #include "core/stl.h"
 #include "basic_traits.h"
+#include "half.h"
 
 namespace ocarina {
 
@@ -61,6 +62,7 @@ public:
     OC_REAL_CAST_OP(short)
     OC_REAL_CAST_OP(size_t)
     OC_REAL_CAST_OP(int)
+    OC_REAL_CAST_OP(half)
     OC_REAL_CAST_OP(bool)
     OC_REAL_CAST_OP(uint)
 #undef OC_REAL_CAST_OP
