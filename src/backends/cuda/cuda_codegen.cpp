@@ -337,7 +337,7 @@ void CUDACodegen::_emit_function(const Function &f) noexcept {
         return;
     }
     if (f.is_kernel()) {
-        const auto policy = global_storage_policy();
+        const auto policy = f.storage_policy();
         _emit_comment(ocarina::format("compile policy: policy={}, allow_real_in_storage={}",
                                       precision_policy_name(policy.policy),
                                       policy.allow_real_in_storage ? "true" : "false"));

@@ -248,7 +248,8 @@ void Function::return_(const Expression *expression) noexcept {
 }
 
 Function::Function(Function::Tag tag) noexcept
-    : tag_(tag) {}
+        : tag_(tag),
+            storage_policy_(global_storage_policy()) {}
 
 const ScopeStmt *Function::body() const noexcept {
     return &body_;
@@ -578,6 +579,9 @@ uint64_t Function::compute_hash() const noexcept {
     for_each_header([&](string_view fn) {
         ret = hash64(ret, fn);
     });
+    ret = hash64(ret,
+                 static_cast<uint>(storage_policy_.policy),
+                 static_cast<uint>(storage_policy_.allow_real_in_storage));
     ret = hash64(tag(), ret);
     for (const Variable &v : arguments_) {
         ret = hash64(ret, v.hash());

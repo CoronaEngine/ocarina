@@ -8,6 +8,7 @@
 #include "core/stl.h"
 #include "core/header.h"
 #include "core/type.h"
+#include "core/type_system/precision_policy.h"
 #include "expression.h"
 #include "statement.h"
 #include "ast_node.h"
@@ -103,6 +104,7 @@ private:
     mutable bool raytracing_{false};
     mutable uint3 block_dim_{make_uint3(0)};
     mutable uint3 grid_dim_{make_uint3(0)};
+    StoragePrecisionPolicy storage_policy_{};
 
     friend class FunctionCorrector;
     friend class Variable;
@@ -280,6 +282,8 @@ public:
         block_dim_ = block_dim;
     }
     [[nodiscard]] bool has_configure() const noexcept { return all(block_dim() != 0u) || all(grid_dim() != 0u); }
+    void set_storage_policy(StoragePrecisionPolicy policy) noexcept { storage_policy_ = policy; }
+    [[nodiscard]] StoragePrecisionPolicy storage_policy() const noexcept { return storage_policy_; }
     [[nodiscard]] ocarina::string func_name(uint64_t ext_hash = 0u, string ext_name = "") const noexcept;
     void assign(const Expression *lhs, const Expression *rhs) noexcept;
     void return_(const Expression *expression) noexcept;
