@@ -27,6 +27,9 @@ public:
     shader_buffer_argument(const Buffer<T> &buffer) noexcept
         : descriptor_(buffer.descriptor()) {}
 
+    shader_buffer_argument(const BufferView<T> &buffer) noexcept
+        : descriptor_(buffer.descriptor()) {}
+
     template<typename U>
     shader_buffer_argument(const DynamicBuffer<U> &buffer) noexcept {
         const bool logical_match = buffer.logical_type() == Type::of<T>();

@@ -254,10 +254,10 @@ using resolved_storage_by_tag_t = detail::resolved_storage_impl_t<T, F>;
 #define OC_STORAGE_MEMBER_ASSIGN_DECODE(member, storage) result.member = ocarina::detail::from_storage_impl_value<std::remove_cvref_t<decltype(this_type::member)>, storage>(value.member);
 
 template<typename T, PrecisionPolicy Policy>
-struct resolved_storage_type;
+struct resolved_storage;
 
 template<typename T, PrecisionPolicy Policy>
-using resolved_storage_type_t = typename resolved_storage_type<std::remove_cvref_t<T>, Policy>::type;
+using resolved_storage_type_t = typename resolved_storage<std::remove_cvref_t<T>, Policy>::type;
 
 template<typename T, PrecisionPolicy Policy>
 using storage_t = resolved_storage_type_t<T, Policy>;
@@ -374,7 +374,7 @@ struct resolved_storage_impl<ocarina::tuple<T...>, F> {
 /// External policy wrapper that selects the concrete storage tag first,
 /// then forwards to the internal F-based implementation layer.
 template<typename T, PrecisionPolicy Policy>
-struct resolved_storage_type : detail::resolved_storage_impl<std::remove_cvref_t<T>, resolved_storage_tag_t<T, Policy>> {};
+struct resolved_storage : detail::resolved_storage_impl<std::remove_cvref_t<T>, resolved_storage_tag_t<T, Policy>> {};
 
 namespace detail {
 
