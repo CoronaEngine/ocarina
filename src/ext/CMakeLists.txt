@@ -39,7 +39,6 @@ target_link_libraries(spdlog PUBLIC fmt::fmt-header-only)
 target_link_libraries(ocarina-ext PUBLIC spdlog)
 
 add_subdirectory(glfw)
-add_subdirectory(imgui)
 add_subdirectory(stblib)
 
 add_subdirectory(SDL)
