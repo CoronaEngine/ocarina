@@ -29,4 +29,7 @@ struct StoragePrecisionPolicy {
     bool allow_real_in_storage = false;
 };
 
+void set_global_storage_policy(StoragePrecisionPolicy policy) noexcept;
+[[nodiscard]] StoragePrecisionPolicy global_storage_policy() noexcept;
+
 }// namespace ocarina

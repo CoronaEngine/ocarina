@@ -6,6 +6,17 @@
 
 namespace ocarina {
 
+namespace {
+
+StoragePrecisionPolicy &global_storage_policy_impl() noexcept {
+    static StoragePrecisionPolicy policy{
+        .policy = PrecisionPolicy::force_f32,
+        .allow_real_in_storage = true};
+    return policy;
+}
+
+}// namespace
+
 /// Decision matrix:
 ///  SM      | fp16        | VRAM tight | Result
 ///  < 53    | none        | -          | force_f32
@@ -27,6 +38,14 @@ PrecisionPolicy DevicePrecisionCaps::recommend_policy(
         return PrecisionPolicy::force_f16;
     }
     return PrecisionPolicy::force_f32;
+}
+
+void set_global_storage_policy(StoragePrecisionPolicy policy) noexcept {
+    global_storage_policy_impl() = policy;
+}
+
+StoragePrecisionPolicy global_storage_policy() noexcept {
+    return global_storage_policy_impl();
 }
 
 }// namespace ocarina
