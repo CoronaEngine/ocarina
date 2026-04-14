@@ -17,13 +17,49 @@ namespace ocarina {
 
 namespace detail {
 template<typename T>
+class shader_buffer_argument {
+private:
+    BufferDesc<T> descriptor_{};
+
+public:
+    shader_buffer_argument() = default;
+
+    shader_buffer_argument(const Buffer<T> &buffer) noexcept
+        : descriptor_(buffer.descriptor()) {}
+
+    template<typename U>
+    shader_buffer_argument(const DynamicBuffer<U> &buffer) noexcept {
+        const bool logical_match = buffer.logical_type() == Type::of<T>();
+        const bool storage_match = buffer.element_stride() == sizeof(T) &&
+                                   buffer.element_alignment() == alignof(T);
+        OC_ASSERT(logical_match || storage_match);
+        descriptor_.handle = reinterpret_cast<T *>(buffer.handle());
+        descriptor_.offset = 0u;
+        descriptor_.size = buffer.size();
+    }
+
+    [[nodiscard]] MemoryBlock memory_block() const noexcept {
+        return {&descriptor_, sizeof(descriptor_), alignof(decltype(descriptor_)), sizeof(handle_ty)};
+    }
+};
+
+template<typename T>
+struct is_shader_buffer_argument : std::false_type {};
+
+template<typename T>
+struct is_shader_buffer_argument<shader_buffer_argument<T>> : std::true_type {};
+
+template<typename T>
+constexpr bool is_shader_buffer_argument_v = is_shader_buffer_argument<std::remove_cvref_t<T>>::value;
+
+template<typename T>
 struct prototype_to_shader_invocation {
     using type = const T &;
 };
 
 template<typename T>
 struct prototype_to_shader_invocation<Buffer<T>> {
-    using type = const Buffer<T> &;
+    using type = shader_buffer_argument<T>;
 };
 
 template<>
@@ -139,7 +175,7 @@ public:
                 const Elm &elm = reinterpret_cast<const Elm &>(*addr);
                 *this << elm;
             });
-        } else if constexpr (is_buffer_v<T> || is_buffer_proxy_v<T>) {
+        } else if constexpr (is_buffer_v<T> || is_buffer_proxy_v<T> || detail::is_shader_buffer_argument_v<T>) {
             _encode_buffer(OC_FORWARD(arg));
         } else if constexpr (is_texture3d_v<T>) {
             _encode_texture3d(OC_FORWARD(arg));

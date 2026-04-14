@@ -5,9 +5,22 @@
 #include "cuda_codegen.h"
 #include "ast/expression.h"
 #include "core/util/util.h"
+#include "core/type_system/precision_policy.h"
 #include "cuda_device.h"
 
 namespace ocarina {
+
+namespace {
+[[nodiscard]] string_view precision_policy_name(PrecisionPolicy policy) noexcept {
+    switch (policy) {
+        case PrecisionPolicy::force_f16:
+            return "force_f16";
+        case PrecisionPolicy::force_f32:
+            return "force_f32";
+    }
+    return "unknown";
+}
+}// namespace
 
 void CUDACodegen::visit(const CallExpr *expr) noexcept {
     auto emit_act_arguments = [this](const CallExpr *expr) {
@@ -322,6 +335,13 @@ void CUDACodegen::_emit_raytracing_param(const Function &f) noexcept {
 void CUDACodegen::_emit_function(const Function &f) noexcept {
     if (has_generated(&f)) {
         return;
+    }
+    if (f.is_kernel()) {
+        const auto policy = global_storage_policy();
+        _emit_comment(ocarina::format("compile policy: policy={}, allow_real_in_storage={}",
+                                      precision_policy_name(policy.policy),
+                                      policy.allow_real_in_storage ? "true" : "false"));
+        _emit_newline();
     }
     switch (f.tag()) {
         case Function::Tag::KERNEL: current_scratch() << "extern \"C\" __global__ "; break;

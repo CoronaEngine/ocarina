@@ -10,11 +10,11 @@
 #include "core/util/util.h"
 #include "dsl/dsl.h"
 
-#ifndef OCARINA_CUDA_USE_FLOAT32
-#define OCARINA_CUDA_USE_FLOAT32 1
-#endif
-
 namespace ocarina {
+
+namespace {
+constexpr unsigned cuda_codegen_cache_version = 1u;
+}// namespace
 
 std::string get_cuda_path() {
     char cudaPath[1024];
@@ -43,8 +43,10 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
     int ver_minor = 0;
     OC_NVRTC_CHECK(nvrtcVersion(&ver_major, &ver_minor));
     int nvrtc_version = ver_major * 10000 + ver_minor * 100;
+    const auto storage_policy = global_storage_policy();
+    const int use_float32 = storage_policy.policy == PrecisionPolicy::force_f16 ? 0 : 1;
     auto nvrtc_option = fmt::format("-DLC_NVRTC_VERSION={}", nvrtc_version);
-    auto real_option = fmt::format("-DOCARINA_CUDA_USE_FLOAT32={}", OCARINA_CUDA_USE_FLOAT32 ? 1 : 0);
+    auto real_option = fmt::format("-DOCARINA_CUDA_USE_FLOAT32={}", use_float32);
     std::vector header_names{"cuda_device_std.h", "cuda_device_scalar.h", "cuda_device_vector.h",
                              "cuda_device_matrix.h", "cuda_device_builtin.h", "cuda_vector_func.h",
                              "cuda_device_math.h", "cuda_matrix_func.h", "cuda_device_resource.h"};
@@ -103,7 +105,12 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
         compile_option.push_back(includes.back().c_str());
     }
 
-    uint64_t ext_hash = hash64(hash64_list(compile_option), hash64_list(header_sources_ptr));
+    uint64_t policy_hash = hash64(static_cast<uint>(storage_policy.policy),
+                                  static_cast<uint>(storage_policy.allow_real_in_storage));
+    uint64_t ext_hash = hash64(hash64_list(compile_option),
+                               hash64_list(header_sources_ptr),
+                               policy_hash,
+                               cuda_codegen_cache_version);
 
     auto compile = [&](const string &cu, const string &fn, int sm) -> string {
         TIMER_TAG(compile, "compile " + fn);
