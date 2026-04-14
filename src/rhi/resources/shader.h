@@ -79,9 +79,10 @@ using prototype_to_shader_invocation_t = typename detail::prototype_to_shader_in
 
 class OC_RHI_API ShaderArgumentPack {
 private:
-    static constexpr auto Size = 200;
+    static constexpr auto Size = 256;
     ocarina::vector<void *> args_;
     ocarina::array<std::byte, Size> pod_data_{};
+    ocarina::list<ocarina::vector<std::byte>> dynamic_pod_data_;
     const Function *function_{};
     size_t cursor_{};
     ocarina::vector<MemoryBlock> blocks_;
@@ -89,14 +90,23 @@ private:
 
 private:
     template<typename T>
-    requires std::is_trivially_destructible_v<T>
+    requires std::is_trivially_copyable_v<std::remove_cvref_t<T>>
     void _encode_pod_type(T &&arg) noexcept {
-        cursor_ = mem_offset(cursor_, alignof(T));
-        auto dst_ptr = pod_data_.data() + cursor_;
-        cursor_ += sizeof(T);
-        OC_ASSERT(cursor_ < Size);
-        oc_memcpy(dst_ptr, &arg, sizeof(T));
-        push_memory_block({dst_ptr, sizeof(T), alignof(T), Type::of<T>()->max_member_size()});
+        using raw_t = std::remove_cvref_t<T>;
+        auto aligned_cursor = mem_offset(cursor_, alignof(raw_t));
+        auto end_cursor = aligned_cursor + sizeof(raw_t);
+        const std::byte *dst_ptr = nullptr;
+        if (end_cursor <= Size) {
+            dst_ptr = pod_data_.data() + aligned_cursor;
+            cursor_ = end_cursor;
+            oc_memcpy(const_cast<std::byte *>(dst_ptr), addressof(arg), sizeof(raw_t));
+        } else {
+            auto &storage = dynamic_pod_data_.emplace_back();
+            storage.resize(sizeof(raw_t));
+            oc_memcpy(storage.data(), addressof(arg), sizeof(raw_t));
+            dst_ptr = storage.data();
+        }
+        push_memory_block({dst_ptr, sizeof(raw_t), alignof(raw_t), Type::of<raw_t>()->max_member_size()});
     }
 
     template<typename TBuffer>
@@ -119,6 +129,7 @@ public:
         cursor_ = 0;
         args_.clear();
         blocks_.clear();
+        dynamic_pod_data_.clear();
     }
 
     [[nodiscard]] const Function &function() const noexcept {
