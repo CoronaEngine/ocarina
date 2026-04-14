@@ -418,4 +418,12 @@ public:
     OC_MAKE_CMD_COMMON_FUNC(HostFunctionCommand)
 };
 
+/// Retain one or more copyable host-side objects until the command reaches execution.
+template<typename... Args>
+requires(sizeof...(Args) > 0u && (std::is_copy_constructible_v<std::remove_cvref_t<Args>> && ...))
+[[nodiscard]] HostFunctionCommand *keep_alive(bool async, Args &&...args) noexcept {
+    return HostFunctionCommand::create(async,
+                                       [...objects = std::remove_cvref_t<Args>(OC_FORWARD(args))] {});
+}
+
 }// namespace ocarina

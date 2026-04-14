@@ -564,8 +564,7 @@ public:
         auto bytes = detail::encode_dynamic_buffer_values(values, policy(), layout);
         CommandBatch commands;
         commands << view_.upload(bytes->data(), async);
-        /// Keep the encoded staging bytes alive until the deferred upload command executes.
-        commands << HostFunctionCommand::create(async, [bytes] {});
+        commands << keep_alive(async, bytes);
         return commands;
     }
 
@@ -684,8 +683,7 @@ public:
                                       DynamicBufferLayout layout = DynamicBufferLayout::AOS) {
         auto bytes = detail::encode_dynamic_buffer_values(values, policy(), layout);
         CommandBatch commands = buffer_.upload(bytes->data(), bytes->size(), async);
-        /// Keep the encoded staging bytes alive until the deferred upload command executes.
-        commands << HostFunctionCommand::create(async, [bytes] {});
+        commands << keep_alive(async, bytes);
         return commands;
     }
 
