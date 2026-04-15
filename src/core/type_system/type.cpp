@@ -477,6 +477,18 @@ uint64_t Type::compute_hash() const noexcept {
     return hash64(description_);
 }
 
+void Type::set_description(ocarina::string_view desc) noexcept {
+    description_ = desc;
+    update_name(desc);
+}
+
+void Type::update_member_name(const string_view *names, int num) const noexcept {
+    member_name_.clear();
+    for (int i = 0; i < num; ++i) {
+        member_name_.push_back(names[i]);
+    }
+}
+
 void Type::update_name(ocarina::string_view desc) noexcept {
     switch (tag_) {
         case Tag::NONE:

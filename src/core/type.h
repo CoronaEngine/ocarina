@@ -719,16 +719,8 @@ private:
 
 private:
     void update_name(ocarina::string_view desc) noexcept;
-    void set_description(ocarina::string_view desc) noexcept {
-        description_ = desc;
-        update_name(desc);
-    }
-    void update_member_name(const string_view *names, int num) noexcept {
-        member_name_.clear();
-        for (int i = 0; i < num; ++i) {
-            member_name_.push_back(names[i]);
-        }
-    }
+    void set_description(ocarina::string_view desc) noexcept;
+    void update_member_name(const string_view *names, int num) const noexcept;
 
 public:
     Type() = default;
@@ -777,7 +769,7 @@ public:
     [[nodiscard]] ocarina::string cname() const noexcept { return cname_; }
     void set_cname(string s) const noexcept;
     [[nodiscard]] ocarina::string simple_cname() const noexcept;
-    [[nodiscard]] constexpr int dimension() const noexcept { return dimension_; }
+    [[nodiscard]] constexpr uint dimension() const noexcept { return dimension_; }
     [[nodiscard]] ocarina::span<const Type *const> members() const noexcept;
     [[nodiscard]] const Type *element() const noexcept;
     [[nodiscard]] bool is_valid() const noexcept;
