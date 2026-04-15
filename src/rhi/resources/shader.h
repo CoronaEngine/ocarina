@@ -11,6 +11,7 @@
 #include "stream.h"
 #include "rhi/command.h"
 #include "core/concepts.h"
+#include "core/dynamic_buffer/dynamic_buffer_layout_codec.h"
 #include "core/util/util.h"
 
 namespace ocarina {
@@ -56,6 +57,55 @@ template<typename T>
 constexpr bool is_shader_buffer_argument_v = is_shader_buffer_argument<std::remove_cvref_t<T>>::value;
 
 template<typename T>
+struct contains_real_argument;
+
+template<typename Tuple, size_t... Indices>
+[[nodiscard]] constexpr bool contains_real_argument_tuple_impl(std::index_sequence<Indices...>) noexcept {
+    return (contains_real_argument<tuple_element_t<Indices, Tuple>>::value || ...);
+}
+
+template<typename Tuple>
+struct contains_real_argument_tuple
+    : std::bool_constant<contains_real_argument_tuple_impl<Tuple>(std::make_index_sequence<tuple_size_v<Tuple>>{})> {};
+
+template<typename T, int Category>
+struct contains_real_argument_impl : std::false_type {};
+
+template<typename T>
+struct contains_real_argument_impl<T, 1> : std::true_type {};
+
+template<typename T>
+struct contains_real_argument_impl<T, 2> : contains_real_argument<type_element_t<std::remove_cvref_t<T>>> {};
+
+template<typename T>
+struct contains_real_argument_impl<T, 3>
+    : contains_real_argument<tuple_element_t<0, struct_member_tuple_t<std::remove_cvref_t<T>>>> {};
+
+template<typename T>
+struct contains_real_argument_impl<T, 4> : contains_real_argument<array_element_t<std::remove_cvref_t<T>>> {};
+
+template<typename T>
+struct contains_real_argument_impl<T, 5>
+    : contains_real_argument_tuple<struct_member_tuple_t<std::remove_cvref_t<T>>> {};
+
+template<typename T>
+struct contains_real_argument
+    : contains_real_argument_impl<T,
+                                  is_real_v<std::remove_cvref_t<T>> ? 1 :
+                                  is_vector_v<std::remove_cvref_t<T>> ? 2 :
+                                  is_matrix_v<std::remove_cvref_t<T>> ? 3 :
+                                  is_array_v<std::remove_cvref_t<T>> ? 4 :
+                                  is_struct_v<std::remove_cvref_t<T>> ? 5 : 0> {};
+
+template<typename T>
+constexpr bool contains_real_argument_v = contains_real_argument<T>::value;
+
+[[nodiscard]] inline StoragePrecisionPolicy shader_argument_encoding_policy(StoragePrecisionPolicy policy) noexcept {
+    policy.allow_real_in_storage = true;
+    return policy;
+}
+
+template<typename T>
 struct prototype_to_shader_invocation {
     using type = const T &;
 };
@@ -96,20 +146,42 @@ private:
     requires std::is_trivially_copyable_v<std::remove_cvref_t<T>>
     void _encode_pod_type(T &&arg) noexcept {
         using raw_t = std::remove_cvref_t<T>;
-        auto aligned_cursor = mem_offset(cursor_, alignof(raw_t));
-        auto end_cursor = aligned_cursor + sizeof(raw_t);
+        size_t encoded_size = sizeof(raw_t);
+        size_t encoded_alignment = alignof(raw_t);
+        size_t encoded_max_member_size = Type::of<raw_t>()->max_member_size();
+        HostByteBuffer encoded_bytes{};
+        if constexpr (detail::contains_real_argument_v<raw_t>) {
+            auto policy = detail::shader_argument_encoding_policy(function_->storage_policy());
+            encoded_size = detail::resolved_size<raw_t>(policy);
+            encoded_alignment = detail::resolved_alignment<raw_t>(policy);
+            encoded_bytes.resize(encoded_size);
+            detail::encode_aos_value<raw_t>(encoded_bytes, 0u, arg, policy, false);
+            if (const Type *resolved_type = Type::resolve(Type::of<raw_t>(), policy)) {
+                encoded_max_member_size = resolved_type->max_member_size();
+            }
+        }
+        auto aligned_cursor = mem_offset(cursor_, encoded_alignment);
+        auto end_cursor = aligned_cursor + encoded_size;
         const std::byte *dst_ptr = nullptr;
         if (end_cursor <= Size) {
             dst_ptr = pod_data_.data() + aligned_cursor;
             cursor_ = end_cursor;
-            oc_memcpy(const_cast<std::byte *>(dst_ptr), addressof(arg), sizeof(raw_t));
+            if constexpr (detail::contains_real_argument_v<raw_t>) {
+                oc_memcpy(const_cast<std::byte *>(dst_ptr), encoded_bytes.data(), encoded_size);
+            } else {
+                oc_memcpy(const_cast<std::byte *>(dst_ptr), addressof(arg), encoded_size);
+            }
         } else {
             auto &storage = dynamic_pod_data_.emplace_back();
-            storage.resize(sizeof(raw_t));
-            oc_memcpy(storage.data(), addressof(arg), sizeof(raw_t));
+            storage.resize(encoded_size);
+            if constexpr (detail::contains_real_argument_v<raw_t>) {
+                oc_memcpy(storage.data(), encoded_bytes.data(), encoded_size);
+            } else {
+                oc_memcpy(storage.data(), addressof(arg), encoded_size);
+            }
             dst_ptr = storage.data();
         }
-        push_memory_block({dst_ptr, sizeof(raw_t), alignof(raw_t), Type::of<raw_t>()->max_member_size()});
+        push_memory_block({dst_ptr, encoded_size, encoded_alignment, encoded_max_member_size});
     }
 
     template<typename TBuffer>
