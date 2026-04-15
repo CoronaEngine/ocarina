@@ -44,13 +44,13 @@ namespace {
         const auto *resolved = type_registry().resolve_type(type, policy);
         return resolved == nullptr ? 0u : resolved->alignment();
     }
+    if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
+        const auto *resolved = type_registry().resolve_type(type, policy);
+        return resolved == nullptr ? 0u : resolved->alignment();
+    }
     if (type->is_scalar() || type->is_byte_buffer() || type->is_texture() ||
         type->is_bindless_array() || type->is_accel()) {
         return type->alignment();
-    }
-    if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
-        const auto *elem = type_registry().resolve_type(type->element(), policy);
-        return elem == nullptr ? 0u : elem->alignment();
     }
     if (type->is_structure()) {
         size_t align = 0u;
