@@ -282,12 +282,15 @@ static bool test_array_and_resource_types() {
 
     const Type *texture2d_type = Type::from(TypeDesc<Texture2D>::description());
     CHECK(texture2d_type != nullptr);
+    CHECK(texture2d_type->is_texture());
     CHECK(texture2d_type->tag() == Type::Tag::TEXTURE2D);
     CHECK(texture2d_type->size() == sizeof(TextureDesc));
     CHECK(texture2d_type->alignment() == alignof(TextureDesc));
+    CHECK(Type::resolve(texture2d_type, StoragePrecisionPolicy{})->tag() == Type::Tag::TEXTURE2D);
 
     const Type *texture3d_type = Type::from(TypeDesc<Texture3D>::description());
     CHECK(texture3d_type != nullptr);
+    CHECK(texture3d_type->is_texture());
     CHECK(texture3d_type->tag() == Type::Tag::TEXTURE3D);
     CHECK(texture3d_type->size() == sizeof(TextureDesc));
     CHECK(texture3d_type->alignment() == alignof(TextureDesc));

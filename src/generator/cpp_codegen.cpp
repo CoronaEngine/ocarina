@@ -12,7 +12,8 @@ namespace detail {
 struct LiteralPrinter {
     using Scratch = Codegen::Scratch;
     Scratch &scratch;
-    explicit LiteralPrinter(Scratch &scratch) : scratch(scratch) {}
+    const Type *type{nullptr};
+    explicit LiteralPrinter(Scratch &scratch, const Type *type = nullptr) : scratch(scratch), type(type) {}
 
     template<typename T>
     requires(is_scalar_v<T> || is_vector_v<T>)
@@ -39,8 +40,9 @@ struct LiteralPrinter {
             }
         } else {
             static constexpr auto dim = ocarina::vector_dimension_v<T>;
-            auto printer = *this;
-            scratch << TYPE_PREFIX << Type::of<T>()->name() << "(";
+            const Type *vector_type = type == nullptr ? Type::of<T>() : type;
+            auto printer = LiteralPrinter{scratch, vector_type->element()};
+            scratch << TYPE_PREFIX << vector_type->name() << "(";
             for (int i = 0; i < dim; ++i) {
                 const char *token = i == dim - 1 ? ")" : ",";
                 printer(v[i]);
@@ -50,8 +52,9 @@ struct LiteralPrinter {
     }
     template<typename T, size_t N, size_t M>
     void operator()(Matrix<T, N, M> m) {
-        auto printer = *this;
-        scratch << TYPE_PREFIX << Type::of<Matrix<T, N, M>>()->name() << "(";
+        const Type *matrix_type = type == nullptr ? Type::of<Matrix<T, N, M>>() : type;
+        auto printer = LiteralPrinter{scratch, matrix_type->element()};
+        scratch << TYPE_PREFIX << matrix_type->name() << "(";
         for (int i = 0; i < M; ++i) {
             const char *token = i == M - 1 ? ")" : ",";
             printer(m[i]);
@@ -266,7 +269,7 @@ void CppCodegen::visit(const SubscriptExpr *expr) noexcept {
 
 void CppCodegen::visit(const LiteralExpr *expr) noexcept {
     ocarina::visit(
-        detail::LiteralPrinter(current_scratch()),
+    detail::LiteralPrinter(current_scratch(), expr->type()),
         expr->value());
 }
 

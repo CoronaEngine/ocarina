@@ -11,7 +11,8 @@ namespace {
 
 void on_type_access_bridge(const Type *type) noexcept {
     if (auto f = Function::current(); f != nullptr && type->is_structure()) {
-        f->add_used_structure(type);
+        const Type *resolved = Type::resolve(type, f->storage_policy());
+        f->add_used_structure(resolved == nullptr ? type : resolved);
     }
 }
 
