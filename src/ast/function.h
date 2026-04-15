@@ -111,6 +111,8 @@ private:
 
 private:
     static stack_type &_function_stack() noexcept;
+    [[nodiscard]] const Type *resolve_ast_type(const Type *type) const noexcept;
+    [[nodiscard]] ocarina::list<CallExpr::Template> resolve_ast_templates(ocarina::list<CallExpr::Template> t_args) const noexcept;
 
     [[nodiscard]] uint _next_variable_uid() noexcept;
     void mark_variable_usage(uint uid, Usage usage) noexcept;
@@ -223,7 +225,7 @@ public:
     void for_each_header(Func &&func) const noexcept {
         std::for_each(headers_.begin(), headers_.end(), OC_FORWARD(func));
     }
-    void add_used_structure(const Type *type) noexcept { used_struct_.add(type); }
+    void add_used_structure(const Type *type) noexcept { used_struct_.add(resolve_ast_type(type)); }
     [[nodiscard]] const Usage &variable_usage(uint uid) const noexcept;
     [[nodiscard]] Usage &variable_usage(uint uid) noexcept;
     [[nodiscard]] const Variable::Data &variable_data(uint uid) const noexcept;

@@ -95,13 +95,17 @@ template<bool Raytracing, PrecisionPolicy precision>
     StoragePrecisionPolicy previous_policy = global_storage_policy();
     set_global_storage_policy(policy);
 
+    Callable callable = [](Var<real> bias_value, Var<ShaderParamRecord> param_value) {
+        return make_float4(cast<float>(bias_value + param_value.leaf.roughness),
+                           cast<float>(param_value.leaf.uv.x + param_value.weights[0]),
+                           cast<float>(param_value.leaf.uv.y + param_value.weights[1]),
+                           param_value.extra);
+    };
+
     Kernel kernel = [&](Var<real> bias_value, Var<ShaderParamRecord> param_value, BufferVar<float4> output_buffer) {
         Uint index = dispatch_id();
         $if(index == 0u) {
-            Float4 value = make_float4(cast<float>(bias_value + param_value.leaf.roughness),
-                                       cast<float>(param_value.leaf.uv.x + param_value.weights[0]),
-                                       cast<float>(param_value.leaf.uv.y + param_value.weights[1]),
-                                       param_value.extra);
+            Float4 value = callable(bias_value, param_value);
             output_buffer.write(0u, value);
         };
     };

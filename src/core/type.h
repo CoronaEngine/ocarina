@@ -670,7 +670,7 @@ OC_CORE_API void register_type_system_callbacks(TypeSystemCallbacks callbacks) n
 
 }// namespace detail
 
-class Type : public concepts::Noncopyable, public Hashable {
+class Type final : public concepts::Noncopyable, public Hashable {
 public:
     enum struct Tag : uint32_t {
         BOOL,
@@ -740,9 +740,22 @@ public:
     [[nodiscard]] static auto of(T &&) noexcept { return of<std::remove_cvref_t<T>>(); }
     [[nodiscard]] static const Type *resolve(const Type *type,
                                              StoragePrecisionPolicy policy) noexcept;
+    [[nodiscard]] static const Type *resolve(const Type *type) noexcept {
+        return Type::resolve(type, global_storage_policy());
+    }
+    [[nodiscard]] const Type *resolve(StoragePrecisionPolicy policy) const noexcept {
+        return Type::resolve(this, policy);
+    }
+    [[nodiscard]] const Type *resolve() const noexcept {
+        return Type::resolve(this);
+    }
     template<typename T>
     [[nodiscard]] static const Type *resolve(StoragePrecisionPolicy policy) noexcept {
-        return resolve(of<T>(), policy);
+        return Type::resolve(of<T>(), policy);
+    }
+    template<typename T>
+    [[nodiscard]] static const Type *resolve() noexcept {
+        return Type::resolve(of<T>());
     }
     [[nodiscard]] static const Type *from(ocarina::string_view description) noexcept;
     [[nodiscard]] static const Type *at(uint32_t uid) noexcept;

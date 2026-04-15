@@ -28,6 +28,22 @@ Function::stack_type &Function::_function_stack() noexcept {
     return ret;
 }
 
+const Type *Function::resolve_ast_type(const Type *type) const noexcept {
+    if (type == nullptr) {
+        return nullptr;
+    }
+    return Type::resolve(type, storage_policy_);
+}
+
+ocarina::list<CallExpr::Template> Function::resolve_ast_templates(ocarina::list<CallExpr::Template> t_args) const noexcept {
+    for (auto &t_arg : t_args) {
+        if (std::holds_alternative<const Type *>(t_arg)) {
+            t_arg = resolve_ast_type(std::get<const Type *>(t_arg));
+        }
+    }
+    return t_args;
+}
+
 void Function::correct() noexcept {
     TIMER(FunctionCorrect)
     FunctionCorrector().apply(this);
@@ -216,7 +232,7 @@ uint Function::_next_variable_uid() noexcept {
 }
 
 Variable Function::create_variable(const Type *type, Variable::Tag tag, std::string name, std::string suffix) noexcept {
-    Variable ret{this, type, tag, _next_variable_uid(), ocarina::move(name), ocarina::move(suffix)};
+    Variable ret{this, resolve_ast_type(type), tag, _next_variable_uid(), ocarina::move(name), ocarina::move(suffix)};
     return ret;
 }
 
@@ -242,7 +258,7 @@ const Variable::Data &Function::variable_data(ocarina::uint uid) const noexcept 
 
 void Function::return_(const Expression *expression) noexcept {
     if (expression) {
-        ret_ = expression->type();
+        ret_ = resolve_ast_type(expression->type());
     }
     create_statement<ReturnStmt>(expression);
 }
@@ -351,57 +367,60 @@ const RefExpr *Function::local(const Type *type, std::source_location location) 
 }
 
 const LiteralExpr *Function::literal(const Type *type, LiteralExpr::value_type value) noexcept {
-    return create_expression<LiteralExpr>(type, value);
+    return create_expression<LiteralExpr>(resolve_ast_type(type), value);
 }
 
 const UnaryExpr *Function::unary(const Type *type, UnaryOp op,
                                  const Expression *expression) noexcept {
-    return create_expression<UnaryExpr>(type, op, expression);
+    return create_expression<UnaryExpr>(resolve_ast_type(type), op, expression);
 }
 
 const BinaryExpr *Function::binary(const Type *type, BinaryOp op, const Expression *lhs,
                                    const Expression *rhs) noexcept {
-    return create_expression<BinaryExpr>(type, op, lhs, rhs);
+    return create_expression<BinaryExpr>(resolve_ast_type(type), op, lhs, rhs);
 }
 
 const ConditionalExpr *Function::conditional(const Type *type, const Expression *pred,
                                              const Expression *t,
                                              const Expression *f) noexcept {
-    return create_expression<ConditionalExpr>(type, pred, t, f);
+    return create_expression<ConditionalExpr>(resolve_ast_type(type), pred, t, f);
 }
 
 const CastExpr *Function::cast(const Type *type, CastOp op, const Expression *expression) noexcept {
-    return create_expression<CastExpr>(type, op, expression);
+    return create_expression<CastExpr>(resolve_ast_type(type), op, expression);
 }
 
 const SubscriptExpr *Function::subscript(const Type *type, const Expression *range,
                                          const Expression *index) noexcept {
-    return create_expression<SubscriptExpr>(type, range, index);
+    return create_expression<SubscriptExpr>(resolve_ast_type(type), range, index);
 }
 
 const SubscriptExpr *Function::subscript(const Type *type, const Expression *range,
                                          vector<const Expression *> indexes) noexcept {
-    return create_expression<SubscriptExpr>(type, range, indexes);
+    return create_expression<SubscriptExpr>(resolve_ast_type(type), range, indexes);
 }
 
 const MemberExpr *Function::swizzle(const Type *type, const Expression *obj, uint16_t mask,
                                     uint16_t swizzle_size) noexcept {
-    return create_expression<MemberExpr>(type, obj, mask, swizzle_size, create_variable(type, Variable::Tag::MEMBER));
+    const Type *resolved = resolve_ast_type(type);
+    return create_expression<MemberExpr>(resolved, obj, mask, swizzle_size, create_variable(resolved, Variable::Tag::MEMBER));
 }
 
 const MemberExpr *Function::member(const Type *type, const Expression *obj, int index) noexcept {
-    return create_expression<MemberExpr>(type, obj, index, 0, create_variable(type, Variable::Tag::MEMBER));
+    const Type *resolved = resolve_ast_type(type);
+    return create_expression<MemberExpr>(resolved, obj, index, 0, create_variable(resolved, Variable::Tag::MEMBER));
 }
 
 const CallExpr *Function::call(const Type *type, SP<const Function> func,
                                ocarina::list<const Expression *> args) noexcept {
     const Function *ptr = add_used_function(func);
-    return create_expression<CallExpr>(type, ptr, std::move(args));
+    const Type *resolved = ptr->return_type() != nullptr ? ptr->return_type() : resolve_ast_type(type);
+    return create_expression<CallExpr>(resolved, ptr, std::move(args));
 }
 
 const CallExpr *Function::call(const ocarina::Type *type, string_view func_name,
                                ocarina::list<const Expression *> args) noexcept {
-    return create_expression<CallExpr>(type, func_name, ocarina::move(args));
+    return create_expression<CallExpr>(resolve_ast_type(type), func_name, ocarina::move(args));
 }
 
 const CallExpr *Function::call_builtin(const Type *type, CallOp op,
@@ -412,7 +431,7 @@ const CallExpr *Function::call_builtin(const Type *type, CallOp op,
     } else if (to_underlying(op) >= to_underlying(CallOp::SYNCHRONIZE_BLOCK)) {
         set_raytracing(false);
     }
-    return create_expression<CallExpr>(type, op, std::move(args), std::move(t_args));
+    return create_expression<CallExpr>(resolve_ast_type(type), op, std::move(args), resolve_ast_templates(std::move(t_args)));
 }
 
 const CapturedResource &Function::get_captured_resource(const Type *type, Variable::Tag tag, MemoryBlock block) noexcept {
@@ -424,14 +443,16 @@ const CapturedResource &Function::get_captured_resource(const Type *type, Variab
         iter != captured_resources_.end()) {
         return *iter;
     }
-    const RefExpr *expr = _ref(create_variable(type, tag));
-    captured_resources_.emplace_back(expr, type, block);
+    const Type *resolved = resolve_ast_type(type);
+    const RefExpr *expr = _ref(create_variable(resolved, tag));
+    captured_resources_.emplace_back(expr, resolved, block);
     return captured_resources_.back();
 }
 
 const CapturedResource &Function::add_captured_resource(const Type *type, Variable::Tag tag, MemoryBlock block) noexcept {
-    const RefExpr *expr = _ref(create_variable(type, tag, "", "cap_res"));
-    captured_resources_.emplace_back(expr, type, block);
+    const Type *resolved = resolve_ast_type(type);
+    const RefExpr *expr = _ref(create_variable(resolved, tag, "", "cap_res"));
+    captured_resources_.emplace_back(expr, resolved, block);
     return captured_resources_.back();
 }
 
