@@ -257,16 +257,16 @@ template<typename T, PrecisionPolicy Policy>
 struct resolved_storage;
 
 template<typename T, PrecisionPolicy Policy>
-using resolved_storage_type_t = typename resolved_storage<std::remove_cvref_t<T>, Policy>::type;
+using resolved_storage_t = typename resolved_storage<std::remove_cvref_t<T>, Policy>::type;
 
 template<typename T, PrecisionPolicy Policy>
-using storage_t = resolved_storage_type_t<T, Policy>;
+using storage_t = resolved_storage_t<T, Policy>;
 
 template<PrecisionPolicy Policy, typename T>
-[[nodiscard]] resolved_storage_type_t<T, Policy> to_storage_value(const T &value) noexcept;
+[[nodiscard]] resolved_storage_t<T, Policy> to_storage_value(const T &value) noexcept;
 
 template<typename T, PrecisionPolicy Policy>
-[[nodiscard]] std::remove_cvref_t<T> from_storage_value(const resolved_storage_type_t<T, Policy> &value) noexcept;
+[[nodiscard]] std::remove_cvref_t<T> from_storage_value(const resolved_storage_t<T, Policy> &value) noexcept;
 
 /// Value-level implementation working directly with a concrete storage tag F.
 namespace detail {
@@ -393,12 +393,12 @@ template<typename T, typename F>
 }// namespace detail
 
 template<PrecisionPolicy Policy, typename T>
-[[nodiscard]] resolved_storage_type_t<T, Policy> to_storage_value(const T &value) noexcept {
+[[nodiscard]] resolved_storage_t<T, Policy> to_storage_value(const T &value) noexcept {
     return detail::to_storage_impl_value<resolved_storage_tag_t<T, Policy>>(value);
 }
 
 template<typename T, PrecisionPolicy Policy>
-[[nodiscard]] std::remove_cvref_t<T> from_storage_value(const resolved_storage_type_t<T, Policy> &value) noexcept {
+[[nodiscard]] std::remove_cvref_t<T> from_storage_value(const resolved_storage_t<T, Policy> &value) noexcept {
     return detail::from_storage_impl_value<T, resolved_storage_tag_t<T, Policy>>(value);
 }
 
