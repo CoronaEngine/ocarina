@@ -169,12 +169,12 @@ void TypeParser::parse_matrix_locked(Type *type, ocarina::string_view desc) noex
     type->tag_ = Type::Tag::MATRIX;
     auto [start, end] = bracket_matching_far(desc, '<', '>');
     auto dimension_str = desc.substr(start + 1, end - start - 1);
-    auto dims = string_split(dimension_str, ',');
-    auto type_str = dims[0];
-    int N = std::stoi(string(dims[1]));
-    int M = std::stoi(string(dims[2]));
-    type->dimension_ = N;
-    auto tmp_desc = ocarina::format("vector<{},{}>", type_str, M);
+    auto data = string_split(dimension_str, ',');
+    auto type_str = data[0];
+    int N = std::stoi(string(data[1]));
+    int M = std::stoi(string(data[2]));
+    type->dimension_ = M;
+    auto tmp_desc = ocarina::format("vector<{},{}>", type_str, N);
     type->members_.push_back(parse_type_locked(tmp_desc));
 
 #define OC_SIZE_ALIGN(TypeName, NN, MM)                       \
@@ -487,7 +487,7 @@ void Type::update_name(ocarina::string_view desc) noexcept {
             break;
         case Tag::MATRIX:
             name_ = ocarina::format("{}{}x{}", element()->element()->name(),
-                                    dimension(), element()->dimension());
+                                    element()->dimension(), dimension());
             break;
         default:
             name_ = desc;

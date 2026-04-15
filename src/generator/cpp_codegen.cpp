@@ -12,12 +12,12 @@ namespace detail {
 struct LiteralPrinter {
     using Scratch = Codegen::Scratch;
     Scratch &scratch;
-    const Type *type{nullptr};
-    explicit LiteralPrinter(Scratch &scratch, const Type *type = nullptr) : scratch(scratch), type(type) {}
+    const Type *type_{nullptr};
+    explicit LiteralPrinter(Scratch &scratch, const Type *type = nullptr) : scratch(scratch), type_(nullptr) {}
 
     template<typename T>
     requires(is_scalar_v<T> || is_vector_v<T>)
-    void operator()(T v) {
+    void operator()(T v, const Type *type = nullptr) {
         if constexpr (ocarina::is_scalar_v<T>) {
             if constexpr (ocarina::is_floating_point_v<T>) {
                 if (ocarina::isnan(v)) [[unlikely]] {
@@ -40,7 +40,7 @@ struct LiteralPrinter {
             }
         } else {
             static constexpr auto dim = ocarina::vector_dimension_v<T>;
-            const Type *vector_type = type == nullptr ? Type::of<T>() : type;
+            const Type *vector_type = type_ == nullptr ? Type::of<T>() : type_;
             auto printer = LiteralPrinter{scratch, vector_type->element()};
             scratch << TYPE_PREFIX << vector_type->name() << "(";
             for (int i = 0; i < dim; ++i) {
@@ -52,7 +52,7 @@ struct LiteralPrinter {
     }
     template<typename T, size_t N, size_t M>
     void operator()(Matrix<T, N, M> m) {
-        const Type *matrix_type = type == nullptr ? Type::of<Matrix<T, N, M>>() : type;
+        const Type *matrix_type = type_ == nullptr ? Type::of<Matrix<T, N, M>>() : type_;
         auto printer = LiteralPrinter{scratch, matrix_type->element()};
         scratch << TYPE_PREFIX << matrix_type->name() << "(";
         for (int i = 0; i < M; ++i) {
@@ -268,9 +268,8 @@ void CppCodegen::visit(const SubscriptExpr *expr) noexcept {
 }
 
 void CppCodegen::visit(const LiteralExpr *expr) noexcept {
-    ocarina::visit(
-    detail::LiteralPrinter(current_scratch(), expr->type()),
-        expr->value());
+    auto printer = detail::LiteralPrinter(current_scratch(), expr->type());
+    ocarina::visit(printer, expr->value());
 }
 
 void CppCodegen::visit(const RefExpr *expr) noexcept {
