@@ -758,6 +758,7 @@ public:
         return Type::resolve(of<T>());
     }
     [[nodiscard]] static const Type *from(ocarina::string_view description) noexcept;
+    [[nodiscard]] bool is_dynamic() const noexcept;
     [[nodiscard]] static const Type *at(uint32_t uid) noexcept;
     [[nodiscard]] static size_t count() noexcept;
     [[nodiscard]] static bool exists(ocarina::string_view description) noexcept;
@@ -795,7 +796,7 @@ public:
     [[nodiscard]] constexpr bool is_structure() const noexcept { return tag_ == Tag::STRUCTURE; }
     [[nodiscard]] constexpr bool is_buffer() const noexcept { return tag_ == Tag::BUFFER; }
     [[nodiscard]] constexpr bool is_byte_buffer() const noexcept { return tag_ == Tag::BYTE_BUFFER; }
-    [[nodiscard]] constexpr bool is_texture() const noexcept { return tag_ == Tag::TEXTURE3D; }
+    [[nodiscard]] constexpr bool is_texture() const noexcept { return tag_ == Tag::TEXTURE3D || tag_ == Tag::TEXTURE2D; }
     [[nodiscard]] constexpr bool is_bindless_array() const noexcept { return tag_ == Tag::BINDLESS_ARRAY; }
     [[nodiscard]] constexpr bool is_accel() const noexcept { return tag_ == Tag::ACCEL; }
     [[nodiscard]] constexpr bool is_resource() const noexcept {

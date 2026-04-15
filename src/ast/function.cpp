@@ -236,6 +236,10 @@ Variable Function::create_variable(const Type *type, Variable::Tag tag, std::str
     return ret;
 }
 
+void Function::add_used_structure(const ocarina::Type *type) noexcept {
+    used_struct_.add(type);
+}
+
 const Usage &Function::variable_usage(uint uid) const noexcept {
     OC_ASSERT(uid < variable_datas_.size());
     return variable_datas_[uid].usage;
@@ -264,8 +268,8 @@ void Function::return_(const Expression *expression) noexcept {
 }
 
 Function::Function(Function::Tag tag) noexcept
-        : tag_(tag),
-            storage_policy_(global_storage_policy()) {}
+    : tag_(tag),
+      storage_policy_(global_storage_policy()) {}
 
 const ScopeStmt *Function::body() const noexcept {
     return &body_;

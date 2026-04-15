@@ -28,7 +28,15 @@ void register_type_system_callbacks(TypeSystemCallbacks callbacks) noexcept {
 
 namespace {
 
-struct TypeDatabase {
+[[nodiscard]] uint64_t compute_type_hash(ocarina::string_view desc) noexcept;
+[[nodiscard]] string resolve_type_description_locked(const Type *type,
+                                                     StoragePrecisionPolicy policy) noexcept;
+[[nodiscard]] const Type *parse_type_locked(ocarina::string_view desc) noexcept;
+
+void notify_type_access(const Type *type) noexcept;
+
+class TypeDatabase {
+private:
     ocarina::vector<ocarina::unique_ptr<Type>> types;
     ocarina::unordered_map<uint64_t, const Type *> by_hash;
     struct ResolvedTypeKey {
@@ -52,6 +60,95 @@ struct TypeDatabase {
     };
     ocarina::unordered_map<ResolvedTypeKey, const Type *, ResolvedTypeKeyHash> resolved_types;
     std::recursive_mutex mutex;
+
+    [[nodiscard]] const Type *find_by_hash_locked(uint64_t hash) const noexcept {
+        if (auto iter = by_hash.find(hash); iter != by_hash.cend()) {
+            return iter->second;
+        }
+        return nullptr;
+    }
+
+    [[nodiscard]] const Type *emplace_type_locked(ocarina::unique_ptr<Type> type) noexcept {
+        const Type *ret = type.get();
+        by_hash.emplace(compute_type_hash(type->description()), ret);
+        types.push_back(ocarina::move(type));
+        return ret;
+    }
+
+public:
+    [[nodiscard]] bool register_type(ocarina::unique_ptr<Type> type) noexcept {
+        std::unique_lock lock{mutex};
+        const auto hash = type->hash();
+        if (by_hash.contains(hash)) {
+            return false;
+        }
+        const auto *ptr = type.get();
+        types.emplace_back(std::move(type));
+        by_hash.emplace(hash, ptr);
+        return true;
+    }
+
+    [[nodiscard]] const Type *find_by_hash(uint64_t hash) noexcept {
+        std::unique_lock lock{mutex};
+        return find_by_hash_locked(hash);
+    }
+
+    [[nodiscard]] const Type *emplace_type(ocarina::unique_ptr<Type> type) noexcept {
+        std::unique_lock lock{mutex};
+        return emplace_type_locked(ocarina::move(type));
+    }
+
+    [[nodiscard]] const Type *resolve_type(const Type *type,
+                                           StoragePrecisionPolicy policy) noexcept {
+        if (!type->is_dynamic()) {
+            return type;
+        }
+        std::unique_lock lock{mutex};
+        if (type == nullptr) {
+            return nullptr;
+        }
+        ResolvedTypeKey key{.logical_type = type,
+                            .policy = policy.policy,
+                            .allow_real_in_storage = policy.allow_real_in_storage};
+        if (auto iter = resolved_types.find(key); iter != resolved_types.cend()) {
+            notify_type_access(iter->second);
+            return iter->second;
+        }
+        const auto desc = resolve_type_description_locked(type, policy);
+        const auto *resolved = desc.empty() ? nullptr : Type::from(desc);
+        resolved_types.emplace(key, resolved);
+        return resolved;
+    }
+
+    [[nodiscard]] const Type *parse_type(std::string_view description) noexcept {
+        std::unique_lock lock{mutex};
+        return parse_type_locked(description);
+    }
+
+    [[nodiscard]] size_t count() noexcept {
+        std::unique_lock lock{mutex};
+        return types.size();
+    }
+
+    [[nodiscard]] const Type *at(uint32_t uid) noexcept {
+        std::unique_lock lock{mutex};
+        return uid < types.size() ? types[uid].get() : nullptr;
+    }
+
+    [[nodiscard]] bool exists(uint64_t hash) noexcept {
+        std::unique_lock lock{mutex};
+        return by_hash.find(hash) != by_hash.cend();
+    }
+
+    [[nodiscard]] ocarina::vector<const Type *> snapshot() noexcept {
+        std::unique_lock lock{mutex};
+        ocarina::vector<const Type *> snapshot;
+        snapshot.reserve(types.size());
+        for (const auto &type : types) {
+            snapshot.push_back(type.get());
+        }
+        return snapshot;
+    }
 };
 
 [[nodiscard]] TypeDatabase &type_database() noexcept {
@@ -62,8 +159,6 @@ struct TypeDatabase {
 [[nodiscard]] uint64_t compute_type_hash(ocarina::string_view desc) noexcept {
     return Hashable::compute_hash<Type>(hash64(desc));
 }
-
-void notify_type_access(const Type *type) noexcept;
 
 [[nodiscard]] string resolve_real_description(StoragePrecisionPolicy policy) noexcept {
     if (!policy.allow_real_in_storage) {
@@ -78,16 +173,13 @@ void notify_type_access(const Type *type) noexcept;
     }
 }
 
-[[nodiscard]] const Type *resolve_type_locked(const Type *type,
-                                              StoragePrecisionPolicy policy) noexcept;
-
 [[nodiscard]] size_t resolved_alignment_locked(const Type *type,
                                                StoragePrecisionPolicy policy) noexcept {
     if (type == nullptr) {
         return 0u;
     }
     if (type->tag() == Type::Tag::REAL) {
-        const auto *resolved = resolve_type_locked(type, policy);
+        const auto *resolved = type_database().resolve_type(type, policy);
         return resolved == nullptr ? 0u : resolved->alignment();
     }
     if (type->is_scalar() || type->is_byte_buffer() || type->is_texture() ||
@@ -95,7 +187,7 @@ void notify_type_access(const Type *type) noexcept;
         return type->alignment();
     }
     if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
-        const auto *elem = resolve_type_locked(type->element(), policy);
+        const auto *elem = type_database().resolve_type(type->element(), policy);
         return elem == nullptr ? 0u : elem->alignment();
     }
     if (type->is_structure()) {
@@ -120,26 +212,23 @@ void notify_type_access(const Type *type) noexcept;
         return string(type->description());
     }
     if (type->is_vector()) {
-        const auto *elem = resolve_type_locked(type->element(), policy);
+        const auto *elem = type_database().resolve_type(type->element(), policy);
         return elem == nullptr ? string{} : ocarina::format("vector<{},{}>", elem->description(), type->dimension());
     }
     if (type->is_matrix()) {
-        const auto *col = resolve_type_locked(type->element(), policy);
+        const auto *col = type_database().resolve_type(type->element(), policy);
         if (col == nullptr || !col->is_vector()) {
             return {};
         }
         const auto *scalar = col->element();
-        return scalar == nullptr ? string{} : ocarina::format("matrix<{},{},{}>",
-                                                               scalar->description(),
-                                                               type->dimension(),
-                                                               col->dimension());
+        return scalar == nullptr ? string{} : ocarina::format("matrix<{},{},{}>", scalar->description(), type->dimension(), col->dimension());
     }
     if (type->is_array()) {
-        const auto *elem = resolve_type_locked(type->element(), policy);
+        const auto *elem = type_database().resolve_type(type->element(), policy);
         return elem == nullptr ? string{} : ocarina::format("array<{},{}>", elem->description(), type->dimension());
     }
     if (type->is_buffer()) {
-        const auto *elem = resolve_type_locked(type->element(), policy);
+        const auto *elem = type_database().resolve_type(type->element(), policy);
         return elem == nullptr ? string{} : ocarina::format("buffer<{}>", elem->description());
     }
     if (type->is_structure()) {
@@ -161,27 +250,8 @@ void notify_type_access(const Type *type) noexcept;
     if (type->is_byte_buffer() || type->is_texture() || type->is_bindless_array() || type->is_accel()) {
         return string(type->description());
     }
+    OC_ASSERT(false);
     return {};
-}
-
-[[nodiscard]] const Type *resolve_type_locked(const Type *type,
-                                              StoragePrecisionPolicy policy) noexcept {
-    if (type == nullptr) {
-        return nullptr;
-    }
-    auto &database = type_database();
-    TypeDatabase::ResolvedTypeKey key{.logical_type = type,
-                                      .policy = policy.policy,
-                                      .allow_real_in_storage = policy.allow_real_in_storage};
-    if (auto iter = database.resolved_types.find(key); iter != database.resolved_types.cend()) {
-        // Cache hits bypass Type::from/TypeParser, so notify callbacks here explicitly.
-        notify_type_access(iter->second);
-        return iter->second;
-    }
-    const auto desc = resolve_type_description_locked(type, policy);
-    const auto *resolved = desc.empty() ? nullptr : Type::from(desc);
-    database.resolved_types.emplace(key, resolved);
-    return resolved;
 }
 
 void notify_type_access(const Type *type) noexcept {
@@ -280,7 +350,7 @@ struct TypeParser {
 }
 
 [[nodiscard]] ocarina::string_view TypeParser::find_identifier(ocarina::string_view &str,
-                                                                       bool check_start_with_num) noexcept {
+                                                               bool check_start_with_num) noexcept {
     OC_USING_SV
     uint i = 0u;
     for (; i < str.size() && is_letter_or_num(str[i]); ++i) {
@@ -358,9 +428,9 @@ void TypeParser::parse_matrix_locked(Type *type, ocarina::string_view desc) noex
     auto tmp_desc = ocarina::format("vector<{},{}>", type_str, M);
     type->members_.push_back(parse_type_locked(tmp_desc));
 
-#define OC_SIZE_ALIGN(TypeName, NN, MM)                 \
-    if (#TypeName == type_str && N == (NN) && M == (MM)) { \
-        type->size_ = sizeof(Matrix<TypeName, NN, MM>);    \
+#define OC_SIZE_ALIGN(TypeName, NN, MM)                       \
+    if (#TypeName == type_str && N == (NN) && M == (MM)) {    \
+        type->size_ = sizeof(Matrix<TypeName, NN, MM>);       \
         type->alignment_ = alignof(Matrix<TypeName, NN, MM>); \
     } else
 
@@ -461,10 +531,8 @@ void TypeParser::parse_array_locked(Type *type, ocarina::string_view desc) noexc
 
 const Type *TypeParser::add_type_locked(ocarina::unique_ptr<Type> type) noexcept {
     auto &database = type_database();
-    type->index_ = database.types.size();
-    const Type *ret = type.get();
-    database.by_hash.emplace(compute_type_hash(type->description()), ret);
-    database.types.push_back(ocarina::move(type));
+    type->index_ = database.count();
+    const Type *ret = database.emplace_type(ocarina::move(type));
     notify_type_access(ret);
     return ret;
 }
@@ -475,9 +543,9 @@ const Type *TypeParser::parse_type_locked(ocarina::string_view desc) noexcept {
     }
     auto &database = type_database();
     uint64_t hash = compute_type_hash(desc);
-    if (auto iter = database.by_hash.find(hash); iter != database.by_hash.cend()) {
-        notify_type_access(iter->second);
-        return iter->second;
+    if (const auto *type = database.find_by_hash(hash); type != nullptr) {
+        notify_type_access(type);
+        return type;
     }
 
     OC_USING_SV
@@ -534,29 +602,47 @@ const Type *TypeParser::parse_type_locked(ocarina::string_view desc) noexcept {
 
 }// namespace detail
 
+namespace {
+
+const Type *parse_type_locked(ocarina::string_view desc) noexcept {
+    return detail::TypeParser::parse_type_locked(desc);
+}
+
+}// namespace
+
 size_t Type::count() noexcept {
-    auto &database = type_database();
-    std::unique_lock lock{database.mutex};
-    return database.types.size();
+    return type_database().count();
 }
 
 const Type *Type::from(std::string_view description) noexcept {
-    auto &database = type_database();
-    std::unique_lock lock{database.mutex};
-    return detail::TypeParser::parse_type_locked(description);
+    return type_database().parse_type(description);
 }
 
 const Type *Type::resolve(const Type *type,
-                         StoragePrecisionPolicy policy) noexcept {
-    auto &database = type_database();
-    std::unique_lock lock{database.mutex};
-    return resolve_type_locked(type, policy);
+                          StoragePrecisionPolicy policy) noexcept {
+    return type_database().resolve_type(type, policy);
 }
 
 const Type *Type::at(uint32_t uid) noexcept {
-    auto &database = type_database();
-    std::unique_lock lock{database.mutex};
-    return uid < database.types.size() ? database.types[uid].get() : nullptr;
+    return type_database().at(uid);
+}
+
+bool Type::is_dynamic() const noexcept {
+    switch (tag_) {
+        case Tag::ARRAY:
+        case Tag::VECTOR:
+        case Tag::MATRIX:
+        case Tag::BUFFER:
+        case Tag::STRUCTURE: {
+            return std::ranges::any_of(members_, [](const Type *member) {
+                return member->is_dynamic();
+            });
+        }
+        case Tag::REAL:
+            return true;
+        default:
+            return false;
+    }
 }
 
 bool Type::exists(ocarina::string_view description) noexcept {
@@ -564,9 +650,7 @@ bool Type::exists(ocarina::string_view description) noexcept {
 }
 
 bool Type::exists(uint64_t hash) noexcept {
-    auto &database = type_database();
-    std::unique_lock lock{database.mutex};
-    return database.by_hash.find(hash) != database.by_hash.cend();
+    return type_database().exists(hash);
 }
 
 ocarina::span<const Type *const> Type::members() const noexcept {
@@ -634,15 +718,7 @@ size_t Type::max_member_size() const noexcept {
 }
 
 void Type::for_each(TypeVisitor *visitor) {
-    auto &database = type_database();
-    ocarina::vector<const Type *> snapshot;
-    {
-        std::unique_lock lock{database.mutex};
-        snapshot.reserve(database.types.size());
-        for (const auto &type : database.types) {
-            snapshot.push_back(type.get());
-        }
-    }
+    auto snapshot = type_database().snapshot();
     for (const Type *type : snapshot) {
         visitor->visit(type);
     }

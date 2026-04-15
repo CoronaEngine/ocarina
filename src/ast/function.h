@@ -225,7 +225,7 @@ public:
     void for_each_header(Func &&func) const noexcept {
         std::for_each(headers_.begin(), headers_.end(), OC_FORWARD(func));
     }
-    void add_used_structure(const Type *type) noexcept { used_struct_.add(resolve_ast_type(type)); }
+    void add_used_structure(const Type *type) noexcept;
     [[nodiscard]] const Usage &variable_usage(uint uid) const noexcept;
     [[nodiscard]] Usage &variable_usage(uint uid) noexcept;
     [[nodiscard]] const Variable::Data &variable_data(uint uid) const noexcept;
