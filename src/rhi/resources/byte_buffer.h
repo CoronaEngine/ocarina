@@ -30,7 +30,7 @@ public:
 class ByteBuffer : public RHIResource {
 private:
     /// just for construct memory block
-    mutable BufferDesc<> proxy_{};
+    mutable BufferDesc<> descriptor_{};
     size_t size_{};
 
 public:
@@ -55,26 +55,27 @@ public:
         size_ = 0;
     }
 
-    const BufferDesc<std::byte> &proxy() const noexcept {
-        proxy_.handle = reinterpret_cast<std::byte *>(handle_);
-        proxy_.size = size_;
-        return proxy_;
+    const BufferDesc<std::byte> &descriptor() const noexcept {
+        descriptor_.handle = reinterpret_cast<std::byte *>(handle_);
+        descriptor_.offset = 0u;
+        descriptor_.size = size_;
+        return descriptor_;
     }
 
-    const BufferDesc<std::byte> *proxy_ptr() const noexcept {
-        return &proxy();
+    const BufferDesc<std::byte> *descriptor_ptr() const noexcept {
+        return &descriptor();
     }
 
     [[nodiscard]] size_t data_alignment() const noexcept override {
-        return alignof(decltype(proxy_));
+        return alignof(decltype(descriptor_));
     }
 
     [[nodiscard]] size_t data_size() const noexcept override {
-        return sizeof(proxy_);
+        return sizeof(descriptor_);
     }
 
     [[nodiscard]] MemoryBlock memory_block() const noexcept override {
-        return {proxy_ptr(), data_size(), data_alignment(), max_member_size()};
+        return {descriptor_ptr(), data_size(), data_alignment(), max_member_size()};
     }
 
     template<typename U = uint>
