@@ -5,10 +5,13 @@
 #include <cmath>
 #include <cstring>
 
+#include "core/dynamic_buffer/host_dynamic_buffer.h"
 #include "core/stl.h"
 #include "core/type_system/precision_policy.h"
+#include "core/type_system/type_desc.h"
 #include "dsl/dsl.h"
 #include "rhi/common.h"
+#include "rhi/resources/dynamic_buffer.h"
 #include "math/base.h"
 #include "core/runtime/platform.h"
 #include "rhi/context.h"
@@ -28,7 +31,18 @@ struct PolicyRecord {
     real rhs{};
 };
 
+struct DynamicRealRecord {
+    real value{};
+    Vector<real, 3> direction{};
+    ocarina::array<real, 4> weights{};
+    Matrix<real, 2, 2> basis{};
+    float extra{};
+};
+
 OC_STRUCT(, PolicyRecord, lhs, rhs) {
+};
+
+OC_STRUCT(, DynamicRealRecord, value, direction, weights, basis, extra) {
 };
 
 OC_STRUCT(, TestRecord, lhs, rhs) {
@@ -50,6 +64,67 @@ static bool equal_float4(const float4 &lhs, const float4 &rhs) {
 
 static bool equal_record(const TestRecord &lhs, const TestRecord &rhs) {
     return equal_float4(lhs.lhs, rhs.lhs) && equal_float4(lhs.rhs, rhs.rhs);
+}
+
+static bool close_real(real lhs, real rhs, float eps) {
+    return std::abs(static_cast<float>(lhs) - static_cast<float>(rhs)) < eps;
+}
+
+static float policy_epsilon(PrecisionPolicy policy) {
+    return policy == PrecisionPolicy::force_f16 ? 1e-2f : 1e-5f;
+}
+
+static const char *policy_suffix(PrecisionPolicy policy) {
+    return policy == PrecisionPolicy::force_f16 ? "f16" : "f32";
+}
+
+static DynamicRealRecord make_dynamic_real_record(float base) {
+    return {
+        .value = real{base + 0.25f},
+        .direction = Vector<real, 3>{real{base + 1.0f}, real{base + 2.0f}, real{base + 3.0f}},
+        .weights = {real{base + 4.0f}, real{base + 5.0f}, real{base + 6.0f}, real{base + 7.0f}},
+        .basis = Matrix<real, 2, 2>{Vector<real, 2>{real{base + 8.0f}, real{base + 9.0f}},
+                                    Vector<real, 2>{real{base + 10.0f}, real{base + 11.0f}}},
+        .extra = base + 12.0f,
+    };
+}
+
+static bool equal_dynamic_real_record(const DynamicRealRecord &lhs,
+                                      const DynamicRealRecord &rhs,
+                                      float eps) {
+    if (!close_real(lhs.value, rhs.value, eps)) {
+        return false;
+    }
+    for (size_t index = 0; index < 3u; ++index) {
+        if (!close_real(lhs.direction[index], rhs.direction[index], eps)) {
+            return false;
+        }
+    }
+    for (size_t index = 0; index < 4u; ++index) {
+        if (!close_real(lhs.weights[index], rhs.weights[index], eps)) {
+            return false;
+        }
+    }
+    for (size_t col = 0; col < 2u; ++col) {
+        for (size_t row = 0; row < 2u; ++row) {
+            if (!close_real(lhs.basis[col][row], rhs.basis[col][row], eps)) {
+                return false;
+            }
+        }
+    }
+    return std::abs(lhs.extra - rhs.extra) < eps;
+}
+
+static bool equal_bytes(span<const std::byte> lhs, span<const std::byte> rhs) {
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+    for (size_t index = 0; index < lhs.size(); ++index) {
+        if (lhs[index] != rhs[index]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 static TestRecord make_test_record(uint index) {
@@ -129,6 +204,67 @@ static int test_policy_aware_soa_layout() {
     }
 
     set_global_storage_policy(previous_policy);
+
+    if (failures == 0) {
+        std::cout << "  PASSED" << std::endl;
+    }
+    return failures;
+}
+
+static int test_dynamic_buffer_real_layout(Device &device) {
+    std::cout << "=== test_dynamic_buffer_real_layout ===" << std::endl;
+    int failures = 0;
+
+    constexpr auto policies = std::array{PrecisionPolicy::force_f16, PrecisionPolicy::force_f32};
+    vector<DynamicRealRecord> records = {make_dynamic_real_record(0.f),
+                                         make_dynamic_real_record(20.f),
+                                         make_dynamic_real_record(40.f)};
+
+    for (auto policy : policies) {
+        StoragePrecisionPolicy storage_policy{.policy = policy, .allow_real_in_storage = true};
+        HostDynamicBuffer<DynamicRealRecord> host = HostDynamicBuffer<DynamicRealRecord>::create(storage_policy);
+        host.write_all(span<const DynamicRealRecord>{records.data(), records.size()});
+
+        for (size_t index = 0; index < records.size(); ++index) {
+            if (!equal_dynamic_real_record(host.read(index), records[index], policy_epsilon(policy))) {
+                std::cerr << "  FAIL: host dynamic buffer read mismatch for policy "
+                          << policy_suffix(policy) << " at index " << index << std::endl;
+                ++failures;
+            }
+        }
+
+        RawDynamicBuffer buffer = device.create_raw_dynamic_buffer(Type::of<DynamicRealRecord>(),
+                                                                   storage_policy,
+                                                                   records.size(),
+                                                                   std::string{"test_soa_dynamic_buffer_"} +
+                                                                       policy_suffix(policy));
+        buffer.upload_immediately(host.bytes());
+
+        if (buffer.logical_type() != Type::of<DynamicRealRecord>()) {
+            std::cerr << "  FAIL: logical type mismatch for policy " << policy_suffix(policy) << std::endl;
+            ++failures;
+        }
+        if (buffer.policy().policy != storage_policy.policy) {
+            std::cerr << "  FAIL: storage policy mismatch for policy " << policy_suffix(policy) << std::endl;
+            ++failures;
+        }
+        if (buffer.policy().allow_real_in_storage != storage_policy.allow_real_in_storage) {
+            std::cerr << "  FAIL: allow_real_in_storage mismatch for policy " << policy_suffix(policy) << std::endl;
+            ++failures;
+        }
+        if (buffer.element_stride() != host.layout_plan().element_size_bytes()) {
+            std::cerr << "  FAIL: element stride mismatch for policy " << policy_suffix(policy) << std::endl;
+            ++failures;
+        }
+
+        vector<std::byte> downloaded(host.bytes().size());
+        buffer.download_immediately(downloaded.data());
+        if (!equal_bytes(host.bytes(), downloaded)) {
+            std::cerr << "  FAIL: raw dynamic buffer byte roundtrip mismatch for policy "
+                      << policy_suffix(policy) << std::endl;
+            ++failures;
+        }
+    }
 
     if (failures == 0) {
         std::cout << "  PASSED" << std::endl;
@@ -328,6 +464,7 @@ int main(int argc, char *argv[]) {
     Env::printer().init(device);
     Env::debugger().init(device);
 
+    total_failures += test_dynamic_buffer_real_layout(device);
     total_failures += test_buffer_read_write(device, stream);
     total_failures += test_byte_buffer_read_write(device, stream);
     total_failures += test_aos_view_var_read_write(device, stream);
