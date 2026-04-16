@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "core/stl.h"
+#include "core/type_system/precision_policy.h"
 #include "dsl/dsl.h"
 #include "rhi/common.h"
 #include "math/base.h"
@@ -20,6 +21,14 @@ struct TestRecord {
 
     TestRecord() = default;
     TestRecord(float4 lhs, float4 rhs) : lhs(lhs), rhs(rhs) {}
+};
+
+struct PolicyRecord {
+    real lhs{};
+    real rhs{};
+};
+
+OC_STRUCT(, PolicyRecord, lhs, rhs) {
 };
 
 OC_STRUCT(, TestRecord, lhs, rhs) {
@@ -81,6 +90,50 @@ static int test_buffer_storage_basic() {
                   "BufferStorage must be correctly aligned for ByteBufferVar");
     std::cout << "  PASSED" << std::endl;
     return 0;
+}
+
+static int test_policy_aware_soa_layout() {
+    std::cout << "=== test_policy_aware_soa_layout ===" << std::endl;
+    int failures = 0;
+
+    StoragePrecisionPolicy previous_policy = global_storage_policy();
+
+    set_global_storage_policy(StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
+                                                     .allow_real_in_storage = true});
+    if (resolved_soa_type_size<PolicyRecord>() != sizeof(float) * 2u) {
+        std::cerr << "  FAIL: force_f32 policy must resolve PolicyRecord to 8 bytes" << std::endl;
+        ++failures;
+    }
+    if (resolved_soa_stride<PolicyRecord>() != sizeof(float) * 2u) {
+        std::cerr << "  FAIL: force_f32 policy must resolve PolicyRecord stride to 8 bytes" << std::endl;
+        ++failures;
+    }
+    if (resolved_soa_type_size<real>() != sizeof(float)) {
+        std::cerr << "  FAIL: force_f32 policy must resolve real to 4 bytes" << std::endl;
+        ++failures;
+    }
+
+    set_global_storage_policy(StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f16,
+                                                     .allow_real_in_storage = true});
+    if (resolved_soa_type_size<PolicyRecord>() != sizeof(uint16_t) * 2u) {
+        std::cerr << "  FAIL: force_f16 policy must resolve PolicyRecord to 4 bytes" << std::endl;
+        ++failures;
+    }
+    if (resolved_soa_stride<PolicyRecord>() != sizeof(uint16_t) * 2u) {
+        std::cerr << "  FAIL: force_f16 policy must resolve PolicyRecord stride to 4 bytes" << std::endl;
+        ++failures;
+    }
+    if (resolved_soa_type_size<real>() != sizeof(uint16_t)) {
+        std::cerr << "  FAIL: force_f16 policy must resolve real to 2 bytes" << std::endl;
+        ++failures;
+    }
+
+    set_global_storage_policy(previous_policy);
+
+    if (failures == 0) {
+        std::cout << "  PASSED" << std::endl;
+    }
+    return failures;
 }
 
 static int test_buffer_read_write(Device &device, Stream &stream) {
@@ -267,6 +320,7 @@ int main(int argc, char *argv[]) {
     int total_failures = 0;
 
     total_failures += test_buffer_storage_basic();
+    total_failures += test_policy_aware_soa_layout();
 
     RHIContext &context = RHIContext::instance();
     Device device = context.create_device("cuda");
