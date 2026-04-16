@@ -93,9 +93,11 @@ private:
 
 private:
     template<typename T>
-    requires std::is_trivially_copyable_v<std::remove_cvref_t<T>>
-    void _encode_pod_type(T &&arg) noexcept {
+    void _append_pod_bytes(const T &arg) noexcept {
         using raw_t = std::remove_cvref_t<T>;
+        static_assert(std::is_standard_layout_v<raw_t>);
+        static_assert(std::is_trivially_destructible_v<raw_t>);
+
         auto aligned_cursor = mem_offset(cursor_, alignof(raw_t));
         auto end_cursor = aligned_cursor + sizeof(raw_t);
         const std::byte *dst_ptr = nullptr;
@@ -110,6 +112,29 @@ private:
             dst_ptr = storage.data();
         }
         push_memory_block({dst_ptr, sizeof(raw_t), alignof(raw_t), Type::of<raw_t>()->max_member_size()});
+    }
+
+    template<typename T>
+    requires std::is_standard_layout_v<std::remove_cvref_t<T>> &&
+             std::is_trivially_destructible_v<std::remove_cvref_t<T>>
+    void _encode_pod_type(T &&arg, const Type *type = nullptr) noexcept {
+        if constexpr (is_dynamic_size_v<T>) {
+            switch (function_->storage_policy().policy) {
+                case PrecisionPolicy::force_f16: {
+                    auto param = resolved_storage<T, PrecisionPolicy::force_f16>::encode(OC_FORWARD(arg));
+                    _append_pod_bytes(param);
+                    return;
+                }
+                case PrecisionPolicy::force_f32: {
+                    auto param = resolved_storage<T, PrecisionPolicy::force_f32>::encode(OC_FORWARD(arg));
+                    _append_pod_bytes(param);
+                    return;
+                }
+                default:
+                    return;
+            }
+        }
+        _append_pod_bytes(arg);
     }
 
     template<typename TBuffer>

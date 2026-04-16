@@ -154,6 +154,7 @@ template<typename T>
     using LeafF32 = storage_t<CodecRealLeaf, PrecisionPolicy::force_f32>;
     using NestedF16 = storage_t<CodecRealNested, PrecisionPolicy::force_f16>;
     using ArrayF16 = storage_t<CodecRealArray, PrecisionPolicy::force_f16>;
+    StoragePrecisionPolicy f16_policy = make_policy(PrecisionPolicy::force_f16);
 
     static_assert(std::is_same_v<LeafHalfStorage, LeafF16>);
     static_assert(std::is_same_v<NestedHalfStorage, NestedF16>);
@@ -163,6 +164,20 @@ template<typename T>
     static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<NestedF16>().leaf)>, LeafF16>);
     static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<NestedF16>().samples)>, half3>);
     static_assert(std::is_same_v<std::remove_cvref_t<decltype(std::declval<ArrayF16>().samples)>, ocarina::array<half, 4>>);
+    static_assert(std::same_as<std::remove_cvref_t<decltype(TypeDesc<LeafF16>::name())>, string_view>);
+
+    const Type *leaf_type = Type::of<LeafF16>();
+    const Type *resolved_leaf_type = Type::resolve(Type::of<CodecRealLeaf>(), f16_policy);
+    CHECK(leaf_type != nullptr);
+    CHECK(resolved_leaf_type != nullptr);
+    CHECK(leaf_type->is_structure());
+    CHECK(leaf_type->description() == TypeDesc<LeafF16>::description());
+    CHECK(leaf_type->cname() == "CodecRealLeaf_storage_f16");
+    CHECK(leaf_type->alignment() == resolved_leaf_type->alignment());
+    CHECK(leaf_type->members().size() == resolved_leaf_type->members().size());
+    CHECK(leaf_type->members()[0] == resolved_leaf_type->members()[0]);
+    CHECK(leaf_type->members()[1] == resolved_leaf_type->members()[1]);
+    CHECK(leaf_type->description() != resolved_leaf_type->description());
 
     CodecRealNested nested = make_nested(2u);
     auto nested_f16 = to_storage_value<PrecisionPolicy::force_f16>(nested);

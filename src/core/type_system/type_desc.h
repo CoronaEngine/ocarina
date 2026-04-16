@@ -30,6 +30,26 @@ struct TypeDesc {
     static_assert(always_false_v<T>, "Invalid type.");
 };
 
+template<typename T>
+concept generated_storage_type_desc = requires {
+    typename T::oc_storage_source_type;
+    typename T::oc_storage_tag_type;
+    T::description();
+    T::name();
+};
+
+template<typename T>
+requires generated_storage_type_desc<T>
+struct TypeDesc<T> {
+    static decltype(auto) description() noexcept {
+        return T::description();
+    }
+
+    static decltype(auto) name() noexcept {
+        return T::name();
+    }
+};
+
 #define OC_MAKE_VECTOR_DESC_NAME(S, N)                                 \
     template<>                                                         \
     struct TypeDesc<Vector<S, N>> {                                    \
@@ -190,16 +210,6 @@ struct TypeDesc<ocarina::tuple<T...>> {
     }
 };
 
-template<>
-struct TypeDesc<BindlessArray> {
-    static ocarina::string_view description() noexcept {
-        return "bindlessArray";
-    }
-    static ocarina::string_view name() noexcept {
-        return description();
-    }
-};
-
 #define OC_MAKE_STRUCT_MEMBER_FMT(member) ",{}"
 
 #define OC_MAKE_STRUCT_MEMBER_DESC(member) \
@@ -222,12 +232,22 @@ struct TypeDesc<BindlessArray> {
         }                                                                                   \
     };
 
+template<>
+struct TypeDesc<BindlessArray> {
+    static ocarina::string_view description() noexcept {
+        return "bindlessArray";
+    }
+    static ocarina::string_view name() noexcept {
+        return description();
+    }
+};
+
 #define OC_IS_DYNAMIC_SIZE(member, S) \
     ocarina::is_dynamic_size<std::remove_cvref_t<decltype(S::member)>>
 
 #define OC_MAKE_STRUCT_IS_DYNAMIC(S, ...) \
     template<>                            \
-    struct ocarina::is_dynamic_size<S> : std::disjunction<MAP_LIST_UD(OC_IS_DYNAMIC_SIZE,S, ##__VA_ARGS__)> {};
+    struct ocarina::is_dynamic_size<S> : std::disjunction<MAP_LIST_UD(OC_IS_DYNAMIC_SIZE, S, ##__VA_ARGS__)> {};
 
 template<typename T>
 const Type *Type::of() noexcept {

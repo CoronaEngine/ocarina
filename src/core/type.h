@@ -248,11 +248,6 @@ using resolved_storage_tag_t = std::conditional_t<Policy == PrecisionPolicy::for
 template<typename T, typename F>
 using resolved_storage_by_tag_t = detail::resolved_storage_impl_t<T, F>;
 
-#define OC_STORAGE_MEMBER_TYPE(storage, member) ocarina::resolved_storage_by_tag_t<std::remove_cvref_t<decltype(this_type::member)>, storage>
-#define OC_STORAGE_MEMBER_DECL(member, storage) OC_STORAGE_MEMBER_TYPE(storage, member) member;
-#define OC_STORAGE_MEMBER_ASSIGN_ENCODE(member, storage) result.member = ocarina::detail::to_storage_impl_value<storage>(value.member);
-#define OC_STORAGE_MEMBER_ASSIGN_DECODE(member, storage) result.member = ocarina::detail::from_storage_impl_value<std::remove_cvref_t<decltype(this_type::member)>, storage>(value.member);
-
 template<typename T, PrecisionPolicy Policy>
 struct resolved_storage;
 
@@ -402,13 +397,66 @@ template<typename T, PrecisionPolicy Policy>
     return detail::from_storage_impl_value<T, resolved_storage_tag_t<T, Policy>>(value);
 }
 
+#define OC_STORAGE_MEMBER_TYPE(storage, member) ocarina::resolved_storage_by_tag_t<std::remove_cvref_t<decltype(this_type::member)>, storage>
+#define OC_STORAGE_MEMBER_DECL(member, storage) OC_STORAGE_MEMBER_TYPE(storage, member) member;
+#define OC_STORAGE_MEMBER_ASSIGN_ENCODE(member, storage) result.member = ocarina::detail::to_storage_impl_value<storage>(value.member);
+#define OC_STORAGE_MEMBER_ASSIGN_DECODE(member, storage) result.member = ocarina::detail::from_storage_impl_value<std::remove_cvref_t<decltype(this_type::member)>, storage>(value.member);
+
 #define OC_MAKE_STORAGE_TYPE(S, ...)                                        \
     template<typename storage>                                              \
     requires ocarina::detail::resolved_storage_supported_tag<storage>       \
     struct ocarina::detail::resolved_storage_impl<S, storage> {             \
         using this_type = S;                                                \
         struct type {                                                       \
+            using oc_storage_source_type = this_type;                       \
+            using oc_storage_tag_type = storage;                            \
             MAP_UD(OC_STORAGE_MEMBER_DECL, storage, ##__VA_ARGS__)          \
+            static constexpr PrecisionPolicy storage_policy() noexcept {    \
+                if constexpr (std::same_as<storage, half>) {                \
+                    return PrecisionPolicy::force_f16;                      \
+                } else {                                                    \
+                    return PrecisionPolicy::force_f32;                      \
+                }                                                           \
+            }                                                               \
+            static constexpr string_view storage_suffix() noexcept {        \
+                if constexpr (std::same_as<storage, half>) {                \
+                    return "_storage_f16";                                  \
+                } else {                                                    \
+                    return "_storage_f32";                                  \
+                }                                                           \
+            }                                                               \
+            static const ocarina::string &storage_cname() noexcept {        \
+                static thread_local ocarina::string s = ocarina::format(    \
+                    "{}{}",                                                 \
+                    Type::of<oc_storage_source_type>()->cname(),            \
+                    storage_suffix());                                      \
+                return s;                                                   \
+            }                                                               \
+            static ocarina::string description() noexcept {                 \
+                static thread_local ocarina::string s = [] {                \
+                    StoragePrecisionPolicy policy{                          \
+                        .policy = storage_policy(),                         \
+                        .allow_real_in_storage = false};                    \
+                    const Type *resolved = Type::resolve(                   \
+                        Type::of<oc_storage_source_type>(), policy);        \
+                    OC_ASSERT(resolved != nullptr);                         \
+                    ocarina::string ret = ocarina::format(                  \
+                        "struct<{},{},{},{}",                               \
+                        storage_cname(),                                    \
+                        resolved->alignment(),                              \
+                        resolved->is_builtin_struct(),                      \
+                        resolved->is_param_struct());                       \
+                    for (const Type *member : resolved->members()) {        \
+                        ret.append(",").append(member->description());      \
+                    }                                                       \
+                    ret.push_back('>');                                     \
+                    return ret;                                             \
+                }();                                                        \
+                return s;                                                   \
+            }                                                               \
+            static ocarina::string_view name() noexcept {                   \
+                return storage_cname();                                     \
+            }                                                               \
         };                                                                  \
                                                                             \
         [[nodiscard]] static type encode(const this_type &value) noexcept { \

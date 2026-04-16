@@ -13,7 +13,7 @@ struct LiteralPrinter {
     using Scratch = Codegen::Scratch;
     Scratch &scratch;
     const Type *type_{nullptr};
-    explicit LiteralPrinter(Scratch &scratch, const Type *type = nullptr) : scratch(scratch), type_(nullptr) {}
+    explicit LiteralPrinter(Scratch &scratch, const Type *type = nullptr) : scratch(scratch), type_(type) {}
 
     template<typename T>
     requires(is_scalar_v<T> || is_vector_v<T>)

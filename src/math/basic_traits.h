@@ -312,7 +312,7 @@ template<typename T>
 }
 
 template<typename T, size_t N>
-struct Vector;
+class Vector;
 
 namespace detail {
 
@@ -405,7 +405,7 @@ template<typename T>
 constexpr auto vector_dimension_v = vector_dimension<T>::value;
 
 template<typename T, size_t N, size_t M>
-struct Matrix;
+class Matrix;
 
 namespace detail {
 template<typename T>
