@@ -67,7 +67,7 @@ template<typename T>
 template<typename T>
 [[nodiscard]] inline size_t compile_time_soa_stride(StoragePrecisionPolicy policy,
                                                     size_t stride = 0u) noexcept {
-    return stride == 0u ? compile_time_resolved_layout_size<T>(policy) : stride;
+    return stride == 0u ? compile_time_soa_storage_bytes<T>(1u, policy) : stride;
 }
 
 [[nodiscard]] inline size_t runtime_resolved_layout_size(const Type *type,

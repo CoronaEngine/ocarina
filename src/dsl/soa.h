@@ -88,13 +88,24 @@ struct SOAView {
 template<typename T>
 [[nodiscard]] inline ocarina::uint resolved_soa_type_size() noexcept {
     return static_cast<ocarina::uint>(
-        ocarina::detail::compile_time_resolved_layout_size<T>(ocarina::global_storage_policy()));
+        ocarina::detail::compile_time_soa_storage_bytes<T>(1u, ocarina::global_storage_policy()));
 }
 
 template<typename T>
 [[nodiscard]] inline ocarina::uint resolved_soa_stride(ocarina::uint stride = 0u) noexcept {
     return static_cast<ocarina::uint>(
         ocarina::detail::compile_time_soa_stride<T>(ocarina::global_storage_policy(), stride));
+}
+
+template<typename T>
+[[nodiscard]] inline ocarina::uint resolved_aos_type_size() noexcept {
+    return static_cast<ocarina::uint>(
+        ocarina::detail::compile_time_resolved_layout_size<T>(ocarina::global_storage_policy()));
+}
+
+template<typename T>
+[[nodiscard]] inline ocarina::uint resolved_aos_stride(ocarina::uint stride = 0u) noexcept {
+    return stride == 0u ? resolved_aos_type_size<T>() : stride;
 }
 
 }// namespace ocarina
@@ -521,8 +532,8 @@ public:
     explicit AOSViewVar(const TBuffer &buffer, const Uint &view_size = InvalidUI32,
                         Uint ofs = 0u, ocarina::uint stride = 0u)
         : buffer_var_(buffer), offset_(std::move(ofs)),
-          type_size_(ocarina::resolved_soa_type_size<T>()),
-          stride_(ocarina::resolved_soa_stride<T>(stride)) {
+                    type_size_(ocarina::resolved_aos_type_size<T>()),
+                    stride_(ocarina::resolved_aos_stride<T>(stride)) {
         (void)view_size;
     }
 

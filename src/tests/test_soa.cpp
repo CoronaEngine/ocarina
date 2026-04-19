@@ -31,6 +31,11 @@ struct PolicyRecord {
     real rhs{};
 };
 
+struct PaddedPolicyRecord {
+    real narrow{};
+    float wide{};
+};
+
 struct DynamicRealRecord {
     real value{};
     Vector<real, 3> direction{};
@@ -40,6 +45,9 @@ struct DynamicRealRecord {
 };
 
 OC_STRUCT(, PolicyRecord, lhs, rhs) {
+};
+
+OC_STRUCT(, PaddedPolicyRecord, narrow, wide) {
 };
 
 OC_STRUCT(, DynamicRealRecord, value, direction, weights, basis, extra) {
@@ -200,6 +208,15 @@ static int test_policy_aware_soa_layout() {
     }
     if (resolved_soa_type_size<real>() != sizeof(uint16_t)) {
         std::cerr << "  FAIL: force_f16 policy must resolve real to 2 bytes" << std::endl;
+        ++failures;
+    }
+
+    if (resolved_soa_type_size<PaddedPolicyRecord>() != sizeof(uint16_t) + sizeof(float)) {
+        std::cerr << "  FAIL: force_f16 policy must use compact SOA size for padded struct" << std::endl;
+        ++failures;
+    }
+    if (resolved_soa_stride<PaddedPolicyRecord>() != sizeof(uint16_t) + sizeof(float)) {
+        std::cerr << "  FAIL: force_f16 policy must use compact SOA stride for padded struct" << std::endl;
         ++failures;
     }
 
