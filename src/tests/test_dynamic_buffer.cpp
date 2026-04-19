@@ -43,6 +43,14 @@ struct DynamicKernelLogicalRecord {
 OC_STRUCT(, DynamicKernelLogicalRecord, lhs, rhs) {
 };
 
+struct DynamicPaddedLogicalRecord {
+    real narrow;
+    float wide;
+};
+
+OC_STRUCT(, DynamicPaddedLogicalRecord, narrow, wide) {
+};
+
 using DynamicKernelRecordF16 = storage_t<DynamicKernelLogicalRecord, PrecisionPolicy::force_f16>;
 using DynamicKernelRecordF32 = storage_t<DynamicKernelLogicalRecord, PrecisionPolicy::force_f32>;
 
@@ -124,6 +132,18 @@ namespace {
     value.rhs[2] = real{static_cast<float>(value.rhs[2]) - 5.0f};
     value.rhs[3] = real{static_cast<float>(value.rhs[3]) - 7.0f};
     return value;
+}
+
+[[nodiscard]] DynamicPaddedLogicalRecord make_padded_logical_record(uint index) {
+    float base = static_cast<float>(index * 3u);
+    return DynamicPaddedLogicalRecord{.narrow = real{base + 0.5f}, .wide = base + 1.25f};
+}
+
+[[nodiscard]] bool equal_padded_logical_record(const DynamicPaddedLogicalRecord &lhs,
+                                               const DynamicPaddedLogicalRecord &rhs,
+                                               float eps = 1e-3f) {
+    return std::abs(static_cast<float>(lhs.narrow) - static_cast<float>(rhs.narrow)) <= eps &&
+           std::abs(lhs.wide - rhs.wide) <= eps;
 }
 
 [[nodiscard]] float precision_epsilon(PrecisionPolicy policy) {
@@ -304,7 +324,8 @@ using kernel_record_t = storage_t<DynamicKernelLogicalRecord, policy>;
 
     auto buffer = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
                                                                       0u,
-                                                                      "test_typed_dynamic_buffer_view_soa_round_trip");
+                                                                      "test_typed_dynamic_buffer_view_soa_round_trip",
+                                                                      DynamicBufferLayout::SOA);
     buffer.upload_immediately(span<const DynamicResolvedRecord>{host_src.data(), host_src.size()}, DynamicBufferLayout::SOA);
 
     auto full = buffer.view();
@@ -316,6 +337,37 @@ using kernel_record_t = storage_t<DynamicKernelLogicalRecord, policy>;
     buffer.download_immediately(host_dst.data(), DynamicBufferLayout::SOA);
     for (size_t index = 0; index < host_src.size(); ++index) {
         CHECK(equal_resolved_record(host_dst[index], host_src[index]));
+    }
+    return true;
+}
+
+[[nodiscard]] bool test_typed_dynamic_buffer_soa_uses_physical_soa_bytes(Device &device) {
+    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f16);
+    vector<DynamicPaddedLogicalRecord> host_src(5u);
+    vector<DynamicPaddedLogicalRecord> host_dst(host_src.size());
+    for (uint index = 0u; index < host_src.size(); ++index) {
+        host_src[index] = make_padded_logical_record(index + 1u);
+    }
+
+    auto buffer = device.create_dynamic_buffer<DynamicPaddedLogicalRecord>(policy,
+                                                                           0u,
+                                                                           "test_typed_dynamic_buffer_soa_uses_physical_soa_bytes",
+                                                                           DynamicBufferLayout::SOA);
+    buffer.upload_immediately(host_src.data(), host_src.size(), DynamicBufferLayout::SOA);
+
+    const auto soa_bytes = DynamicBufferLayoutCodec<DynamicPaddedLogicalRecord>::storage_bytes(host_src.size(),
+                                                                                                policy,
+                                                                                                DynamicBufferLayout::SOA);
+    const auto aos_bytes = DynamicBufferLayoutCodec<DynamicPaddedLogicalRecord>::storage_bytes(host_src.size(),
+                                                                                                policy,
+                                                                                                DynamicBufferLayout::AOS);
+    CHECK(buffer.layout() == DynamicBufferLayout::SOA);
+    CHECK(buffer.size_in_byte() == soa_bytes);
+    CHECK(soa_bytes < aos_bytes);
+
+    buffer.download_immediately(host_dst.data(), DynamicBufferLayout::SOA);
+    for (size_t index = 0; index < host_src.size(); ++index) {
+        CHECK(equal_padded_logical_record(host_dst[index], host_src[index]));
     }
     return true;
 }
@@ -567,10 +619,12 @@ template<PrecisionPolicy precision>
     string suffix = precision_suffix(precision);
     auto src = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
                                                                         count,
-                                                                        "test_dynamic_buffer_capture_soa_src_" + suffix);
+                                                                        "test_dynamic_buffer_capture_soa_src_" + suffix,
+                                                                        DynamicBufferLayout::SOA);
     auto dst = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
                                                                         count,
-                                                                        "test_dynamic_buffer_capture_soa_dst_" + suffix);
+                                                                        "test_dynamic_buffer_capture_soa_dst_" + suffix,
+                                                                        DynamicBufferLayout::SOA);
 
     vector<DynamicKernelLogicalRecord> host_src(count);
     vector<DynamicKernelLogicalRecord> host_dst(count);
@@ -693,6 +747,7 @@ int main() {
     passed = test_typed_dynamic_buffer_logical_round_trip(device) && passed;
     passed = test_typed_dynamic_buffer_view_aos_round_trip(device) && passed;
     passed = test_typed_dynamic_buffer_view_soa_round_trip(device) && passed;
+    passed = test_typed_dynamic_buffer_soa_uses_physical_soa_bytes(device) && passed;
     for (auto precision : kernel_precisions) {
         passed = test_dynamic_buffer_param_aos_access(device, precision) && passed;
         passed = test_dynamic_buffer_param_aos_logical_access(device, precision) && passed;

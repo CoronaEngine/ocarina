@@ -113,6 +113,7 @@ struct HostDynamicBufferUploadView {
     size_t element_count{0u};
     StoragePrecisionPolicy policy{};
     const Type *logical_type{nullptr};
+    DynamicBufferLayout layout{DynamicBufferLayout::AOS};
     /// Dirty export exposes precise byte segments and also keeps one merged range for compatibility.
     span<const ByteRegion> dirty_segments{};
     DirtyByteRange dirty{};
@@ -186,6 +187,7 @@ public:
             .element_count = element_count_,
             .policy = layout_plan_.policy(),
             .logical_type = layout_plan_.logical_type(),
+            .layout = DynamicBufferLayout::AOS,
             .dirty_segments = dirty_segments_.segments(),
             .dirty = dirty_segments_.merged_range()};
     }

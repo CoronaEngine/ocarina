@@ -74,6 +74,7 @@ private:
     size_t total_element_count_{0u};
     size_t element_stride_{0u};
     size_t element_alignment_{0u};
+    DynamicBufferLayout layout_{DynamicBufferLayout::AOS};
     StoragePrecisionPolicy policy_{};
     const Type *type_{nullptr};
     bool type_is_resolved_{false};
@@ -86,6 +87,7 @@ public:
                          size_t total_element_count,
                          size_t element_stride,
                          size_t element_alignment,
+                                                 DynamicBufferLayout layout,
                                                  const Type *type,
                                                  bool type_is_resolved,
                          StoragePrecisionPolicy policy) noexcept
@@ -95,6 +97,7 @@ public:
           total_element_count_(total_element_count),
           element_stride_(element_stride),
           element_alignment_(element_alignment),
+                    layout_(layout),
           policy_(policy),
                     type_(type),
                     type_is_resolved_(type_is_resolved) {}
@@ -110,6 +113,7 @@ public:
     [[nodiscard]] size_t total_size_in_byte() const noexcept { return byte_view_.total_size(); }
     [[nodiscard]] size_t element_stride() const noexcept { return element_stride_; }
     [[nodiscard]] size_t element_alignment() const noexcept { return element_alignment_; }
+    [[nodiscard]] DynamicBufferLayout layout() const noexcept { return layout_; }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return policy_; }
     [[nodiscard]] const Type *logical_type() const noexcept { return type_is_resolved_ ? nullptr : type_; }
     [[nodiscard]] const Type *resolved_type() const noexcept {
@@ -123,12 +127,14 @@ public:
 
     template<typename T>
     [[nodiscard]] BufferView<T> aos_view() const noexcept {
+        OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         OC_ASSERT(resolved_type() == Type::of<T>());
         OC_ASSERT(element_stride_ == sizeof(T));
         return byte_view().template view_as<T>();
     }
 
     [[nodiscard]] RawDynamicBufferView subview(size_t offset, size_t size = 0u) const noexcept {
+        OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         size = size == 0u ? element_count_ - offset : size;
         return RawDynamicBufferView{ByteBufferView(handle(),
                                                    offset_in_byte() + offset * element_stride_,
@@ -139,6 +145,7 @@ public:
                                     total_element_count_,
                                     element_stride_,
                                     element_alignment_,
+                                    layout_,
                                     type_,
                                     type_is_resolved_,
                                     policy_};
@@ -147,6 +154,7 @@ public:
     template<typename Arg>
     requires is_buffer_or_view_v<Arg> && std::is_same_v<buffer_element_t<Arg>, std::byte>
     [[nodiscard]] BufferCopyCommand *copy_from(const Arg &src, uint dst_offset = 0u) const noexcept {
+        OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         return BufferCopyCommand::create(src.handle(), handle(),
                                          src.offset_in_byte(),
                                          offset_in_byte() + dst_offset,
@@ -156,6 +164,7 @@ public:
     template<typename Arg>
     requires is_buffer_or_view_v<Arg> && std::is_same_v<buffer_element_t<Arg>, std::byte>
     [[nodiscard]] BufferCopyCommand *copy_to(Arg &dst, uint src_offset = 0u) const noexcept {
+        OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         return BufferCopyCommand::create(handle(), dst.handle(),
                                          offset_in_byte() + src_offset,
                                          dst.offset_in_byte(),
@@ -194,6 +203,7 @@ private:
     const Type *type_{nullptr};
     bool type_is_resolved_{false};
     StoragePrecisionPolicy policy_{};
+    DynamicBufferLayout layout_{DynamicBufferLayout::AOS};
     size_t element_stride_{0u};
     size_t element_alignment_{0u};
     size_t element_count_{0u};
@@ -201,23 +211,39 @@ private:
     string name_{};
 
 private:
-    void assign_layout_plan(const DynamicBufferLayoutPlan &layout_plan) noexcept {
+    [[nodiscard]] size_t storage_bytes_for_count(size_t element_count) const noexcept {
+        const auto *resolved = resolved_type();
+        if (resolved == nullptr) {
+            return 0u;
+        }
+        if (layout_ == DynamicBufferLayout::AOS) {
+            return resolved->size() * element_count;
+        }
+        return detail::runtime_soa_storage_bytes(resolved, element_count, policy_);
+    }
+
+    void assign_layout_plan(const DynamicBufferLayoutPlan &layout_plan,
+                            DynamicBufferLayout layout) noexcept {
         type_ = layout_plan.logical_type();
         type_is_resolved_ = false;
         policy_ = layout_plan.policy();
+        layout_ = layout;
         element_stride_ = layout_plan.element_size_bytes();
         element_alignment_ = layout_plan.element_alignment();
     }
 
-    void assign_resolved_layout(const Type *resolved_type) noexcept {
+    void assign_resolved_layout(const Type *resolved_type,
+                                DynamicBufferLayout layout) noexcept {
         type_ = resolved_type;
         type_is_resolved_ = true;
         policy_ = StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32, .allow_real_in_storage = true};
+        layout_ = layout;
         element_stride_ = resolved_type->size();
         element_alignment_ = resolved_type->alignment();
     }
 
     void validate_byte_size(size_t byte_size) const noexcept {
+        OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         OC_ASSERT(element_stride_ > 0u || byte_size == 0u);
         OC_ASSERT(element_stride_ == 0u || byte_size % element_stride_ == 0u);
     }
@@ -228,7 +254,7 @@ private:
         }
         auto *device = this->device();
         OC_ASSERT(device != nullptr);
-        ByteBuffer new_buffer{device, required_count * element_stride_, name_};
+        ByteBuffer new_buffer{device, storage_bytes_for_count(required_count), name_};
         if (valid() && size_in_byte() != 0u) {
             auto *copy = BufferCopyCommand::create(handle(), new_buffer.handle(), 0u, 0u, size_in_byte(), false);
             copy->accept(*device->command_visitor());
@@ -247,31 +273,45 @@ public:
                      const Type *logical_type,
                      StoragePrecisionPolicy policy,
                      size_t element_count,
+                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS,
                      const string &name = "")
-        : RawDynamicBuffer(device, DynamicBufferLayoutPlan::create(logical_type, policy), element_count, name) {}
+                : RawDynamicBuffer(device, DynamicBufferLayoutPlan::create(logical_type, policy), element_count, layout, name) {}
 
     RawDynamicBuffer(Device::Impl *device,
                      const Type *resolved_type,
                      size_t element_count,
+                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS,
                      const string &name = "")
         : device_(device),
-          byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device, resolved_type->size() * element_count, name)),
+                    byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device,
+                                                                                                                                             layout == DynamicBufferLayout::AOS ? resolved_type->size() * element_count
+                                                                                                                                                                                                                    : detail::runtime_soa_storage_bytes(resolved_type,
+                                                                                                                                                                                                                                                                                                                        element_count,
+                                                                                                                                                                                                                                                                                                                        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
+                                                                                                                                                                                                                                                                                                                                               .allow_real_in_storage = true}),
+                                                                                                                                             name)),
           element_count_(element_count),
           element_capacity_(element_count),
           name_(name) {
-        assign_resolved_layout(resolved_type);
+                assign_resolved_layout(resolved_type, layout);
     }
 
     RawDynamicBuffer(Device::Impl *device,
                      const DynamicBufferLayoutPlan &layout_plan,
                      size_t element_count,
+                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS,
                      const string &name = "")
         : device_(device),
-          byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device, layout_plan.storage_bytes(element_count), name)),
+                    byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device,
+                                                                                                                                             layout == DynamicBufferLayout::AOS ? layout_plan.storage_bytes(element_count)
+                                                                                                                                                                                                                    : detail::runtime_soa_storage_bytes(layout_plan.resolved_type(),
+                                                                                                                                                                                                                                                                                                                        element_count,
+                                                                                                                                                                                                                                                                                                                        layout_plan.policy()),
+                                                                                                                                             name)),
           element_count_(element_count),
           element_capacity_(element_count),
           name_(name) {
-        assign_layout_plan(layout_plan);
+                assign_layout_plan(layout_plan, layout);
     }
 
     [[nodiscard]] bool valid() const noexcept { return byte_buffer_.valid(); }
@@ -286,13 +326,14 @@ public:
         return type_is_resolved_ ? type_ : Type::resolve(type_, policy_);
     }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return policy_; }
+    [[nodiscard]] DynamicBufferLayout layout() const noexcept { return layout_; }
     [[nodiscard]] size_t element_stride() const noexcept { return element_stride_; }
     [[nodiscard]] size_t element_alignment() const noexcept { return element_alignment_; }
     [[nodiscard]] size_t size() const noexcept { return element_count_; }
     [[nodiscard]] size_t capacity() const noexcept { return element_capacity_; }
     [[nodiscard]] bool empty() const noexcept { return element_count_ == 0u; }
-    [[nodiscard]] size_t size_in_byte() const noexcept { return element_count_ * element_stride_; }
-    [[nodiscard]] size_t capacity_in_byte() const noexcept { return element_capacity_ * element_stride_; }
+    [[nodiscard]] size_t size_in_byte() const noexcept { return storage_bytes_for_count(element_count_); }
+    [[nodiscard]] size_t capacity_in_byte() const noexcept { return storage_bytes_for_count(element_capacity_); }
     [[nodiscard]] uint offset_in_byte() const noexcept { return 0u; }
 
     void destroy() noexcept {
@@ -302,10 +343,11 @@ public:
     }
 
     void reset_layout(const Type *logical_type,
-                      StoragePrecisionPolicy policy) noexcept {
+                      StoragePrecisionPolicy policy,
+                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) noexcept {
         const auto layout_plan = DynamicBufferLayoutPlan::create(logical_type, policy);
         destroy();
-        assign_layout_plan(layout_plan);
+        assign_layout_plan(layout_plan, layout);
     }
 
     void reserve(size_t element_capacity) noexcept {
@@ -318,6 +360,20 @@ public:
     }
 
     [[nodiscard]] RawDynamicBufferView view(size_t offset = 0u, size_t size = 0u) const noexcept {
+        if (layout_ != DynamicBufferLayout::AOS) {
+            OC_ASSERT(offset == 0u);
+            OC_ASSERT(size == 0u || size == element_count_);
+            return RawDynamicBufferView{byte_view(),
+                                        0u,
+                                        element_count_,
+                                        element_count_,
+                                        element_stride_,
+                                        element_alignment_,
+                                        layout_,
+                                        type_,
+                                        type_is_resolved_,
+                                        policy_};
+        }
         size = size == 0u ? element_count_ - offset : size;
         return RawDynamicBufferView{byte_view(offset * element_stride_, size * element_stride_),
                                     offset,
@@ -325,6 +381,7 @@ public:
                                     element_count_,
                                     element_stride_,
                                     element_alignment_,
+                                    layout_,
                                     type_,
                                     type_is_resolved_,
                                     policy_};
@@ -336,6 +393,7 @@ public:
 
     template<typename T>
     [[nodiscard]] BufferView<T> aos_view() const noexcept {
+        OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         return view().template aos_view<T>();
     }
 
@@ -379,19 +437,34 @@ public:
         return byte_buffer_.template soa_view_var<Elm>(view_size);
     }
 
-    [[nodiscard]] CommandBatch upload(const void *data, size_t byte_size, bool async = true) noexcept {
-        validate_byte_size(byte_size);
-        const auto required_count = element_stride_ == 0u ? 0u : byte_size / element_stride_;
-        reserve_for_count(required_count);
-        element_count_ = required_count;
+    [[nodiscard]] CommandBatch upload(const void *data,
+                                      size_t byte_size,
+                                      size_t element_count,
+                                      bool async = true) noexcept {
+        OC_ASSERT(byte_size == storage_bytes_for_count(element_count));
+        reserve_for_count(element_count);
+        element_count_ = element_count;
         if (byte_size == 0u) {
             return {};
         }
         return {BufferUploadCommand::create(data, handle(), 0u, byte_size, async)};
     }
 
+    [[nodiscard]] CommandBatch upload(const void *data, size_t byte_size, bool async = true) noexcept {
+        validate_byte_size(byte_size);
+        const auto required_count = element_stride_ == 0u ? 0u : byte_size / element_stride_;
+        return upload(data, byte_size, required_count, async);
+    }
+
     [[nodiscard]] CommandBatch upload(span<const std::byte> bytes, bool async = true) noexcept {
+        OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         return upload(bytes.data(), bytes.size(), async);
+    }
+
+    [[nodiscard]] CommandBatch upload(span<const std::byte> bytes,
+                                      size_t element_count,
+                                      bool async = true) noexcept {
+        return upload(bytes.data(), bytes.size(), element_count, async);
     }
 
     void upload_immediately(const void *data, size_t byte_size) noexcept {
@@ -399,13 +472,26 @@ public:
         commands.accept(*device()->command_visitor());
     }
 
+    void upload_immediately(const void *data,
+                            size_t byte_size,
+                            size_t element_count) noexcept {
+        auto commands = upload(data, byte_size, element_count, false);
+        commands.accept(*device()->command_visitor());
+    }
+
     void upload_immediately(span<const std::byte> bytes) noexcept {
         upload_immediately(bytes.data(), bytes.size());
+    }
+
+    void upload_immediately(span<const std::byte> bytes,
+                            size_t element_count) noexcept {
+        upload_immediately(bytes.data(), bytes.size(), element_count);
     }
 
     [[nodiscard]] bool needs_recreate(const HostDynamicBufferUploadView &view) const noexcept {
         return !valid() ||
                view.bytes.size() > capacity_in_byte() ||
+               layout() != view.layout ||
                logical_type() != view.logical_type ||
                resolved_type() != view.resolved_type() ||
                policy().policy != view.policy.policy ||
@@ -415,11 +501,12 @@ public:
     [[nodiscard]] DynamicBufferUploadStats sync_immediately(const HostDynamicBufferUploadView &view,
                                                             bool force_full_upload = false) noexcept {
         DynamicBufferUploadStats stats;
-        if (view.logical_type != nullptr && (logical_type() != view.logical_type ||
+        if (view.logical_type != nullptr && (layout() != view.layout ||
+                                             logical_type() != view.logical_type ||
                                              resolved_type() != view.resolved_type() ||
                                              policy().policy != view.policy.policy ||
                                              policy().allow_real_in_storage != view.policy.allow_real_in_storage)) {
-            reset_layout(view.logical_type, view.policy);
+            reset_layout(view.logical_type, view.policy, view.layout);
         }
         if (view.bytes.empty()) {
             destroy();
@@ -428,7 +515,7 @@ public:
         const bool full_upload_required = force_full_upload || needs_recreate(view) || view.dirty_segments.empty();
         reserve(view.element_count);
         if (full_upload_required) {
-            upload_immediately(view.bytes);
+            upload_immediately(view.bytes, view.element_count);
             stats.full_upload = true;
             stats.uploaded_segment_count = view.bytes.empty() ? 0u : 1u;
             stats.uploaded_bytes = view.bytes.size();
@@ -522,6 +609,7 @@ public:
     [[nodiscard]] size_t total_size_in_byte() const noexcept { return view_.total_size_in_byte(); }
     [[nodiscard]] size_t element_stride() const noexcept { return view_.element_stride(); }
     [[nodiscard]] size_t element_alignment() const noexcept { return view_.element_alignment(); }
+    [[nodiscard]] DynamicBufferLayout layout() const noexcept { return view_.layout(); }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return view_.policy(); }
     [[nodiscard]] const Type *logical_type() const noexcept { return view_.logical_type(); }
     [[nodiscard]] const Type *resolved_type() const noexcept { return view_.resolved_type(); }
@@ -536,6 +624,7 @@ public:
     template<typename Arg>
     requires is_buffer_or_view_v<Arg>
     [[nodiscard]] BufferCopyCommand *copy_from(const Arg &src, uint dst_offset = 0u) const noexcept {
+        OC_ASSERT(layout() == DynamicBufferLayout::AOS);
         return BufferCopyCommand::create(src.handle(), handle(),
                                          src.offset_in_byte(),
                                          offset_in_byte() + dst_offset * element_stride(),
@@ -545,6 +634,7 @@ public:
     template<typename Arg>
     requires is_buffer_or_view_v<Arg>
     [[nodiscard]] BufferCopyCommand *copy_to(Arg &dst, uint src_offset = 0u) const noexcept {
+        OC_ASSERT(layout() == DynamicBufferLayout::AOS);
         return BufferCopyCommand::create(handle(), dst.handle(),
                                          offset_in_byte() + src_offset * element_stride(),
                                          dst.offset_in_byte(),
@@ -561,6 +651,7 @@ public:
                                       bool async = true,
                                       DynamicBufferLayout layout = DynamicBufferLayout::AOS) const {
         OC_ASSERT(values.size() == size());
+        OC_ASSERT(layout == this->layout());
         auto bytes = detail::encode_dynamic_buffer_values(values, policy(), layout);
         CommandBatch commands;
         commands << view_.upload(bytes->data(), async);
@@ -571,6 +662,7 @@ public:
     [[nodiscard]] CommandBatch download(T *data,
                                         bool async = true,
                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS) const {
+        OC_ASSERT(layout == this->layout());
         auto bytes = detail::allocate_dynamic_buffer_bytes<T>(size(), policy(), layout);
         CommandBatch commands;
         commands << view_.download(bytes->data(), async);
@@ -612,6 +704,7 @@ public:
     [[nodiscard]] const Type *logical_type() const noexcept { return buffer_.logical_type(); }
     [[nodiscard]] const Type *resolved_type() const noexcept { return buffer_.resolved_type(); }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return buffer_.policy(); }
+    [[nodiscard]] DynamicBufferLayout layout() const noexcept { return buffer_.layout(); }
     [[nodiscard]] size_t element_stride() const noexcept { return buffer_.element_stride(); }
     [[nodiscard]] size_t element_alignment() const noexcept { return buffer_.element_alignment(); }
     [[nodiscard]] size_t size() const noexcept { return buffer_.size(); }
@@ -681,8 +774,9 @@ public:
     [[nodiscard]] CommandBatch upload(span<const T> values,
                                       bool async = true,
                                       DynamicBufferLayout layout = DynamicBufferLayout::AOS) {
+        OC_ASSERT(layout == this->layout());
         auto bytes = detail::encode_dynamic_buffer_values(values, policy(), layout);
-        CommandBatch commands = buffer_.upload(bytes->data(), bytes->size(), async);
+        CommandBatch commands = buffer_.upload(bytes->data(), bytes->size(), values.size(), async);
         commands << keep_alive(async, bytes);
         return commands;
     }
@@ -695,18 +789,20 @@ public:
 
     void upload_immediately(span<const T> values,
                             DynamicBufferLayout layout = DynamicBufferLayout::AOS) noexcept {
+        OC_ASSERT(layout == this->layout());
         HostByteBuffer bytes;
         DynamicBufferLayoutCodec<T>::encode(values.data(),
                                             values.size(),
                                             bytes,
                                             policy(),
                                             layout);
-        buffer_.upload_immediately(bytes.bytes_span());
+        buffer_.upload_immediately(bytes.bytes_span(), values.size());
     }
 
     [[nodiscard]] CommandBatch download(T *data,
                                         bool async = true,
                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS) const {
+        OC_ASSERT(layout == this->layout());
         auto bytes = detail::allocate_dynamic_buffer_bytes<T>(size(), policy(), layout);
         CommandBatch commands;
         commands << buffer_.download(bytes->data(), async);
@@ -718,6 +814,7 @@ public:
 
     void download_immediately(T *data,
                               DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept {
+        OC_ASSERT(layout == this->layout());
         HostByteBuffer bytes;
         bytes.resize(DynamicBufferLayoutCodec<T>::storage_bytes(size(),
                                                                 policy(),
@@ -770,6 +867,7 @@ inline RawDynamicBufferView::RawDynamicBufferView(const RawDynamicBuffer &buffer
                            buffer.size(),
                            buffer.element_stride(),
                            buffer.element_alignment(),
+                           buffer.layout(),
                            buffer.logical_type() != nullptr ? buffer.logical_type() : buffer.resolved_type(),
                            buffer.logical_type() == nullptr,
                            buffer.policy()) {}

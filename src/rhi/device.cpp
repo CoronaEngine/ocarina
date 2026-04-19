@@ -21,14 +21,16 @@ ByteBuffer Device::create_byte_buffer(size_t size, const std::string &name) cons
 RawDynamicBuffer Device::create_raw_dynamic_buffer(const Type *logical_type,
                                                    StoragePrecisionPolicy policy,
                                                    size_t element_count,
-                                                   const string &name) const noexcept {
-    return create<RawDynamicBuffer>(logical_type, policy, element_count, name);
+                                                   const string &name,
+                                                   DynamicBufferLayout layout) const noexcept {
+    return create<RawDynamicBuffer>(logical_type, policy, element_count, layout, name);
 }
 
 RawDynamicBuffer Device::create_raw_dynamic_buffer_resolved(const Type *resolved_type,
                                                             size_t element_count,
-                                                            const string &name) const noexcept {
-    return create<RawDynamicBuffer>(resolved_type, element_count, name);
+                                                            const string &name,
+                                                            DynamicBufferLayout layout) const noexcept {
+    return create<RawDynamicBuffer>(resolved_type, element_count, layout, name);
 }
 
 Stream Device::create_stream() noexcept {

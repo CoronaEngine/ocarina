@@ -61,14 +61,12 @@ void for_each_array_element(Func &&func) noexcept {
 
 template<typename T>
 [[nodiscard]] size_t resolved_size(StoragePrecisionPolicy policy) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    return recursive_resolved_size<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, policy);
+    return compile_time_resolved_layout_size<T>(policy);
 }
 
 template<typename T>
 [[nodiscard]] size_t resolved_alignment(StoragePrecisionPolicy policy) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    return recursive_resolved_alignment<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, policy);
+    return compile_time_resolved_layout_alignment<T>(policy);
 }
 
 template<typename T>
@@ -416,8 +414,7 @@ template<typename T, typename Getter>
 template<typename T>
 [[nodiscard]] size_t soa_struct_like_storage_bytes(size_t count,
                                                    StoragePrecisionPolicy policy) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
-    return recursive_soa_storage_bytes<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, count, policy);
+    return compile_time_soa_storage_bytes<T>(count, policy);
 }
 
 template<typename T, typename Getter>
@@ -474,9 +471,8 @@ template<typename T>
 [[nodiscard]] size_t soa_storage_bytes(size_t count,
                                        StoragePrecisionPolicy policy,
                                        bool direct_array_element) noexcept {
-    using raw_t = std::remove_cvref_t<T>;
     (void)direct_array_element;
-    return recursive_soa_storage_bytes<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, count, policy);
+    return compile_time_soa_storage_bytes<T>(count, policy);
 }
 
 }// namespace detail

@@ -153,17 +153,20 @@ public:
     [[nodiscard]] RawDynamicBuffer create_raw_dynamic_buffer(const Type *logical_type,
                                                              StoragePrecisionPolicy policy,
                                                              size_t element_count = 0u,
-                                                             const string &name = "") const noexcept;
+                                                             const string &name = "",
+                                                             DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept;
 
     [[nodiscard]] RawDynamicBuffer create_raw_dynamic_buffer_resolved(const Type *resolved_type,
                                                                       size_t element_count = 0u,
-                                                                      const string &name = "") const noexcept;
+                                                                      const string &name = "",
+                                                                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept;
 
     template<typename T>
     [[nodiscard]] DynamicBuffer<T> create_dynamic_buffer(StoragePrecisionPolicy policy,
                                                          size_t element_count = 0u,
-                                                         const string &name = "") const noexcept {
-        return DynamicBuffer<T>{create_raw_dynamic_buffer(Type::of<T>(), policy, element_count, name)};
+                                                         const string &name = "",
+                                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept {
+        return DynamicBuffer<T>{create_raw_dynamic_buffer(Type::of<T>(), policy, element_count, name, layout)};
     }
 
     template<typename T, AccessMode mode = AOS>

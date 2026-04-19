@@ -16,6 +16,76 @@ struct StaticTypeKey {
     using type = T;
 };
 
+struct RuntimeTypeLayoutAdapter;
+struct CompileTimeTypeLayoutAdapter;
+
+template<typename Adapter, typename T>
+[[nodiscard]] size_t recursive_resolved_alignment(StaticTypeKey<T> node,
+                                                  StoragePrecisionPolicy policy) noexcept;
+
+template<typename Adapter, typename T>
+[[nodiscard]] size_t recursive_resolved_size(StaticTypeKey<T> node,
+                                             StoragePrecisionPolicy policy) noexcept;
+
+template<typename Adapter, typename T>
+[[nodiscard]] size_t recursive_soa_storage_bytes(StaticTypeKey<T> node,
+                                                 size_t count,
+                                                 StoragePrecisionPolicy policy) noexcept;
+
+template<typename Adapter>
+[[nodiscard]] size_t recursive_resolved_alignment(const Type *node,
+                                                  StoragePrecisionPolicy policy) noexcept;
+
+template<typename Adapter>
+[[nodiscard]] size_t recursive_resolved_size(const Type *node,
+                                             StoragePrecisionPolicy policy) noexcept;
+
+template<typename Adapter>
+[[nodiscard]] size_t recursive_soa_storage_bytes(const Type *node,
+                                                 size_t count,
+                                                 StoragePrecisionPolicy policy) noexcept;
+
+template<typename T>
+[[nodiscard]] inline size_t compile_time_resolved_layout_size(StoragePrecisionPolicy policy) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    return recursive_resolved_size<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, policy);
+}
+
+template<typename T>
+[[nodiscard]] inline size_t compile_time_resolved_layout_alignment(StoragePrecisionPolicy policy) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    return recursive_resolved_alignment<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, policy);
+}
+
+template<typename T>
+[[nodiscard]] inline size_t compile_time_soa_storage_bytes(size_t count,
+                                                           StoragePrecisionPolicy policy) noexcept {
+    using raw_t = std::remove_cvref_t<T>;
+    return recursive_soa_storage_bytes<CompileTimeTypeLayoutAdapter>(StaticTypeKey<raw_t>{}, count, policy);
+}
+
+template<typename T>
+[[nodiscard]] inline size_t compile_time_soa_stride(StoragePrecisionPolicy policy,
+                                                    size_t stride = 0u) noexcept {
+    return stride == 0u ? compile_time_resolved_layout_size<T>(policy) : stride;
+}
+
+[[nodiscard]] inline size_t runtime_resolved_layout_size(const Type *type,
+                                                         StoragePrecisionPolicy policy) noexcept {
+    return recursive_resolved_size<RuntimeTypeLayoutAdapter>(type, policy);
+}
+
+[[nodiscard]] inline size_t runtime_resolved_layout_alignment(const Type *type,
+                                                              StoragePrecisionPolicy policy) noexcept {
+    return recursive_resolved_alignment<RuntimeTypeLayoutAdapter>(type, policy);
+}
+
+[[nodiscard]] inline size_t runtime_soa_storage_bytes(const Type *type,
+                                                      size_t count,
+                                                      StoragePrecisionPolicy policy) noexcept {
+    return recursive_soa_storage_bytes<RuntimeTypeLayoutAdapter>(type, count, policy);
+}
+
 template<typename T>
 [[nodiscard]] inline size_t resolved_scalar_size(StoragePrecisionPolicy policy) noexcept {
     using raw_t = std::remove_cvref_t<T>;
@@ -39,10 +109,6 @@ template<typename T>
         return alignof(raw_t);
     }
 }
-
-template<typename Adapter, typename T>
-[[nodiscard]] size_t recursive_resolved_alignment(StaticTypeKey<T> node,
-                                                  StoragePrecisionPolicy policy) noexcept;
 
 template<typename Adapter, typename T>
 [[nodiscard]] size_t recursive_resolved_size(StaticTypeKey<T> node,
@@ -104,10 +170,6 @@ template<typename Adapter, typename T>
         return Adapter::fallback_size(node) * count;
     }
 }
-
-template<typename Adapter>
-[[nodiscard]] size_t recursive_resolved_alignment(const Type *node,
-                                                  StoragePrecisionPolicy policy) noexcept;
 
 template<typename Adapter>
 [[nodiscard]] size_t recursive_resolved_size(const Type *node,

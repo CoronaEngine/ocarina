@@ -4,6 +4,7 @@
 
 #include "dynamic_buffer_layout_plan.h"
 
+#include "core/dynamic_buffer/dynamic_buffer_field_access.h"
 #include "core/dynamic_buffer/dynamic_buffer_layout_common.h"
 #include "core/type_system/type_desc.h"
 
@@ -14,22 +15,6 @@ namespace {
 [[nodiscard]] size_t align_up_size(size_t value, size_t alignment) noexcept {
     OC_ASSERT(alignment != 0u);
     return (value + alignment - 1u) / alignment * alignment;
-}
-
-[[nodiscard]] size_t resolved_runtime_size(const Type *type) noexcept {
-    OC_ASSERT(type != nullptr);
-    return detail::recursive_resolved_size<detail::RuntimeTypeLayoutAdapter>(
-        type,
-        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
-                               .allow_real_in_storage = true});
-}
-
-[[nodiscard]] size_t resolved_runtime_alignment(const Type *type) noexcept {
-    OC_ASSERT(type != nullptr);
-    return detail::recursive_resolved_alignment<detail::RuntimeTypeLayoutAdapter>(
-        type,
-        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
-                               .allow_real_in_storage = true});
 }
 
 [[nodiscard]] string resolve_real_description(StoragePrecisionPolicy policy) noexcept {
@@ -192,17 +177,6 @@ namespace {
     return false;
 }
 
-[[nodiscard]] size_t soa_storage_bytes(const Type *type, size_t count) noexcept {
-    if (type == nullptr) {
-        return 0u;
-    }
-    return detail::recursive_soa_storage_bytes<detail::RuntimeTypeLayoutAdapter>(
-        type,
-        count,
-        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
-                               .allow_real_in_storage = true});
-}
-
 struct FieldRegionInfo {
     const Type *logical_type{nullptr};
     const Type *resolved_type{nullptr};
@@ -214,240 +188,20 @@ struct FieldRegionInfo {
     }
 };
 
-struct FieldStorageInfo {
-    const Type *logical_type{nullptr};
-    const Type *resolved_type{nullptr};
-    size_t storage_offset{0u};
-    size_t record_stride{0u};
-
-    [[nodiscard]] bool valid() const noexcept {
-        return logical_type != nullptr && resolved_type != nullptr;
-    }
-};
-
-enum class FieldOffsetMode : uint8_t {
-    AOS,
-    SOA,
-};
-
-struct FieldAccessInfo {
-    const Type *logical_type{nullptr};
-    const Type *resolved_type{nullptr};
-    size_t offset{0u};
-    size_t size_in_bytes{0u};
-    size_t record_stride{0u};
-
-    [[nodiscard]] bool valid() const noexcept {
-        return logical_type != nullptr && resolved_type != nullptr;
-    }
-};
-
-[[nodiscard]] size_t field_member_offset(const Type *resolved_type,
-                                         uint32_t member_index,
-                                         FieldOffsetMode mode,
-                                         size_t element_count) noexcept {
-    size_t offset = 0u;
-    for (uint32_t index = 0u; index < member_index; ++index) {
-        const auto *member = resolved_type->members()[index];
-        if (mode == FieldOffsetMode::AOS) {
-            offset = align_up_size(offset, resolved_runtime_alignment(member));
-            offset += resolved_runtime_size(member);
-        } else {
-            offset += soa_storage_bytes(member, element_count);
-        }
-    }
-    return offset;
-}
-
-[[nodiscard]] size_t field_element_offset(const Type *resolved_elem,
-                                          uint32_t element_index,
-                                          FieldOffsetMode mode,
-                                          size_t element_count) noexcept {
-    if (mode == FieldOffsetMode::AOS) {
-        return element_index * resolved_runtime_size(resolved_elem);
-    }
-    return element_index * soa_storage_bytes(resolved_elem, element_count);
-}
-
-[[nodiscard]] FieldAccessInfo resolve_field_access_info(const Type *logical_type,
-                                                        const Type *resolved_type,
-                                                        span<const TypedFieldPath::Step> steps,
-                                                        FieldOffsetMode mode,
-                                                        size_t element_count,
-                                                        size_t current_offset = 0u) noexcept {
-    if (logical_type == nullptr || resolved_type == nullptr) {
-        return {};
-    }
-    size_t record_stride = 0u;
-    while (!steps.empty()) {
-        const auto step = steps.front();
-        steps = steps.subspan(1u);
-        if (logical_type->is_structure()) {
-            if (step.kind != TypedFieldPath::StepKind::member) {
-                return {};
-            }
-            const auto logical_members = logical_type->members();
-            const auto resolved_members = resolved_type->members();
-            if (logical_members.size() != resolved_members.size() || step.value >= logical_members.size()) {
-                return {};
-            }
-            current_offset += field_member_offset(resolved_type, step.value, mode, element_count);
-            const auto *resolved_member = resolved_members[step.value];
-            if (mode == FieldOffsetMode::AOS) {
-                current_offset = align_up_size(current_offset, resolved_runtime_alignment(resolved_member));
-            }
-            logical_type = logical_members[step.value];
-            resolved_type = resolved_member;
-            continue;
-        }
-        if (logical_type->is_array()) {
-            if (step.kind != TypedFieldPath::StepKind::index || step.value >= logical_type->dimension()) {
-                return {};
-            }
-            const auto *resolved_elem = resolved_type->element();
-            current_offset += field_element_offset(resolved_elem, step.value, mode, element_count);
-            logical_type = logical_type->element();
-            resolved_type = resolved_elem;
-            continue;
-        }
-        if (logical_type->is_vector()) {
-            if (step.kind != TypedFieldPath::StepKind::component || step.value >= logical_type->dimension()) {
-                return {};
-            }
-            const auto *logical_elem = logical_type->element();
-            const auto *resolved_elem = resolved_type->element();
-            current_offset += step.value * resolved_runtime_size(resolved_elem);
-            if (mode == FieldOffsetMode::SOA && steps.empty()) {
-                record_stride = resolved_runtime_size(resolved_type);
-            }
-            logical_type = logical_elem;
-            resolved_type = resolved_elem;
-            continue;
-        }
-        if (logical_type->is_matrix()) {
-            if ((step.kind != TypedFieldPath::StepKind::index && step.kind != TypedFieldPath::StepKind::component) ||
-                step.value >= logical_type->dimension()) {
-                return {};
-            }
-            const auto *resolved_elem = resolved_type->element();
-            current_offset += field_element_offset(resolved_elem, step.value, mode, element_count);
-            logical_type = logical_type->element();
-            resolved_type = resolved_elem;
-            continue;
-        }
-        return {};
-    }
-    return FieldAccessInfo{logical_type,
-                           resolved_type,
-                           current_offset,
-                           resolved_runtime_size(resolved_type),
-                           record_stride == 0u ? resolved_runtime_size(resolved_type) : record_stride};
-}
-
 [[nodiscard]] FieldRegionInfo resolve_field_region_info(const Type *logical_type,
                                                         const Type *resolved_type,
                                                         span<const TypedFieldPath::Step> steps,
                                                         size_t current_offset) noexcept {
-    auto info = resolve_field_access_info(logical_type,
-                                          resolved_type,
-                                          steps,
-                                          FieldOffsetMode::AOS,
-                                          1u,
-                                          current_offset);
+    auto info = detail::resolve_runtime_field_access_info(logical_type,
+                                                          resolved_type,
+                                                          steps,
+                                                          detail::FieldOffsetMode::AOS,
+                                                          1u,
+                                                          current_offset);
     if (!info.valid()) {
         return {};
     }
     return FieldRegionInfo{info.logical_type, info.resolved_type, info.offset, info.size_in_bytes};
-}
-
-[[nodiscard]] FieldStorageInfo resolve_field_storage_info(const Type *logical_type,
-                                                          const Type *resolved_type,
-                                                          span<const TypedFieldPath::Step> steps,
-                                                          size_t current_offset,
-                                                          size_t element_count) noexcept {
-    auto info = resolve_field_access_info(logical_type,
-                                          resolved_type,
-                                          steps,
-                                          FieldOffsetMode::SOA,
-                                          element_count,
-                                          current_offset);
-    if (!info.valid()) {
-        return {};
-    }
-    return FieldStorageInfo{info.logical_type, info.resolved_type, info.offset, info.record_stride};
-}
-
-void collect_soa_segments(const Type *resolved_type,
-                          size_t element_count,
-                          size_t index,
-                          size_t storage_offset,
-                          size_t staging_offset,
-                          vector<ByteSegment> &segments) noexcept {
-    if (resolved_type == nullptr) {
-        return;
-    }
-    if (resolved_type->is_scalar() || resolved_type->is_vector()) {
-        const auto stride = resolved_runtime_size(resolved_type);
-        segments.emplace_back(ByteSegment{
-            .storage_begin_byte = storage_offset + index * stride,
-            .staging_begin_byte = staging_offset,
-            .size_in_bytes = stride});
-        return;
-    }
-    if (resolved_type->is_matrix() || resolved_type->is_array()) {
-        const auto *resolved_elem = resolved_type->element();
-        size_t current_storage = storage_offset;
-        size_t current_staging = staging_offset;
-        for (uint32_t element_index = 0u; element_index < resolved_type->dimension(); ++element_index) {
-            collect_soa_segments(resolved_elem,
-                                 element_count,
-                                 index,
-                                 current_storage,
-                                 current_staging,
-                                 segments);
-            current_storage += soa_storage_bytes(resolved_elem, element_count);
-            current_staging += soa_storage_bytes(resolved_elem, 1u);
-        }
-        return;
-    }
-    if (resolved_type->is_structure()) {
-        size_t current_storage = storage_offset;
-        size_t current_staging = staging_offset;
-        for (const auto *member : resolved_type->members()) {
-            collect_soa_segments(member,
-                                 element_count,
-                                 index,
-                                 current_storage,
-                                 current_staging,
-                                 segments);
-            current_storage += soa_storage_bytes(member, element_count);
-            current_staging += soa_storage_bytes(member, 1u);
-        }
-        return;
-    }
-    const auto size = resolved_runtime_size(resolved_type);
-    segments.emplace_back(ByteSegment{
-        .storage_begin_byte = storage_offset + index * size,
-        .staging_begin_byte = staging_offset,
-        .size_in_bytes = size});
-}
-
-void collect_soa_field_segments(const FieldStorageInfo &info,
-                                size_t element_count,
-                                size_t index,
-                                vector<ByteSegment> &segments) noexcept {
-    if (!info.valid()) {
-        return;
-    }
-    if (info.resolved_type->is_scalar()) {
-        const auto size = resolved_runtime_size(info.resolved_type);
-        segments.emplace_back(ByteSegment{
-            .storage_begin_byte = info.storage_offset + index * info.record_stride,
-            .staging_begin_byte = 0u,
-            .size_in_bytes = size});
-        return;
-    }
-    collect_soa_segments(info.resolved_type, element_count, index, info.storage_offset, 0u, segments);
 }
 
 }// namespace
@@ -483,8 +237,8 @@ DynamicBufferLayoutPlan DynamicBufferLayoutPlan::create(const Type *logical_type
     OC_ASSERT(resolved_type != nullptr);
     return DynamicBufferLayoutPlan{logical_type,
                                    policy,
-                                   resolved_runtime_size(resolved_type),
-                                   resolved_runtime_alignment(resolved_type),
+                                   detail::resolved_runtime_field_size(resolved_type),
+                                   detail::resolved_runtime_field_alignment(resolved_type),
                                    contains_real_recursive(logical_type),
                                    has_precision_lowering_recursive(logical_type, resolved_type)};
 }

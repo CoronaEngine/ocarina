@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 
+#include "core/dynamic_buffer/dynamic_buffer_field_access.h"
 #include "core/dynamic_buffer/host_dynamic_buffer.h"
 #include "core/type_system/type_desc.h"
 #include "math/real.h"
@@ -166,6 +167,47 @@ namespace {
     CHECK(roughness_segments[0].storage_begin_byte == 40u);
     CHECK(roughness_segments[0].staging_begin_byte == 0u);
     CHECK(roughness_segments[0].size_in_bytes == 2u);
+    return true;
+}
+
+[[nodiscard]] bool test_shared_runtime_field_access_matches_layout_plan() {
+    auto policy = make_policy(PrecisionPolicy::force_f16);
+    auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(), policy);
+    auto direction_z_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<1u>, FieldComponentStep<2u>>();
+    auto info = detail::resolve_runtime_field_access_info(plan.logical_type(),
+                                                          plan.resolved_type(),
+                                                          direction_z_path.steps(),
+                                                          detail::FieldOffsetMode::AOS,
+                                                          1u);
+    CHECK(info.valid());
+    auto record_region = plan.record_region(1u);
+    auto field_region = plan.field_region(1u, direction_z_path);
+    CHECK(field_region.begin_byte == record_region.begin_byte + info.offset);
+    CHECK(field_region.size() == info.size_in_bytes);
+    CHECK(info.logical_type == Type::of<real>());
+    CHECK(info.resolved_type == Type::of<half>());
+    return true;
+}
+
+[[nodiscard]] bool test_shared_runtime_soa_field_segments() {
+    auto policy = make_policy(PrecisionPolicy::force_f16);
+    auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(), policy);
+    auto leaf_path = make_typed_field_path<FieldMemberStep<0u>>();
+    auto info = detail::resolve_runtime_field_access_info(plan.logical_type(),
+                                                          plan.resolved_type(),
+                                                          leaf_path.steps(),
+                                                          detail::FieldOffsetMode::SOA,
+                                                          3u);
+    CHECK(info.valid());
+    vector<ByteSegment> segments;
+    detail::collect_runtime_soa_field_segments(info, 3u, 1u, segments);
+    CHECK(segments.size() == 2u);
+    CHECK(segments[0].storage_begin_byte == 2u);
+    CHECK(segments[0].staging_begin_byte == 0u);
+    CHECK(segments[0].size_in_bytes == 2u);
+    CHECK(segments[1].storage_begin_byte == 14u);
+    CHECK(segments[1].staging_begin_byte == 2u);
+    CHECK(segments[1].size_in_bytes == 8u);
     return true;
 }
 
@@ -351,6 +393,8 @@ int main() {
     passed = test_layout_plan_reports_expected_types() && passed;
     passed = test_record_and_field_regions_report_expected_offsets() && passed;
     passed = test_record_and_field_segments_match_regions() && passed;
+    passed = test_shared_runtime_field_access_matches_layout_plan() && passed;
+    passed = test_shared_runtime_soa_field_segments() && passed;
     passed = test_host_buffer_record_round_trip() && passed;
     passed = test_single_element_external_read_write_usage() && passed;
     passed = test_typed_view_single_element_read_write_usage() && passed;

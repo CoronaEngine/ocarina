@@ -32,6 +32,7 @@ public:
 
     template<typename U>
     shader_buffer_argument(const DynamicBuffer<U> &buffer) noexcept {
+        OC_ASSERT(buffer.layout() == DynamicBufferLayout::AOS);
         const bool logical_match = buffer.logical_type() == Type::of<T>();
         const bool storage_match = buffer.element_stride() == sizeof(T) &&
                                    buffer.element_alignment() == alignof(T);

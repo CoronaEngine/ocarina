@@ -133,6 +133,27 @@ template<typename T>
     return true;
 }
 
+template<typename T>
+[[nodiscard]] bool test_shared_compile_time_layout_helpers(StoragePrecisionPolicy policy) {
+    CHECK(detail::compile_time_resolved_layout_size<T>(policy) ==
+          DynamicBufferLayoutCodec<T>::storage_bytes(1u, policy, DynamicBufferLayout::AOS));
+    CHECK(detail::compile_time_soa_stride<T>(policy) == detail::compile_time_resolved_layout_size<T>(policy));
+    CHECK(detail::compile_time_soa_storage_bytes<T>(3u, policy) ==
+          DynamicBufferLayoutCodec<T>::storage_bytes(3u, policy, DynamicBufferLayout::SOA));
+    return true;
+}
+
+template<typename T>
+[[nodiscard]] bool test_shared_runtime_layout_helpers(StoragePrecisionPolicy policy) {
+    const Type *resolved = Type::resolve(Type::of<T>(), policy);
+    CHECK(resolved != nullptr);
+    CHECK(detail::runtime_resolved_layout_size(resolved, policy) == resolved->size());
+    CHECK(detail::runtime_resolved_layout_alignment(resolved, policy) == resolved->alignment());
+    CHECK(detail::runtime_soa_storage_bytes(resolved, 3u, policy) ==
+          DynamicBufferLayoutCodec<T>::storage_bytes(3u, policy, DynamicBufferLayout::SOA));
+    return true;
+}
+
 [[nodiscard]] bool test_force_f32_array_uses_float_storage() {
     StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
     HostByteBuffer bytes;
@@ -270,6 +291,10 @@ int main() {
     passed = test_aos_storage_matches_layout_resolver<CodecRealLeaf>(make_policy(PrecisionPolicy::force_f32)) && passed;
     passed = test_aos_storage_matches_layout_resolver<CodecRealLeaf>(make_policy(PrecisionPolicy::force_f16)) && passed;
     passed = test_aos_storage_matches_layout_resolver<CodecRealArray>(make_policy(PrecisionPolicy::force_f32)) && passed;
+    passed = test_shared_compile_time_layout_helpers<CodecRealNested>(make_policy(PrecisionPolicy::force_f32)) && passed;
+    passed = test_shared_compile_time_layout_helpers<CodecRealNested>(make_policy(PrecisionPolicy::force_f16)) && passed;
+    passed = test_shared_runtime_layout_helpers<CodecRealNested>(make_policy(PrecisionPolicy::force_f32)) && passed;
+    passed = test_shared_runtime_layout_helpers<CodecRealNested>(make_policy(PrecisionPolicy::force_f16)) && passed;
     passed = test_force_f32_array_uses_float_storage() && passed;
     passed = test_storage_type_scheme() && passed;
     passed = test_float_aos_round_trip() && passed;

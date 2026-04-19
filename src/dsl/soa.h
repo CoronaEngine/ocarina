@@ -87,12 +87,14 @@ struct SOAView {
 
 template<typename T>
 [[nodiscard]] inline ocarina::uint resolved_soa_type_size() noexcept {
-    return ocarina::detail::template resolved_size<T>(ocarina::global_storage_policy());
+    return static_cast<ocarina::uint>(
+        ocarina::detail::compile_time_resolved_layout_size<T>(ocarina::global_storage_policy()));
 }
 
 template<typename T>
 [[nodiscard]] inline ocarina::uint resolved_soa_stride(ocarina::uint stride = 0u) noexcept {
-    return stride == 0u ? resolved_soa_type_size<T>() : stride;
+    return static_cast<ocarina::uint>(
+        ocarina::detail::compile_time_soa_stride<T>(ocarina::global_storage_policy(), stride));
 }
 
 }// namespace ocarina
