@@ -96,40 +96,59 @@ struct FieldIndexStep {};
 template<uint32_t Index>
 struct FieldComponentStep {};
 
+template<typename... Steps>
+class StaticTypedFieldPath;
+
 namespace detail {
 
 template<typename Step>
-struct TypedFieldPathStepAppender;
+struct TypedFieldPathStaticStep;
 
 template<uint32_t Index>
-struct TypedFieldPathStepAppender<FieldMemberStep<Index>> {
-    [[nodiscard]] static TypedFieldPath append(const TypedFieldPath &path) {
-        return path.append_member(Index);
-    }
+struct TypedFieldPathStaticStep<FieldMemberStep<Index>> {
+    inline static constexpr TypedFieldPath::Step value{
+        .kind = TypedFieldPath::StepKind::member,
+        .value = Index};
 };
 
 template<uint32_t Index>
-struct TypedFieldPathStepAppender<FieldIndexStep<Index>> {
-    [[nodiscard]] static TypedFieldPath append(const TypedFieldPath &path) {
-        return path.append_index(Index);
-    }
+struct TypedFieldPathStaticStep<FieldIndexStep<Index>> {
+    inline static constexpr TypedFieldPath::Step value{
+        .kind = TypedFieldPath::StepKind::index,
+        .value = Index};
 };
 
 template<uint32_t Index>
-struct TypedFieldPathStepAppender<FieldComponentStep<Index>> {
-    [[nodiscard]] static TypedFieldPath append(const TypedFieldPath &path) {
-        return path.append_component(Index);
-    }
+struct TypedFieldPathStaticStep<FieldComponentStep<Index>> {
+    inline static constexpr TypedFieldPath::Step value{
+        .kind = TypedFieldPath::StepKind::component,
+        .value = Index};
 };
 
 }// namespace detail
 
+/// Compile-time field path that exposes the same step view as TypedFieldPath.
+template<typename... Steps>
+class StaticTypedFieldPath {
+private:
+    inline static constexpr ocarina::array<TypedFieldPath::Step, sizeof...(Steps)> steps_{
+        detail::TypedFieldPathStaticStep<Steps>::value...
+    };
+
+public:
+    [[nodiscard]] constexpr span<const TypedFieldPath::Step> steps() const noexcept {
+        return {steps_.data(), steps_.size()};
+    }
+
+    [[nodiscard]] constexpr bool empty() const noexcept {
+        return steps_.empty();
+    }
+};
+
 template<typename... Steps>
 /// Build a compile-time checked field path from step tags.
-[[nodiscard]] TypedFieldPath make_typed_field_path() {
-    TypedFieldPath path;
-    ((path = detail::TypedFieldPathStepAppender<Steps>::append(path)), ...);
-    return path;
+[[nodiscard]] constexpr StaticTypedFieldPath<Steps...> make_typed_field_path() noexcept {
+    return {};
 }
 
 /// Resolved layout metadata for one logical dynamic-buffer element type.
@@ -183,18 +202,48 @@ public:
     [[nodiscard]] ByteRegion record_region(size_t index) const noexcept;
     /// Continuous byte range for one logical subfield within one record.
     [[nodiscard]] ByteRegion field_region(size_t index,
-                                          const TypedFieldPath &path) const noexcept;
+                                          span<const TypedFieldPath::Step> steps) const noexcept;
+    [[nodiscard]] ByteRegion field_region(size_t index,
+                                          const TypedFieldPath &path) const noexcept {
+        return field_region(index, path.steps());
+    }
+    template<typename... Steps>
+    [[nodiscard]] ByteRegion field_region(size_t index,
+                                          const StaticTypedFieldPath<Steps...> &path) const noexcept {
+        return field_region(index, path.steps());
+    }
     /// Storage/staging copy segments for one full record.
-    [[nodiscard]] vector<ByteSegment> record_segments(size_t element_count,
-                                                      size_t index) const noexcept;
+    [[nodiscard]] vector<ByteSegment> record_segments(size_t index) const noexcept;
     /// Storage/staging copy segments for one logical subfield.
-    [[nodiscard]] vector<ByteSegment> field_segments(size_t element_count,
-                                                     size_t index,
-                                                     const TypedFieldPath &path) const noexcept;
+    [[nodiscard]] vector<ByteSegment> field_segments(size_t index,
+                                                     span<const TypedFieldPath::Step> steps) const noexcept;
+    [[nodiscard]] vector<ByteSegment> field_segments(size_t index,
+                                                     const TypedFieldPath &path) const noexcept {
+        return field_segments(index, path.steps());
+    }
+    template<typename... Steps>
+    [[nodiscard]] vector<ByteSegment> field_segments(size_t index,
+                                                     const StaticTypedFieldPath<Steps...> &path) const noexcept {
+        return field_segments(index, path.steps());
+    }
     /// Logical type reached by the given field path.
-    [[nodiscard]] const Type *field_logical_type(const TypedFieldPath &path) const noexcept;
+    [[nodiscard]] const Type *field_logical_type(span<const TypedFieldPath::Step> steps) const noexcept;
+    [[nodiscard]] const Type *field_logical_type(const TypedFieldPath &path) const noexcept {
+        return field_logical_type(path.steps());
+    }
+    template<typename... Steps>
+    [[nodiscard]] const Type *field_logical_type(const StaticTypedFieldPath<Steps...> &path) const noexcept {
+        return field_logical_type(path.steps());
+    }
     /// Resolved storage type reached by the given field path.
-    [[nodiscard]] const Type *field_resolved_type(const TypedFieldPath &path) const noexcept;
+    [[nodiscard]] const Type *field_resolved_type(span<const TypedFieldPath::Step> steps) const noexcept;
+    [[nodiscard]] const Type *field_resolved_type(const TypedFieldPath &path) const noexcept {
+        return field_resolved_type(path.steps());
+    }
+    template<typename... Steps>
+    [[nodiscard]] const Type *field_resolved_type(const StaticTypedFieldPath<Steps...> &path) const noexcept {
+        return field_resolved_type(path.steps());
+    }
 };
 
 }// namespace ocarina

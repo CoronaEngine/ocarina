@@ -155,14 +155,14 @@ namespace {
 [[nodiscard]] bool test_record_and_field_segments_match_regions() {
     auto plan = DynamicBufferLayoutPlan::create(Type::of<HostDynamicRecord>(),
                                                 make_policy(PrecisionPolicy::force_f16));
-    auto record_segments = plan.record_segments(3u, 1u);
+    auto record_segments = plan.record_segments(1u);
     CHECK(record_segments.size() == 1u);
     CHECK(record_segments[0].storage_begin_byte == 40u);
     CHECK(record_segments[0].staging_begin_byte == 0u);
     CHECK(record_segments[0].size_in_bytes == 40u);
 
     auto roughness_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
-    auto roughness_segments = plan.field_segments(3u, 1u, roughness_path);
+    auto roughness_segments = plan.field_segments(1u, roughness_path);
     CHECK(roughness_segments.size() == 1u);
     CHECK(roughness_segments[0].storage_begin_byte == 40u);
     CHECK(roughness_segments[0].staging_begin_byte == 0u);
@@ -295,8 +295,8 @@ namespace {
 
     auto first_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<0u>>();
     auto second_path = make_typed_field_path<FieldMemberStep<3u>>();
-    auto first_segments = buffer.layout_plan().field_segments(buffer.element_count(), 0u, first_path);
-    auto second_segments = buffer.layout_plan().field_segments(buffer.element_count(), 1u, second_path);
+    auto first_segments = buffer.layout_plan().field_segments(0u, first_path);
+    auto second_segments = buffer.layout_plan().field_segments(1u, second_path);
 
     buffer.patch(0u, first_path, real{1.5f});
     buffer.patch(1u, second_path, 99.0f);

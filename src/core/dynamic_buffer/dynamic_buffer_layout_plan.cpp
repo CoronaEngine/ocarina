@@ -238,17 +238,15 @@ ByteRegion DynamicBufferLayoutPlan::record_region(size_t index) const noexcept {
 }
 
 ByteRegion DynamicBufferLayoutPlan::field_region(size_t index,
-                                                 const TypedFieldPath &path) const noexcept {
-    auto info = resolve_field_region_info(logical_type_, resolved_type(), path.steps(), 0u);
+                                                 span<const TypedFieldPath::Step> steps) const noexcept {
+    auto info = resolve_field_region_info(logical_type_, resolved_type(), steps, 0u);
     OC_ASSERT(info.valid());
     const auto record = record_region(index);
     return ByteRegion{record.begin_byte + info.offset_in_record,
                       record.begin_byte + info.offset_in_record + info.size_in_bytes};
 }
 
-vector<ByteSegment> DynamicBufferLayoutPlan::record_segments(size_t element_count,
-                                                             size_t index) const noexcept {
-    (void)element_count;
+vector<ByteSegment> DynamicBufferLayoutPlan::record_segments(size_t index) const noexcept {
     vector<ByteSegment> segments;
     const auto region = record_region(index);
     segments.emplace_back(ByteSegment{
@@ -258,12 +256,10 @@ vector<ByteSegment> DynamicBufferLayoutPlan::record_segments(size_t element_coun
     return segments;
 }
 
-vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t element_count,
-                                                            size_t index,
-                                                            const TypedFieldPath &path) const noexcept {
-    (void)element_count;
+vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t index,
+                                                            span<const TypedFieldPath::Step> steps) const noexcept {
     vector<ByteSegment> segments;
-    const auto region = field_region(index, path);
+    const auto region = field_region(index, steps);
     segments.emplace_back(ByteSegment{
         .storage_begin_byte = region.begin_byte,
         .staging_begin_byte = 0u,
@@ -271,14 +267,14 @@ vector<ByteSegment> DynamicBufferLayoutPlan::field_segments(size_t element_count
     return segments;
 }
 
-const Type *DynamicBufferLayoutPlan::field_logical_type(const TypedFieldPath &path) const noexcept {
-    auto info = resolve_field_region_info(logical_type_, resolved_type(), path.steps(), 0u);
+const Type *DynamicBufferLayoutPlan::field_logical_type(span<const TypedFieldPath::Step> steps) const noexcept {
+    auto info = resolve_field_region_info(logical_type_, resolved_type(), steps, 0u);
     OC_ASSERT(info.valid());
     return info.logical_type;
 }
 
-const Type *DynamicBufferLayoutPlan::field_resolved_type(const TypedFieldPath &path) const noexcept {
-    auto info = resolve_field_region_info(logical_type_, resolved_type(), path.steps(), 0u);
+const Type *DynamicBufferLayoutPlan::field_resolved_type(span<const TypedFieldPath::Step> steps) const noexcept {
+    auto info = resolve_field_region_info(logical_type_, resolved_type(), steps, 0u);
     OC_ASSERT(info.valid());
     return info.resolved_type;
 }

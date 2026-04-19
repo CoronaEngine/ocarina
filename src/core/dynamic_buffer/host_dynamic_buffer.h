@@ -215,7 +215,17 @@ public:
 
     /// Patch one logical subfield inside one record.
     template<typename TField>
-    void patch(size_t index, const TypedFieldPath &path, const TField &value);
+    void patch(size_t index, span<const TypedFieldPath::Step> steps, const TField &value);
+
+    template<typename TField>
+    void patch(size_t index, const TypedFieldPath &path, const TField &value) {
+        patch(index, path.steps(), value);
+    }
+
+    template<typename TField, typename... Steps>
+    void patch(size_t index, const StaticTypedFieldPath<Steps...> &path, const TField &value) {
+        patch(index, path.steps(), value);
+    }
 };
 
 }// namespace detail
@@ -275,7 +285,17 @@ public:
     }
 
     template<typename TField>
+    void patch(size_t index, span<const TypedFieldPath::Step> steps, const TField &value) {
+        buffer_.template patch<TField>(index, steps, value);
+    }
+
+    template<typename TField>
     void patch(size_t index, const TypedFieldPath &path, const TField &value) {
+        buffer_.template patch<TField>(index, path, value);
+    }
+
+    template<typename TField, typename... Steps>
+    void patch(size_t index, const StaticTypedFieldPath<Steps...> &path, const TField &value) {
         buffer_.template patch<TField>(index, path, value);
     }
 };
@@ -289,7 +309,7 @@ T detail::HostDynamicBufferStorage::read(size_t index) const {
     encoded_record.resize(DynamicBufferLayoutCodec<T>::storage_bytes(1u,
                                                                      layout_plan_.policy(),
                                                                      DynamicBufferLayout::AOS));
-    const auto segments = layout_plan_.record_segments(element_count_, index);
+    const auto segments = layout_plan_.record_segments(index);
     gather_segments(segments, encoded_record);
     DynamicBufferLayoutCodec<T>::decode(encoded_record,
                                         1u,
@@ -309,7 +329,7 @@ void detail::HostDynamicBufferStorage::write(size_t index, const T &value) {
                                         encoded_record,
                                         layout_plan_.policy(),
                                         DynamicBufferLayout::AOS);
-    const auto segments = layout_plan_.record_segments(element_count_, index);
+    const auto segments = layout_plan_.record_segments(index);
     scatter_segments(encoded_record, segments);
     generation_++;
 }
@@ -354,16 +374,18 @@ void detail::HostDynamicBufferStorage::write_all(span<const T> values) {
 }
 
 template<typename TField>
-void detail::HostDynamicBufferStorage::patch(size_t index, const TypedFieldPath &path, const TField &value) {
+void detail::HostDynamicBufferStorage::patch(size_t index,
+                                             span<const TypedFieldPath::Step> steps,
+                                             const TField &value) {
     validate_index(index);
-    OC_ASSERT(layout_plan_.field_logical_type(path) == Type::of<TField>());
+    OC_ASSERT(layout_plan_.field_logical_type(steps) == Type::of<TField>());
     HostByteBuffer encoded_field;
     DynamicBufferLayoutCodec<TField>::encode(addressof(value),
                                              1u,
                                              encoded_field,
                                              layout_plan_.policy(),
                                              DynamicBufferLayout::AOS);
-    const auto segments = layout_plan_.field_segments(element_count_, index, path);
+    const auto segments = layout_plan_.field_segments(index, steps);
     scatter_segments(encoded_field, segments);
     generation_++;
 }
