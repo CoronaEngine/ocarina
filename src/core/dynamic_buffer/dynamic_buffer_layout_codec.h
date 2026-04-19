@@ -20,11 +20,6 @@ enum class DynamicBufferLayout : uint8_t {
 
 namespace detail {
 
-[[nodiscard]] inline size_t align_up_size(size_t value, size_t alignment) noexcept {
-    OC_ASSERT(alignment != 0u);
-    return (value + alignment - 1u) / alignment * alignment;
-}
-
 [[nodiscard]] inline bool store_real_as_f32(StoragePrecisionPolicy policy,
                                             bool direct_array_element = false) noexcept {
     (void)direct_array_element;
@@ -200,7 +195,7 @@ void encode_aos_struct_members(HostByteBuffer &dst,
     size_t current = offset;
     for_each_struct_member(value, [&](const auto &member, size_t) {
         using member_t = std::remove_cvref_t<decltype(member)>;
-        current = align_up_size(current, resolved_alignment<member_t>(policy));
+        current = mem_offset(current, resolved_alignment<member_t>(policy));
         encode_aos_value<member_t>(dst, current, member, policy, false);
         current += resolved_size<member_t>(policy);
     });
@@ -214,7 +209,7 @@ template<typename T>
     size_t current = offset;
     for_each_struct_member(value, [&](auto &member, size_t) {
         using member_t = std::remove_cvref_t<decltype(member)>;
-        current = align_up_size(current, resolved_alignment<member_t>(policy));
+        current = mem_offset(current, resolved_alignment<member_t>(policy));
         member = decode_aos_value<member_t>(src, current, policy, false);
         current += resolved_size<member_t>(policy);
     });

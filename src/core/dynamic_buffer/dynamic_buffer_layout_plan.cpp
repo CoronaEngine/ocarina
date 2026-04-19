@@ -12,11 +12,7 @@ namespace ocarina {
 
 namespace {
 
-[[nodiscard]] size_t align_up_size(size_t value, size_t alignment) noexcept {
-    OC_ASSERT(alignment != 0u);
-    return (value + alignment - 1u) / alignment * alignment;
-}
-
+/// Resolve the storage scalar used for logical real under the active policy.
 [[nodiscard]] string resolve_real_description(StoragePrecisionPolicy policy) noexcept {
     if (!policy.allow_real_in_storage) {
         return {};
@@ -33,6 +29,7 @@ namespace {
 [[nodiscard]] const Type *resolve_type_description(const Type *type,
                                                    StoragePrecisionPolicy policy) noexcept;
 
+/// Resolve the encoded element type for aggregate containers whose scalar may change.
 [[nodiscard]] const Type *resolve_real_container_element(const Type *type,
                                                          StoragePrecisionPolicy policy) noexcept {
     const auto *resolved = resolve_type_description(type, policy);
@@ -42,6 +39,7 @@ namespace {
     return resolved;
 }
 
+/// Compute alignment after recursive precision resolution.
 [[nodiscard]] size_t resolved_alignment(const Type *type,
                                         StoragePrecisionPolicy policy) noexcept {
     if (type == nullptr) {
@@ -69,6 +67,7 @@ namespace {
     return type->alignment();
 }
 
+/// Rebuild a type description string after applying storage-precision resolution.
 [[nodiscard]] string resolve_description(const Type *type,
                                          StoragePrecisionPolicy policy) noexcept {
     if (type == nullptr) {
@@ -125,12 +124,14 @@ namespace {
     return {};
 }
 
+/// Reify the resolved description back into a registered Type instance.
 [[nodiscard]] const Type *resolve_type_description(const Type *type,
                                                    StoragePrecisionPolicy policy) noexcept {
     const auto desc = resolve_description(type, policy);
     return desc.empty() ? nullptr : Type::from(desc);
 }
 
+/// Detect whether any logical real becomes a narrower storage representation.
 [[nodiscard]] bool has_precision_lowering_recursive(const Type *logical, const Type *resolved) noexcept {
     if (logical == nullptr || resolved == nullptr) {
         return false;
@@ -158,9 +159,13 @@ namespace {
 }
 
 struct FieldRegionInfo {
+    /// Logical field type addressed by the path.
     const Type *logical_type{nullptr};
+    /// Encoded storage type addressed by the path.
     const Type *resolved_type{nullptr};
+    /// Byte offset from the beginning of one encoded record.
     size_t offset_in_record{0u};
+    /// Encoded field size in bytes.
     size_t size_in_bytes{0u};
 
     [[nodiscard]] bool valid() const noexcept {
@@ -168,6 +173,7 @@ struct FieldRegionInfo {
     }
 };
 
+/// Resolve one logical field path into byte offset, byte size, and type information.
 [[nodiscard]] FieldRegionInfo resolve_field_region_info(const Type *logical_type,
                                                         const Type *resolved_type,
                                                         span<const TypedFieldPath::Step> steps,
