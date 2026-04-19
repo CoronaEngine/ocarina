@@ -114,7 +114,6 @@ private:
     StoragePrecisionPolicy policy_{};
     size_t element_size_bytes_{0u};
     size_t element_alignment_{0u};
-    bool contains_real_{false};
     bool has_precision_lowering_{false};
 
 public:
@@ -123,24 +122,21 @@ public:
                             StoragePrecisionPolicy policy,
                             size_t element_size_bytes,
                             size_t element_alignment,
-                            bool contains_real,
                             bool has_precision_lowering) noexcept
         : logical_type_(logical_type),
           policy_(policy),
           element_size_bytes_(element_size_bytes),
           element_alignment_(element_alignment),
-          contains_real_(contains_real),
           has_precision_lowering_(has_precision_lowering) {}
 
     [[nodiscard]] static DynamicBufferLayoutPlan create(const Type *logical_type,
-                                                                                                                StoragePrecisionPolicy policy);
+                                                        StoragePrecisionPolicy policy);
 
     [[nodiscard]] const Type *logical_type() const noexcept { return logical_type_; }
     [[nodiscard]] const Type *resolved_type() const noexcept { return Type::resolve(logical_type_, policy_); }
     [[nodiscard]] StoragePrecisionPolicy policy() const noexcept { return policy_; }
     [[nodiscard]] size_t element_size_bytes() const noexcept { return element_size_bytes_; }
     [[nodiscard]] size_t element_alignment() const noexcept { return element_alignment_; }
-    [[nodiscard]] bool contains_real() const noexcept { return contains_real_; }
     [[nodiscard]] bool has_precision_lowering() const noexcept { return has_precision_lowering_; }
 
     [[nodiscard]] size_t storage_bytes(size_t element_count) const noexcept;

@@ -131,26 +131,6 @@ namespace {
     return desc.empty() ? nullptr : Type::from(desc);
 }
 
-[[nodiscard]] bool contains_real_recursive(const Type *type) noexcept {
-    if (type == nullptr) {
-        return false;
-    }
-    if (type->tag() == Type::Tag::REAL) {
-        return true;
-    }
-    if (type->is_vector() || type->is_matrix() || type->is_array() || type->is_buffer()) {
-        return contains_real_recursive(type->element());
-    }
-    if (type->is_structure()) {
-        for (const auto *member : type->members()) {
-            if (contains_real_recursive(member)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 [[nodiscard]] bool has_precision_lowering_recursive(const Type *logical, const Type *resolved) noexcept {
     if (logical == nullptr || resolved == nullptr) {
         return false;
@@ -239,7 +219,6 @@ DynamicBufferLayoutPlan DynamicBufferLayoutPlan::create(const Type *logical_type
                                    policy,
                                    detail::resolved_runtime_field_size(resolved_type),
                                    detail::resolved_runtime_field_alignment(resolved_type),
-                                   contains_real_recursive(logical_type),
                                    has_precision_lowering_recursive(logical_type, resolved_type)};
 }
 

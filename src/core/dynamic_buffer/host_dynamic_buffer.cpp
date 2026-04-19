@@ -20,21 +20,21 @@ void for_each_non_empty_segment(span<const ByteSegment> segments, Func &&func) n
 
 }// namespace
 
-RawHostDynamicBuffer::RawHostDynamicBuffer(DynamicBufferLayoutPlan layout_plan,
-                                                                                     size_t initial_count)
+detail::HostDynamicBufferStorage::HostDynamicBufferStorage(DynamicBufferLayoutPlan layout_plan,
+                                                           size_t initial_count)
     : layout_plan_(std::move(layout_plan)),
       element_count_(initial_count),
       element_capacity_(initial_count) {
     storage_.resize(layout_plan_.storage_bytes(initial_count));
 }
 
-RawHostDynamicBuffer RawHostDynamicBuffer::create(const Type *logical_type,
-                                                                                                    StoragePrecisionPolicy policy,
-                                                                                                    size_t initial_count) {
-        return RawHostDynamicBuffer{DynamicBufferLayoutPlan::create(logical_type, policy), initial_count};
+detail::HostDynamicBufferStorage detail::HostDynamicBufferStorage::create(const Type *logical_type,
+                                                                          StoragePrecisionPolicy policy,
+                                                                          size_t initial_count) {
+    return HostDynamicBufferStorage{DynamicBufferLayoutPlan::create(logical_type, policy), initial_count};
 }
 
-void RawHostDynamicBuffer::ensure_capacity(size_t required_capacity) {
+void detail::HostDynamicBufferStorage::ensure_capacity(size_t required_capacity) {
     if (required_capacity <= element_capacity_) {
         return;
     }
@@ -42,16 +42,16 @@ void RawHostDynamicBuffer::ensure_capacity(size_t required_capacity) {
     element_capacity_ = required_capacity;
 }
 
-void RawHostDynamicBuffer::validate_index(size_t index) const noexcept {
+void detail::HostDynamicBufferStorage::validate_index(size_t index) const noexcept {
     OC_ASSERT(index < element_count_);
 }
 
-void RawHostDynamicBuffer::mark_dirty(ByteRegion region) noexcept {
+void detail::HostDynamicBufferStorage::mark_dirty(ByteRegion region) noexcept {
     dirty_segments_.merge(region);
 }
 
-void RawHostDynamicBuffer::gather_segments(span<const ByteSegment> segments,
-                                           HostByteBuffer &dst) const noexcept {
+void detail::HostDynamicBufferStorage::gather_segments(span<const ByteSegment> segments,
+                                                       HostByteBuffer &dst) const noexcept {
     for_each_non_empty_segment(segments, [&](const ByteSegment &segment) {
         dst.copy_from(storage_.data() + segment.storage_begin_byte,
                       segment.size_in_bytes,
@@ -59,8 +59,8 @@ void RawHostDynamicBuffer::gather_segments(span<const ByteSegment> segments,
     });
 }
 
-void RawHostDynamicBuffer::scatter_segments(const HostByteBuffer &src,
-                                            span<const ByteSegment> segments) noexcept {
+void detail::HostDynamicBufferStorage::scatter_segments(const HostByteBuffer &src,
+                                                        span<const ByteSegment> segments) noexcept {
     for_each_non_empty_segment(segments, [&](const ByteSegment &segment) {
         storage_.copy_from(src.data() + segment.staging_begin_byte,
                            segment.size_in_bytes,
@@ -70,11 +70,11 @@ void RawHostDynamicBuffer::scatter_segments(const HostByteBuffer &src,
     });
 }
 
-void RawHostDynamicBuffer::reserve(size_t element_capacity) {
+void detail::HostDynamicBufferStorage::reserve(size_t element_capacity) {
     ensure_capacity(element_capacity);
 }
 
-void RawHostDynamicBuffer::resize(size_t element_count) {
+void detail::HostDynamicBufferStorage::resize(size_t element_count) {
     ensure_capacity(element_count);
     storage_.resize(layout_plan_.storage_bytes(element_count));
     element_count_ = element_count;
@@ -84,7 +84,7 @@ void RawHostDynamicBuffer::resize(size_t element_count) {
     generation_++;
 }
 
-void RawHostDynamicBuffer::clear() noexcept {
+void detail::HostDynamicBufferStorage::clear() noexcept {
     storage_.clear();
     element_count_ = 0u;
     dirty_segments_.clear();

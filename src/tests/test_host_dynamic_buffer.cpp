@@ -107,7 +107,7 @@ namespace {
     CHECK(plan.resolved_type() != nullptr);
     CHECK(plan.resolved_type() == Type::resolve(Type::of<HostDynamicRecord>(), policy));
     CHECK(Type::resolve(Type::of<real>(), policy) == Type::of<half>());
-    CHECK(plan.contains_real());
+    CHECK(plan.logical_type()->is_dynamic());
     CHECK(plan.has_precision_lowering());
     CHECK(plan.element_size_bytes() == codec_bytes);
     CHECK(plan.storage_bytes(2u) == codec_bytes * 2u);
@@ -244,19 +244,18 @@ namespace {
     return true;
 }
 
-[[nodiscard]] bool test_typed_view_single_element_read_write_usage() {
+[[nodiscard]] bool test_single_element_read_write_usage_after_resize() {
     auto buffer = HostDynamicBuffer<HostDynamicRecord>::create(make_policy(PrecisionPolicy::force_f32),
                                                                0u);
     buffer.resize(1u);
-    auto view = buffer.view();
 
     const auto input = make_record(5.0f);
-    view.write(0u, input);
+    buffer.write(0u, input);
 
-    const auto output = view.read(0u);
+    const auto output = buffer.read(0u);
     CHECK(equal_record(output, input, 1e-6f));
-    CHECK(view.element_count() == 1u);
-    CHECK(!view.empty());
+    CHECK(buffer.element_count() == 1u);
+    CHECK(!buffer.empty());
     return true;
 }
 
@@ -364,21 +363,20 @@ namespace {
     return true;
 }
 
-[[nodiscard]] bool test_typed_view_read_write_patch_usage() {
+[[nodiscard]] bool test_direct_read_write_patch_usage() {
     auto buffer = HostDynamicBuffer<HostDynamicRecord>::create(make_policy(PrecisionPolicy::force_f32),
                                                                0u);
     buffer.resize(2u);
-    auto view = buffer.view();
 
     const auto lhs = make_record(7.0f);
     const auto rhs = make_record(27.0f);
-    view.write(0u, lhs);
-    view.write(1u, rhs);
+    buffer.write(0u, lhs);
+    buffer.write(1u, rhs);
     auto direction_path = make_typed_field_path<FieldMemberStep<0u>, FieldMemberStep<1u>, FieldComponentStep<2u>>();
-    view.patch(1u, direction_path, real{88.0f});
+    buffer.patch(1u, direction_path, real{88.0f});
 
-    const auto read_lhs = view.read(0u);
-    const auto read_rhs = view.read(1u);
+    const auto read_lhs = buffer.read(0u);
+    const auto read_rhs = buffer.read(1u);
     CHECK(equal_record(read_lhs, lhs, 1e-6f));
     CHECK(close_float(static_cast<float>(read_rhs.leaf.direction[2u]), 88.0f));
     CHECK(close_float(static_cast<float>(read_rhs.leaf.direction[0u]), static_cast<float>(rhs.leaf.direction[0u]), 1e-6f));
@@ -397,12 +395,12 @@ int main() {
     passed = test_shared_runtime_soa_field_segments() && passed;
     passed = test_host_buffer_record_round_trip() && passed;
     passed = test_single_element_external_read_write_usage() && passed;
-    passed = test_typed_view_single_element_read_write_usage() && passed;
+    passed = test_single_element_read_write_usage_after_resize() && passed;
     passed = test_field_patch_updates_target_bytes() && passed;
     passed = test_dirty_segments_preserve_disjoint_record_updates() && passed;
     passed = test_append_and_upload_view() && passed;
     passed = test_write_all_round_trip_and_upload_view() && passed;
-    passed = test_typed_view_read_write_patch_usage() && passed;
+    passed = test_direct_read_write_patch_usage() && passed;
     if (!passed) {
         std::cerr << "host dynamic buffer test failed" << std::endl;
         return 1;

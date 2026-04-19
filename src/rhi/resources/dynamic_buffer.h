@@ -535,18 +535,13 @@ public:
         return stats;
     }
 
-    [[nodiscard]] DynamicBufferUploadStats sync_immediately(RawHostDynamicBuffer &buffer,
+    template<typename T>
+    [[nodiscard]] DynamicBufferUploadStats sync_immediately(HostDynamicBuffer<T> &buffer,
                                                             bool force_full_upload = false) noexcept {
         const auto view = buffer.upload_view();
         auto stats = sync_immediately(view, force_full_upload);
         buffer.clear_dirty();
         return stats;
-    }
-
-    template<typename T>
-    [[nodiscard]] DynamicBufferUploadStats sync_immediately(HostDynamicBuffer<T> &buffer,
-                                                            bool force_full_upload = false) noexcept {
-        return sync_immediately(buffer.raw(), force_full_upload);
     }
 
     [[nodiscard]] BufferDownloadCommand *download(void *data, bool async = true) const noexcept {
@@ -826,11 +821,6 @@ public:
     [[nodiscard]] DynamicBufferUploadStats sync_immediately(const HostDynamicBufferUploadView &view,
                                                             bool force_full_upload = false) noexcept {
         return buffer_.sync_immediately(view, force_full_upload);
-    }
-
-    [[nodiscard]] DynamicBufferUploadStats sync_immediately(RawHostDynamicBuffer &host_buffer,
-                                                            bool force_full_upload = false) noexcept {
-        return buffer_.sync_immediately(host_buffer, force_full_upload);
     }
 
     template<typename U>
