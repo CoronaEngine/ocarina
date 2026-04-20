@@ -5,7 +5,7 @@
 #include "cuda_compiler.h"
 #include "cuda_device.h"
 #include "ast/function.h"
-#include "cuda_codegen.h"
+#include "ast_to_cuda_source.h"
 #include "rhi/context.h"
 #include "core/util/util.h"
 #include "dsl/dsl.h"
@@ -13,7 +13,7 @@
 namespace ocarina {
 
 namespace {
-constexpr unsigned cuda_codegen_cache_version = 1u;
+constexpr unsigned ast_to_cuda_source_cache_version = 1u;
 }// namespace
 
 std::string get_cuda_path() {
@@ -107,7 +107,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
 
     uint64_t ext_hash = hash64(hash64_list(compile_option),
                                hash64_list(header_sources_ptr),
-                               cuda_codegen_cache_version);
+                               ast_to_cuda_source_cache_version);
 
     auto compile = [&](const string &cu, const string &fn, int sm) -> string {
         TIMER_TAG(compile, "compile " + fn);
@@ -145,7 +145,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
     if (!context->is_exist_cache(ptx_fn)) {
         OC_INFO_FORMAT("miss ptx file {}", ptx_fn);
         if (!context->is_exist_cache(cu_fn)) {
-            CUDACodegen codegen{Env::code_obfuscation()};
+            AstToCudaSource codegen{Env::code_obfuscation()};
             codegen.emit(function);
             const ocarina::string &cu = codegen.scratch().c_str();
             context->write_global_cache(cu_fn, cu);

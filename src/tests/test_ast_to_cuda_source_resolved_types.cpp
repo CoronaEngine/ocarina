@@ -1,10 +1,10 @@
 #include <iostream>
 #include <string_view>
 
-#include "backends/cuda/cuda_codegen.h"
+#include "backends/cuda/ast_to_cuda_source.h"
 #include "core/type_system/precision_policy.h"
 #include "dsl/dsl.h"
-#include "generator/cpp_codegen.h"
+#include "generator/ast_to_cpp_source.h"
 #include "math/real.h"
 
 using namespace ocarina;
@@ -62,15 +62,15 @@ namespace {
 }
 
 [[nodiscard]] std::string emit_cpp_source(const Function &function) {
-    CppCodegen codegen(false);
-    codegen.emit(function);
-    return std::string(codegen.scratch().view());
+    AstToCppSource emitter(false);
+    emitter.emit(function);
+    return std::string(emitter.scratch().view());
 }
 
 [[nodiscard]] std::string emit_cuda_source(const Function &function) {
-    CUDACodegen codegen(false);
-    codegen.emit(function);
-    return std::string(codegen.scratch().view());
+    AstToCudaSource emitter(false);
+    emitter.emit(function);
+    return std::string(emitter.scratch().view());
 }
 
 template<PrecisionPolicy precision>
@@ -145,7 +145,7 @@ template<PrecisionPolicy precision>
 }
 
 template<PrecisionPolicy precision>
-[[nodiscard]] bool test_callable_codegen() {
+[[nodiscard]] bool test_callable_ast_to_cuda_source() {
     auto function = make_callable_function<precision>();
     std::string cpp_source = emit_cpp_source(*function);
     std::string cuda_source = emit_cuda_source(*function);
@@ -167,7 +167,7 @@ template<PrecisionPolicy precision>
 }
 
 template<PrecisionPolicy precision>
-[[nodiscard]] bool test_kernel_codegen() {
+[[nodiscard]] bool test_kernel_ast_to_cuda_source() {
     auto function = make_kernel_function<precision>();
     std::string cpp_source = emit_cpp_source(*function);
     std::string cuda_source = emit_cuda_source(*function);
@@ -179,7 +179,7 @@ template<PrecisionPolicy precision>
 }
 
 template<PrecisionPolicy precision>
-[[nodiscard]] bool test_nested_kernel_ast_and_codegen() {
+[[nodiscard]] bool test_nested_kernel_ast_and_cuda_source() {
     auto function = make_nested_kernel_function<precision>();
     const Type *resolved_record = resolved_type(Type::of<CodegenNestedRecord>(), precision);
     const Type *resolved_inner = resolved_type(Type::of<CodegenNestedInner>(), precision);
@@ -219,15 +219,15 @@ int main() {
     bool passed = true;
     passed = test_callable_ast_types<PrecisionPolicy::force_f16>() && passed;
     passed = test_callable_ast_types<PrecisionPolicy::force_f32>() && passed;
-    passed = test_callable_codegen<PrecisionPolicy::force_f16>() && passed;
-    passed = test_callable_codegen<PrecisionPolicy::force_f32>() && passed;
-    passed = test_kernel_codegen<PrecisionPolicy::force_f16>() && passed;
-    passed = test_kernel_codegen<PrecisionPolicy::force_f32>() && passed;
-    passed = test_nested_kernel_ast_and_codegen<PrecisionPolicy::force_f16>() && passed;
-    passed = test_nested_kernel_ast_and_codegen<PrecisionPolicy::force_f32>() && passed;
+    passed = test_callable_ast_to_cuda_source<PrecisionPolicy::force_f16>() && passed;
+    passed = test_callable_ast_to_cuda_source<PrecisionPolicy::force_f32>() && passed;
+    passed = test_kernel_ast_to_cuda_source<PrecisionPolicy::force_f16>() && passed;
+    passed = test_kernel_ast_to_cuda_source<PrecisionPolicy::force_f32>() && passed;
+    passed = test_nested_kernel_ast_and_cuda_source<PrecisionPolicy::force_f16>() && passed;
+    passed = test_nested_kernel_ast_and_cuda_source<PrecisionPolicy::force_f32>() && passed;
     if (!passed) {
         return 1;
     }
-    std::cout << "codegen resolved type test passed" << std::endl;
+    std::cout << "ast to cuda source resolved type test passed" << std::endl;
     return 0;
 }

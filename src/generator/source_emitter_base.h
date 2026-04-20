@@ -19,7 +19,7 @@ struct LiteralPrinter;
 
 }// namespace detail
 
-class OC_GENERATOR_API Codegen {
+class OC_GENERATOR_API SourceEmitterBase {
 protected:
     class OC_GENERATOR_API Scratch {
     private:
@@ -83,10 +83,10 @@ protected:
     class Guard {
     private:
         T &_val;
-        Codegen *_codegen{};
+        SourceEmitterBase *_codegen{};
 
     public:
-        Guard(Codegen *codegen, T &val)
+        Guard(SourceEmitterBase *codegen, T &val)
             : _codegen(codegen), _val(val) {
             _codegen->push(_val);
         }
@@ -108,8 +108,8 @@ protected:
     virtual void _emit_member_name(const Type *type, int index) noexcept;
 
 public:
-    explicit Codegen(bool obfuscation) : obfuscation_(obfuscation) { push(scratch_); }
-    explicit Codegen(Scratch &scratch)
+    explicit SourceEmitterBase(bool obfuscation) : obfuscation_(obfuscation) { push(scratch_); }
+    explicit SourceEmitterBase(Scratch &scratch)
         : scratch_(scratch) {
         push(scratch_);
     }

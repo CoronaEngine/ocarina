@@ -2,7 +2,7 @@
 // Created by Zero on 2022/7/15.
 //
 
-#include "cuda_codegen.h"
+#include "ast_to_cuda_source.h"
 #include "ast/expression.h"
 #include "core/util/util.h"
 #include "core/type_system/precision_policy.h"
@@ -22,7 +22,7 @@ namespace {
 }
 }// namespace
 
-void CUDACodegen::visit(const CallExpr *expr) noexcept {
+void AstToCudaSource::visit(const CallExpr *expr) noexcept {
     auto emit_act_arguments = [this](const CallExpr *expr) {
         current_scratch() << "(";
         for (const auto &arg : expr->arguments()) {
@@ -43,7 +43,7 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
 
 #define OC_GEN_FUNC_NAME(func_name) current_scratch() << TYPE_PREFIX #func_name
     switch (expr->call_op()) {
-        case CallOp::CUSTOM: CppCodegen::visit(expr); return;
+        case CallOp::CUSTOM: AstToCppSource::visit(expr); return;
         case CallOp::ALL: OC_GEN_FUNC_NAME(all); break;
         case CallOp::ANY: OC_GEN_FUNC_NAME(any); break;
         case CallOp::NONE: OC_GEN_FUNC_NAME(none); break;
@@ -267,7 +267,7 @@ void CUDACodegen::visit(const CallExpr *expr) noexcept {
     emit_act_arguments(expr);
 }
 
-void CUDACodegen::visit(const MemberExpr *expr) noexcept {
+void AstToCudaSource::visit(const MemberExpr *expr) noexcept {
     if (expr->is_swizzle()) {
         static constexpr std::string_view xyzw[] = {"x", "y", "z", "w"};
         int swizzle_size = expr->swizzle_size();
@@ -293,7 +293,7 @@ void CUDACodegen::visit(const MemberExpr *expr) noexcept {
     }
 }
 
-void CUDACodegen::_emit_raytracing_param(const Function &f) noexcept {
+void AstToCudaSource::_emit_raytracing_param(const Function &f) noexcept {
     current_scratch() << "struct Params {";
     _emit_newline();
     indent_inc();
@@ -332,7 +332,7 @@ void CUDACodegen::_emit_raytracing_param(const Function &f) noexcept {
     _emit_newline();
 }
 
-void CUDACodegen::_emit_function(const Function &f) noexcept {
+void AstToCudaSource::_emit_function(const Function &f) noexcept {
     if (has_generated(&f)) {
         return;
     }
@@ -347,10 +347,10 @@ void CUDACodegen::_emit_function(const Function &f) noexcept {
         case Function::Tag::KERNEL: current_scratch() << "extern \"C\" __global__ "; break;
         case Function::Tag::CALLABLE: current_scratch() << "__device__ "; break;
     }
-    CppCodegen::_emit_function(f);
+    AstToCppSource::_emit_function(f);
 }
 
-void CUDACodegen::_emit_builtin_vars_define(const Function &f) noexcept {
+void AstToCudaSource::_emit_builtin_vars_define(const Function &f) noexcept {
     const char *str = "oc_uint3 d_idx = oc_make_uint3(blockIdx.x * blockDim.x + threadIdx.x,"
                       "blockIdx.y * blockDim.y + threadIdx.y,"
                       "blockIdx.z * blockDim.z + threadIdx.z);";
@@ -388,10 +388,10 @@ void CUDACodegen::_emit_builtin_vars_define(const Function &f) noexcept {
         });
     } else if (f.is_callable()) {
     }
-    CppCodegen::_emit_builtin_vars_define(f);
+    AstToCppSource::_emit_builtin_vars_define(f);
 }
 
-void CUDACodegen::_emit_builtin_var(Variable v) noexcept {
+void AstToCudaSource::_emit_builtin_var(Variable v) noexcept {
     _emit_type_name(v.type());
     _emit_space();
     _emit_variable_name(v);
@@ -427,7 +427,7 @@ void CUDACodegen::_emit_builtin_var(Variable v) noexcept {
     }
 }
 
-void CUDACodegen::_emit_arguments(const Function &f) noexcept {
+void AstToCudaSource::_emit_arguments(const Function &f) noexcept {
     current_scratch() << "(";
     if (f.is_general_kernel()) {
         for (const auto &v : f.all_arguments()) {
@@ -447,7 +447,7 @@ void CUDACodegen::_emit_arguments(const Function &f) noexcept {
     current_scratch() << ")";
 }
 
-void CUDACodegen::_emit_type_name(const Type *type) noexcept {
+void AstToCudaSource::_emit_type_name(const Type *type) noexcept {
     if (type == nullptr) {
         current_scratch() << "void";
     } else {
@@ -501,12 +501,12 @@ void CUDACodegen::_emit_type_name(const Type *type) noexcept {
     }
 }
 
-void CUDACodegen::_emit_struct_name(const Type *type) noexcept {
+void AstToCudaSource::_emit_struct_name(const Type *type) noexcept {
     OC_ERROR_IF(type->cname().empty());
     if (type->is_builtin_struct()) {
         current_scratch() << type->simple_cname();
     } else {
-        Codegen::_emit_struct_name(type);
+        SourceEmitterBase::_emit_struct_name(type);
     }
 }
 

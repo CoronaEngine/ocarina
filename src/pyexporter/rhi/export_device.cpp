@@ -7,7 +7,7 @@
 #include "rhi/common.h"
 #include "dsl/dsl.h"
 #include "rhi/context.h"
-#include "generator/cpp_codegen.h"
+#include "generator/ast_to_cpp_source.h"
 
 namespace py = pybind11;
 using namespace ocarina;
@@ -115,7 +115,7 @@ void export_device(PythonExporter &exporter) {
 
     auto func = [] {
         auto &_ = Env::printer();
-        CppCodegen a(false);
+        AstToCppSource a(false);
     };
 
     func();

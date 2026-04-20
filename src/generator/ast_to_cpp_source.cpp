@@ -2,7 +2,7 @@
 // Created by Zero on 08/06/2022.
 //
 
-#include "cpp_codegen.h"
+#include "ast_to_cpp_source.h"
 #include "core/type_system/type_desc.h"
 #include "core/util/util.h"
 
@@ -10,7 +10,7 @@ namespace ocarina {
 
 namespace detail {
 struct LiteralPrinter {
-    using Scratch = Codegen::Scratch;
+    using Scratch = SourceEmitterBase::Scratch;
     Scratch &scratch;
     const Type *type_{nullptr};
     explicit LiteralPrinter(Scratch &scratch, const Type *type = nullptr) : scratch(scratch), type_(type) {}
@@ -64,19 +64,19 @@ struct LiteralPrinter {
 };
 }// namespace detail
 
-void CppCodegen::visit(const BreakStmt *stmt) noexcept {
+void AstToCppSource::visit(const BreakStmt *stmt) noexcept {
     current_scratch() << "break";
 }
-void CppCodegen::visit(const ContinueStmt *stmt) noexcept {
+void AstToCppSource::visit(const ContinueStmt *stmt) noexcept {
     current_scratch() << "continue";
 }
-void CppCodegen::visit(const ReturnStmt *stmt) noexcept {
+void AstToCppSource::visit(const ReturnStmt *stmt) noexcept {
     current_scratch() << "return ";
     if (stmt->expression()) {
         stmt->expression()->accept(*this);
     }
 }
-void CppCodegen::visit(const ScopeStmt *stmt) noexcept {
+void AstToCppSource::visit(const ScopeStmt *stmt) noexcept {
     current_scratch() << "{";
     _emit_newline();
     indent_inc();
@@ -89,7 +89,7 @@ void CppCodegen::visit(const ScopeStmt *stmt) noexcept {
     _emit_indent();
     current_scratch() << "}";
 }
-void CppCodegen::visit(const IfStmt *stmt) noexcept {
+void AstToCppSource::visit(const IfStmt *stmt) noexcept {
     current_scratch() << "if (";
     stmt->condition()->accept(*this);
     current_scratch() << ") ";
@@ -106,40 +106,40 @@ void CppCodegen::visit(const IfStmt *stmt) noexcept {
     }
 }
 
-void CppCodegen::visit(const CommentStmt *stmt) noexcept {
+void AstToCppSource::visit(const CommentStmt *stmt) noexcept {
     _emit_comment(stmt->string());
 }
 
-void CppCodegen::visit(const LoopStmt *stmt) noexcept {
+void AstToCppSource::visit(const LoopStmt *stmt) noexcept {
     current_scratch() << "while (1) ";
     stmt->body()->accept(*this);
 }
-void CppCodegen::visit(const ExprStmt *stmt) noexcept {
+void AstToCppSource::visit(const ExprStmt *stmt) noexcept {
     stmt->expression()->accept(*this);
 }
-void CppCodegen::visit(const SwitchStmt *stmt) noexcept {
+void AstToCppSource::visit(const SwitchStmt *stmt) noexcept {
     current_scratch() << "switch (";
     stmt->expression()->accept(*this);
     current_scratch() << ") ";
     stmt->body()->accept(*this);
 }
-void CppCodegen::visit(const SwitchCaseStmt *stmt) noexcept {
+void AstToCppSource::visit(const SwitchCaseStmt *stmt) noexcept {
     current_scratch() << "case ";
     stmt->expression()->accept(*this);
     current_scratch() << ":";
     stmt->body()->accept(*this);
 }
-void CppCodegen::visit(const SwitchDefaultStmt *stmt) noexcept {
+void AstToCppSource::visit(const SwitchDefaultStmt *stmt) noexcept {
     current_scratch() << "default:";
     stmt->body()->accept(*this);
 }
-void CppCodegen::visit(const AssignStmt *stmt) noexcept {
+void AstToCppSource::visit(const AssignStmt *stmt) noexcept {
     stmt->lhs()->accept(*this);
     current_scratch() << " = ";
     stmt->rhs()->accept(*this);
 }
 
-void CppCodegen::visit(const ForStmt *stmt) noexcept {
+void AstToCppSource::visit(const ForStmt *stmt) noexcept {
     current_scratch() << "for (;";
     stmt->condition()->accept(*this);
     current_scratch() << "; ";
@@ -150,7 +150,7 @@ void CppCodegen::visit(const ForStmt *stmt) noexcept {
     stmt->body()->accept(*this);
 }
 
-void CppCodegen::visit(const PrintStmt *stmt) noexcept {
+void AstToCppSource::visit(const PrintStmt *stmt) noexcept {
     span<const Expression *const> args = stmt->args();
     current_scratch() << "printf(";
     Scratch format_scratch("\"");
@@ -196,7 +196,7 @@ void CppCodegen::visit(const PrintStmt *stmt) noexcept {
                       << ")";
 }
 
-void CppCodegen::visit(const UnaryExpr *expr) noexcept {
+void AstToCppSource::visit(const UnaryExpr *expr) noexcept {
     switch (expr->op()) {
         case UnaryOp::POSITIVE: current_scratch() << "+"; break;
         case UnaryOp::NEGATIVE: current_scratch() << "-"; break;
@@ -207,7 +207,7 @@ void CppCodegen::visit(const UnaryExpr *expr) noexcept {
     expr->operand()->accept(*this);
     current_scratch() << ")";
 }
-void CppCodegen::visit(const BinaryExpr *expr) noexcept {
+void AstToCppSource::visit(const BinaryExpr *expr) noexcept {
     current_scratch() << "(";
     expr->lhs()->accept(*this);
     switch (expr->op()) {
@@ -234,7 +234,7 @@ void CppCodegen::visit(const BinaryExpr *expr) noexcept {
     current_scratch() << ")";
 }
 
-void CppCodegen::visit(const ocarina::ConditionalExpr *expr) {
+void AstToCppSource::visit(const ocarina::ConditionalExpr *expr) {
     current_scratch() << "(";
     expr->pred()->accept(*this);
     current_scratch() << " ? ";
@@ -244,7 +244,7 @@ void CppCodegen::visit(const ocarina::ConditionalExpr *expr) {
     current_scratch() << ")";
 }
 
-void CppCodegen::visit(const MemberExpr *expr) noexcept {
+void AstToCppSource::visit(const MemberExpr *expr) noexcept {
     expr->parent()->accept(*this);
     if (expr->is_swizzle()) {
         static constexpr std::string_view xyzw[] = {"x", "y", "z", "w"};
@@ -258,7 +258,7 @@ void CppCodegen::visit(const MemberExpr *expr) noexcept {
     }
 }
 
-void CppCodegen::visit(const SubscriptExpr *expr) noexcept {
+void AstToCppSource::visit(const SubscriptExpr *expr) noexcept {
     expr->range()->accept(*this);
     expr->for_each_index([&](const Expression *index) {
         current_scratch() << "[";
@@ -267,16 +267,16 @@ void CppCodegen::visit(const SubscriptExpr *expr) noexcept {
     });
 }
 
-void CppCodegen::visit(const LiteralExpr *expr) noexcept {
+void AstToCppSource::visit(const LiteralExpr *expr) noexcept {
     auto printer = detail::LiteralPrinter(current_scratch(), expr->type());
     ocarina::visit(printer, expr->value());
 }
 
-void CppCodegen::visit(const RefExpr *expr) noexcept {
+void AstToCppSource::visit(const RefExpr *expr) noexcept {
     _emit_variable_name(expr->variable());
 }
 
-void CppCodegen::visit(const CallExpr *expr) noexcept {
+void AstToCppSource::visit(const CallExpr *expr) noexcept {
     switch (expr->call_op()) {
         case CallOp::CUSTOM: {
             _emit_func_name(*expr->function());
@@ -293,7 +293,7 @@ void CppCodegen::visit(const CallExpr *expr) noexcept {
     }
 }
 
-void CppCodegen::visit(const CastExpr *expr) noexcept {
+void AstToCppSource::visit(const CastExpr *expr) noexcept {
     switch (expr->cast_op()) {
         case CastOp::STATIC: current_scratch() << "static_cast<"; break;
         case CastOp::BITWISE: current_scratch() << "bit_cast<"; break;
@@ -304,7 +304,7 @@ void CppCodegen::visit(const CastExpr *expr) noexcept {
     current_scratch() << ")";
 }
 
-void CppCodegen::visit(const Type *type) noexcept {
+void AstToCppSource::visit(const Type *type) noexcept {
     if (!type->is_structure() ||
         has_generated(type) ||
         type->is_builtin_struct()) {
@@ -334,27 +334,27 @@ void CppCodegen::visit(const Type *type) noexcept {
     add_generated(type);
 }
 
-void CppCodegen::_emit_types_define() noexcept {
+void AstToCppSource::_emit_types_define() noexcept {
     Type::for_each(this);
 }
 
-bool CppCodegen::has_generated(const Type *type) const noexcept {
+bool AstToCppSource::has_generated(const Type *type) const noexcept {
     return generated_struct_.contains(type);
 }
 
-void CppCodegen::add_generated(const Type *type) noexcept {
+void AstToCppSource::add_generated(const Type *type) noexcept {
     generated_struct_.emplace(type);
 }
 
-bool CppCodegen::has_generated(const Function *func) const noexcept {
+bool AstToCppSource::has_generated(const Function *func) const noexcept {
     return generated_func_.contains(func->hash());
 }
 
-void CppCodegen::add_generated(const Function *func) noexcept {
+void AstToCppSource::add_generated(const Function *func) noexcept {
     generated_func_.emplace(func->hash());
 }
 
-void CppCodegen::_emit_variable_define(const Variable &v) noexcept {
+void AstToCppSource::_emit_variable_define(const Variable &v) noexcept {
     if (v.type()->is_buffer()) {
         _emit_type_name(v.type());
         _emit_space();
@@ -370,7 +370,7 @@ void CppCodegen::_emit_variable_define(const Variable &v) noexcept {
     }
 }
 
-void CppCodegen::_emit_local_var_define(const ScopeStmt *scope) noexcept {
+void AstToCppSource::_emit_local_var_define(const ScopeStmt *scope) noexcept {
     for (const auto &var : scope->local_vars()) {
         _emit_indent();
         _emit_variable_define(var);
@@ -379,7 +379,7 @@ void CppCodegen::_emit_local_var_define(const ScopeStmt *scope) noexcept {
     }
 }
 
-void CppCodegen::_emit_builtin_vars_define(const Function &f) noexcept {
+void AstToCppSource::_emit_builtin_vars_define(const Function &f) noexcept {
     for (const Variable &var : f.builtin_vars()) {
         _emit_indent();
         _emit_builtin_var(var);
@@ -388,7 +388,7 @@ void CppCodegen::_emit_builtin_vars_define(const Function &f) noexcept {
     }
 }
 
-void CppCodegen::_emit_type_name(const Type *type) noexcept {
+void AstToCppSource::_emit_type_name(const Type *type) noexcept {
     if (type == nullptr) {
         current_scratch() << "void";
     } else {
@@ -432,7 +432,7 @@ void CppCodegen::_emit_type_name(const Type *type) noexcept {
     }
 }
 
-void CppCodegen::_emit_function(const Function &f) noexcept {
+void AstToCppSource::_emit_function(const Function &f) noexcept {
     if (has_generated(&f)) {
         return;
     }
@@ -445,29 +445,11 @@ void CppCodegen::_emit_function(const Function &f) noexcept {
     _emit_newline();
 }
 
-void CppCodegen::_emit_variable_name(Variable v) noexcept {
+void AstToCppSource::_emit_variable_name(Variable v) noexcept {
     current_scratch() << v.final_name();
-    //    if (v.uid() == InvalidUI32) {
-    //        return;
-    //    }
-    //    Usage usage = current_function().variable_usage(v.uid());
-    //    switch (usage) {
-    //        case Usage::NONE:
-    //            _emit_comment("none");
-    //            break;
-    //        case Usage::READ:
-    //            _emit_comment("read");
-    //            break;
-    //        case Usage::WRITE:
-    //            _emit_comment("write");
-    //            break;
-    //        case Usage::READ_WRITE:
-    //            _emit_comment("read_write");
-    //            break;
-    //    }
 }
 
-void CppCodegen::_emit_statements(ocarina::span<const Statement *const> stmts) noexcept {
+void AstToCppSource::_emit_statements(ocarina::span<const Statement *const> stmts) noexcept {
     for (const Statement *stmt : stmts) {
         _emit_indent();
         stmt->accept(*this);
@@ -476,24 +458,24 @@ void CppCodegen::_emit_statements(ocarina::span<const Statement *const> stmts) n
     }
 }
 
-void CppCodegen::_emit_body(const Function &f) noexcept {
+void AstToCppSource::_emit_body(const Function &f) noexcept {
     f.body()->accept(*this);
 }
 
-void CppCodegen::_emit_comment(const std::string &content) noexcept {
+void AstToCppSource::_emit_comment(const std::string &content) noexcept {
     if (obfuscation_) {
         return;
     }
     current_scratch() << "/* " << content << " */";
 }
 
-void CppCodegen::_emit_argument(const ocarina::Variable &v) noexcept {
+void AstToCppSource::_emit_argument(const ocarina::Variable &v) noexcept {
     _emit_variable_define(v);
     current_scratch() << ",";
     _emit_newline();
 }
 
-void CppCodegen::_emit_arguments(const Function &f) noexcept {
+void AstToCppSource::_emit_arguments(const Function &f) noexcept {
     current_scratch() << "(";
     for (const auto &v : f.arguments()) {
         _emit_argument(v);
@@ -512,7 +494,7 @@ void CppCodegen::_emit_arguments(const Function &f) noexcept {
     current_scratch() << ")";
 }
 
-void CppCodegen::emit(const Function &func) noexcept {
+void AstToCppSource::emit(const Function &func) noexcept {
     FUNCTION_GUARD(func)
     if (func.is_kernel()) {
         _emit_comment(func.description());

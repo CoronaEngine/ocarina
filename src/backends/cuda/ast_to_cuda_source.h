@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "generator/cpp_codegen.h"
+#include "generator/ast_to_cpp_source.h"
 
 namespace ocarina {
-class CUDACodegen final : public CppCodegen {
+class AstToCudaSource final : public AstToCppSource {
 protected:
     void _emit_raytracing_param(const Function &f) noexcept override;
     void visit(const MemberExpr *expr) noexcept override;
@@ -20,6 +20,6 @@ protected:
     void _emit_builtin_vars_define(const Function &f) noexcept override;
 
 public:
-    explicit CUDACodegen(bool obfuscation) : CppCodegen(obfuscation) {}
+    explicit AstToCudaSource(bool obfuscation) : AstToCppSource(obfuscation) {}
 };
 }// namespace ocarina
