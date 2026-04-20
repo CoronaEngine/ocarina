@@ -114,9 +114,8 @@ struct HostDynamicBufferUploadView {
     StoragePrecisionPolicy policy{};
     const Type *logical_type{nullptr};
     DynamicBufferLayout layout{DynamicBufferLayout::AOS};
-    /// Dirty export exposes precise byte segments and also keeps one merged range for compatibility.
+    /// Dirty export exposes precise byte segments for incremental uploads.
     span<const ByteRegion> dirty_segments{};
-    DirtyByteRange dirty{};
 
     [[nodiscard]] const Type *resolved_type() const noexcept {
         return Type::resolve(logical_type, policy);
@@ -160,16 +159,6 @@ public:
     [[nodiscard]] size_t storage_size_bytes() const noexcept { return storage_.size(); }
     [[nodiscard]] bool empty() const noexcept { return element_count_ == 0u; }
 
-    /// Record-level random access is available on canonical host storage.
-    [[nodiscard]] bool supports_record_access() const noexcept {
-        return true;
-    }
-
-    /// Field-level patching is available on canonical host storage.
-    [[nodiscard]] bool supports_field_patch() const noexcept {
-        return true;
-    }
-
     void reserve(size_t element_capacity);
     void resize(size_t element_count);
     void clear() noexcept;
@@ -193,8 +182,7 @@ public:
             .policy = layout_plan_.policy(),
             .logical_type = layout_plan_.logical_type(),
             .layout = DynamicBufferLayout::AOS,
-            .dirty_segments = dirty_segments_.segments(),
-            .dirty = dirty_segments_.merged_range()};
+            .dirty_segments = dirty_segments_.segments()};
     }
 
     /// Read one logical record.
@@ -254,8 +242,6 @@ public:
     [[nodiscard]] size_t element_capacity() const noexcept { return buffer_.element_capacity(); }
     [[nodiscard]] size_t storage_size_bytes() const noexcept { return buffer_.storage_size_bytes(); }
     [[nodiscard]] bool empty() const noexcept { return buffer_.empty(); }
-    [[nodiscard]] bool supports_record_access() const noexcept { return buffer_.supports_record_access(); }
-    [[nodiscard]] bool supports_field_patch() const noexcept { return buffer_.supports_field_patch(); }
     [[nodiscard]] span<const std::byte> bytes() const noexcept { return buffer_.bytes(); }
     [[nodiscard]] span<std::byte> bytes() noexcept { return buffer_.bytes(); }
     [[nodiscard]] DirtyByteRange dirty_range() const noexcept { return buffer_.dirty_range(); }

@@ -104,8 +104,6 @@ public:
           type_(type),
           type_is_resolved_(type_is_resolved) {}
 
-    explicit RawDynamicBufferView(const RawDynamicBuffer &buffer) noexcept;
-
     [[nodiscard]] handle_ty handle() const noexcept { return byte_view_.handle(); }
     [[nodiscard]] size_t size() const noexcept { return element_count_; }
     [[nodiscard]] size_t size_in_byte() const noexcept { return byte_view_.size(); }
@@ -248,6 +246,14 @@ private:
         OC_ASSERT(layout_ == DynamicBufferLayout::AOS);
         OC_ASSERT(element_stride_ > 0u || byte_size == 0u);
         OC_ASSERT(element_stride_ == 0u || byte_size % element_stride_ == 0u);
+    }
+
+    [[nodiscard]] bool is_compatible_with(const HostDynamicBufferUploadView &view) const noexcept {
+        return layout() == view.layout &&
+               logical_type() == view.logical_type &&
+               resolved_type() == view.resolved_type() &&
+               policy().policy == view.policy.policy &&
+               policy().allow_real_in_storage == view.policy.allow_real_in_storage;
     }
 
     void reserve_for_count(size_t required_count) noexcept {
@@ -498,21 +504,13 @@ public:
     [[nodiscard]] bool needs_recreate(const HostDynamicBufferUploadView &view) const noexcept {
         return !valid() ||
                view.bytes.size() > capacity_in_byte() ||
-               layout() != view.layout ||
-               logical_type() != view.logical_type ||
-               resolved_type() != view.resolved_type() ||
-               policy().policy != view.policy.policy ||
-               policy().allow_real_in_storage != view.policy.allow_real_in_storage;
+               !is_compatible_with(view);
     }
 
     [[nodiscard]] DynamicBufferUploadStats sync_immediately(const HostDynamicBufferUploadView &view,
                                                             bool force_full_upload = false) noexcept {
         DynamicBufferUploadStats stats;
-        if (view.logical_type != nullptr && (layout() != view.layout ||
-                                             logical_type() != view.logical_type ||
-                                             resolved_type() != view.resolved_type() ||
-                                             policy().policy != view.policy.policy ||
-                                             policy().allow_real_in_storage != view.policy.allow_real_in_storage)) {
+        if (view.logical_type != nullptr && !is_compatible_with(view)) {
             reset_layout(view.logical_type, view.policy, view.layout);
         }
         if (view.bytes.empty()) {
@@ -593,6 +591,12 @@ class DynamicBufferView {
 private:
     detail::RawDynamicBufferView view_{};
 
+private:
+    [[nodiscard]] size_t aos_byte_offset(size_t element_offset) const noexcept {
+        OC_ASSERT(layout() == DynamicBufferLayout::AOS);
+        return offset_in_byte() + element_offset * element_stride();
+    }
+
 public:
     DynamicBufferView() = default;
 
@@ -601,9 +605,6 @@ private:
         : view_(std::move(view)) {
         OC_ASSERT(view_.logical_type() == nullptr || view_.logical_type() == Type::of<T>());
     }
-
-    explicit DynamicBufferView(const detail::RawDynamicBuffer &buffer) noexcept
-        : DynamicBufferView(detail::RawDynamicBufferView{buffer}) {}
 
     template<typename>
     friend class DynamicBuffer;
@@ -632,19 +633,17 @@ public:
     template<typename Arg>
     requires is_buffer_or_view_v<Arg>
     [[nodiscard]] BufferCopyCommand *copy_from(const Arg &src, uint dst_offset = 0u) const noexcept {
-        OC_ASSERT(layout() == DynamicBufferLayout::AOS);
         return BufferCopyCommand::create(src.handle(), handle(),
                                          src.offset_in_byte(),
-                                         offset_in_byte() + dst_offset * element_stride(),
+                                         aos_byte_offset(dst_offset),
                                          src.size_in_byte(), true);
     }
 
     template<typename Arg>
     requires is_buffer_or_view_v<Arg>
     [[nodiscard]] BufferCopyCommand *copy_to(Arg &dst, uint src_offset = 0u) const noexcept {
-        OC_ASSERT(layout() == DynamicBufferLayout::AOS);
         return BufferCopyCommand::create(handle(), dst.handle(),
-                                         offset_in_byte() + src_offset * element_stride(),
+                                         aos_byte_offset(src_offset),
                                          dst.offset_in_byte(),
                                          dst.size_in_byte(), true);
     }
@@ -694,6 +693,11 @@ class DynamicBuffer {
 private:
     detail::RawDynamicBuffer buffer_{};
     mutable BufferDesc<T> descriptor_{};
+
+private:
+    [[nodiscard]] Expr<Buffer<T>> as_buffer_expr() const noexcept {
+        return make_expr<Buffer<T>>(buffer_expression());
+    }
 
 public:
     DynamicBuffer() = default;
@@ -780,41 +784,41 @@ public:
     template<typename Index>
     requires concepts::all_integral<expr_value_t<Index>>
     [[nodiscard]] auto at(Index &&index) const noexcept {
-        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        auto expr = as_buffer_expr();
         return expr.at(OC_FORWARD(index));
     }
 
     template<typename Index>
     requires concepts::all_integral<expr_value_t<Index>>
     [[nodiscard]] auto &at(Index &&index) noexcept {
-        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        auto expr = as_buffer_expr();
         return expr.at(OC_FORWARD(index));
     }
 
     template<typename Index>
     requires concepts::all_integral<expr_value_t<Index>>
     [[nodiscard]] auto read(Index &&index, bool check_boundary = true) const {
-        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        auto expr = as_buffer_expr();
         return expr.read(OC_FORWARD(index), check_boundary);
     }
 
     template<typename... Index>
     requires concepts::all_integral<expr_value_t<Index>...>
     [[nodiscard]] auto read_multi(Index &&...index) const {
-        return make_expr<Buffer<T>>(buffer_expression()).read_multi(OC_FORWARD(index)...);
+        return as_buffer_expr().read_multi(OC_FORWARD(index)...);
     }
 
     template<typename Index, typename Val>
     requires concepts::integral<expr_value_t<Index>> && concepts::static_convertible<T, expr_value_t<Val>>
     void write(Index &&index, Val &&elm, bool check_boundary = true) {
-        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        auto expr = as_buffer_expr();
         expr.write(OC_FORWARD(index), OC_FORWARD(elm), check_boundary);
     }
 
     template<typename Index>
     requires concepts::integral<expr_value_t<Index>>
     [[nodiscard]] detail::AtomicRef<T> atomic(Index &&index) const noexcept {
-        return make_expr<Buffer<T>>(buffer_expression()).atomic(OC_FORWARD(index));
+        return as_buffer_expr().atomic(OC_FORWARD(index));
     }
 
     template<typename Target, typename Offset>
@@ -939,17 +943,5 @@ public:
         return buffer_.copy_to(dst, src_offset);
     }
 };
-
-inline detail::RawDynamicBufferView::RawDynamicBufferView(const detail::RawDynamicBuffer &buffer) noexcept
-    : RawDynamicBufferView(buffer.byte_view(),
-                           0u,
-                           buffer.size(),
-                           buffer.size(),
-                           buffer.element_stride(),
-                           buffer.element_alignment(),
-                           buffer.layout(),
-                           buffer.logical_type() != nullptr ? buffer.logical_type() : buffer.resolved_type(),
-                           buffer.logical_type() == nullptr,
-                           buffer.policy()) {}
 
 }// namespace ocarina

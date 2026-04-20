@@ -339,8 +339,6 @@ namespace {
     vector<HostDynamicRecord> values{make_record(4.0f), make_record(12.0f)};
     buffer.write_all(values);
 
-    CHECK(buffer.supports_record_access());
-    CHECK(buffer.supports_field_patch());
     CHECK(buffer.element_count() == values.size());
     CHECK(equal_record(buffer.read(0u), values[0], 1e-2f));
     CHECK(equal_record(buffer.read(1u), values[1], 1e-2f));
