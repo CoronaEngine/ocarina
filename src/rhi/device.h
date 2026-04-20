@@ -24,7 +24,10 @@ template<typename T>
 class Buffer;
 
 class ByteBuffer;
+
+namespace detail {
 class RawDynamicBuffer;
+}
 
 template<typename T>
 class DynamicBuffer;
@@ -150,23 +153,12 @@ public:
 
     [[nodiscard]] ByteBuffer create_byte_buffer(size_t size, const string &name = "") const noexcept;
 
-    [[nodiscard]] RawDynamicBuffer create_raw_dynamic_buffer(const Type *logical_type,
-                                                             StoragePrecisionPolicy policy,
-                                                             size_t element_count = 0u,
-                                                             const string &name = "",
-                                                             DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept;
-
-    [[nodiscard]] RawDynamicBuffer create_raw_dynamic_buffer_resolved(const Type *resolved_type,
-                                                                      size_t element_count = 0u,
-                                                                      const string &name = "",
-                                                                      DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept;
-
     template<typename T>
     [[nodiscard]] DynamicBuffer<T> create_dynamic_buffer(StoragePrecisionPolicy policy,
                                                          size_t element_count = 0u,
                                                          const string &name = "",
                                                          DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept {
-        return DynamicBuffer<T>{create_raw_dynamic_buffer(Type::of<T>(), policy, element_count, name, layout)};
+        return DynamicBuffer<T>{create<detail::RawDynamicBuffer>(Type::of<T>(), policy, element_count, layout, name)};
     }
 
     template<typename T, AccessMode mode = AOS>
@@ -218,6 +210,7 @@ public:
                                       AccelUsageTag usage_tag = AccelUsageTag::FAST_TRACE,
                                       AccelGeomTag geom_tag = AccelGeomTag::DISABLE_ANYHIT) const noexcept;// implement in mesh.h
     [[nodiscard]] Stream create_stream() noexcept;
+
     [[nodiscard]] Accel create_accel(AccelUsageTag usage_tag = AccelUsageTag::FAST_TRACE) const noexcept;
     [[nodiscard]] BindlessArray create_bindless_array() const noexcept;
     void init_rtx() noexcept { impl_->init_rtx(); }
@@ -294,6 +287,18 @@ public:
 
     [[nodiscard]] static Device create_device(const string &backend_name, const ocarina::InstanceCreation &instance_creation);
     [[nodiscard]] static Device create_device(const string &backend_name);
+
+private:
+    [[nodiscard]] detail::RawDynamicBuffer create_raw_dynamic_buffer(const Type *logical_type,
+                                                                     StoragePrecisionPolicy policy,
+                                                                     size_t element_count = 0u,
+                                                                     const string &name = "",
+                                                                     DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept;
+
+    [[nodiscard]] detail::RawDynamicBuffer create_raw_dynamic_buffer_resolved(const Type *resolved_type,
+                                                                              size_t element_count = 0u,
+                                                                              const string &name = "",
+                                                                              DynamicBufferLayout layout = DynamicBufferLayout::AOS) const noexcept;
 };
 
 }// namespace ocarina

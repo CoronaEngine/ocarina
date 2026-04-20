@@ -57,14 +57,16 @@ struct DynamicBufferUploadStats {
     bool full_upload{false};
 };
 
-class RawDynamicBuffer;
-class RawDynamicBufferView;
-
 template<typename T>
 class DynamicBuffer;
 
 template<typename T>
 class DynamicBufferView;
+
+namespace detail {
+
+class RawDynamicBuffer;
+class RawDynamicBufferView;
 
 class RawDynamicBufferView {
 private:
@@ -87,9 +89,9 @@ public:
                          size_t total_element_count,
                          size_t element_stride,
                          size_t element_alignment,
-                                                 DynamicBufferLayout layout,
-                                                 const Type *type,
-                                                 bool type_is_resolved,
+                         DynamicBufferLayout layout,
+                         const Type *type,
+                         bool type_is_resolved,
                          StoragePrecisionPolicy policy) noexcept
         : byte_view_(byte_view),
           element_offset_(element_offset),
@@ -97,10 +99,10 @@ public:
           total_element_count_(total_element_count),
           element_stride_(element_stride),
           element_alignment_(element_alignment),
-                    layout_(layout),
+          layout_(layout),
           policy_(policy),
-                    type_(type),
-                    type_is_resolved_(type_is_resolved) {}
+          type_(type),
+          type_is_resolved_(type_is_resolved) {}
 
     explicit RawDynamicBufferView(const RawDynamicBuffer &buffer) noexcept;
 
@@ -273,45 +275,50 @@ public:
                      const Type *logical_type,
                      StoragePrecisionPolicy policy,
                      size_t element_count,
-                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS,
+                     DynamicBufferLayout layout = DynamicBufferLayout::AOS,
                      const string &name = "")
-                : RawDynamicBuffer(device, DynamicBufferLayoutPlan::create(logical_type, policy), element_count, layout, name) {}
+        : RawDynamicBuffer(device, DynamicBufferLayoutPlan::create(logical_type, policy), element_count, layout, name) {}
 
     RawDynamicBuffer(Device::Impl *device,
                      const Type *resolved_type,
                      size_t element_count,
-                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS,
+                     DynamicBufferLayout layout = DynamicBufferLayout::AOS,
                      const string &name = "")
         : device_(device),
-                    byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device,
-                                                                                                                                             layout == DynamicBufferLayout::AOS ? resolved_type->size() * element_count
-                                                                                                                                                                                                                    : detail::runtime_soa_storage_bytes(resolved_type,
-                                                                                                                                                                                                                                                                                                                        element_count,
-                                                                                                                                                                                                                                                                                                                        StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
-                                                                                                                                                                                                                                                                                                                                               .allow_real_in_storage = true}),
-                                                                                                                                             name)),
+          byte_buffer_(element_count == 0u ?
+                           ByteBuffer{} :
+                           ByteBuffer(device,
+                                      layout == DynamicBufferLayout::AOS ?
+                                          resolved_type->size() * element_count :
+                                          detail::runtime_soa_storage_bytes(resolved_type, element_count,
+                                                                            StoragePrecisionPolicy{.policy = PrecisionPolicy::force_f32,
+                                                                                                   .allow_real_in_storage = true}),
+                                      name)),
           element_count_(element_count),
           element_capacity_(element_count),
           name_(name) {
-                assign_resolved_layout(resolved_type, layout);
+        assign_resolved_layout(resolved_type, layout);
     }
 
     RawDynamicBuffer(Device::Impl *device,
                      const DynamicBufferLayoutPlan &layout_plan,
                      size_t element_count,
-                                         DynamicBufferLayout layout = DynamicBufferLayout::AOS,
+                     DynamicBufferLayout layout = DynamicBufferLayout::AOS,
                      const string &name = "")
         : device_(device),
-                    byte_buffer_(element_count == 0u ? ByteBuffer{} : ByteBuffer(device,
-                                                                                                                                             layout == DynamicBufferLayout::AOS ? layout_plan.storage_bytes(element_count)
-                                                                                                                                                                                                                    : detail::runtime_soa_storage_bytes(layout_plan.resolved_type(),
-                                                                                                                                                                                                                                                                                                                        element_count,
-                                                                                                                                                                                                                                                                                                                        layout_plan.policy()),
-                                                                                                                                             name)),
+          byte_buffer_(element_count == 0u ?
+                           ByteBuffer{} :
+                           ByteBuffer(device,
+                                      layout == DynamicBufferLayout::AOS ?
+                                          layout_plan.storage_bytes(element_count) :
+                                          detail::runtime_soa_storage_bytes(layout_plan.resolved_type(),
+                                                                            element_count,
+                                                                            layout_plan.policy()),
+                                      name)),
           element_count_(element_count),
           element_capacity_(element_count),
           name_(name) {
-                assign_layout_plan(layout_plan, layout);
+        assign_layout_plan(layout_plan, layout);
     }
 
     [[nodiscard]] bool valid() const noexcept { return byte_buffer_.valid(); }
@@ -579,22 +586,29 @@ public:
     }
 };
 
+}// namespace detail
+
 template<typename T>
 class DynamicBufferView {
 private:
-    RawDynamicBufferView view_{};
+    detail::RawDynamicBufferView view_{};
 
 public:
     DynamicBufferView() = default;
 
-    explicit DynamicBufferView(RawDynamicBufferView view) noexcept
+private:
+    explicit DynamicBufferView(detail::RawDynamicBufferView view) noexcept
         : view_(std::move(view)) {
         OC_ASSERT(view_.logical_type() == nullptr || view_.logical_type() == Type::of<T>());
     }
 
-    explicit DynamicBufferView(const RawDynamicBuffer &buffer) noexcept
-        : DynamicBufferView(RawDynamicBufferView{buffer}) {}
+    explicit DynamicBufferView(const detail::RawDynamicBuffer &buffer) noexcept
+        : DynamicBufferView(detail::RawDynamicBufferView{buffer}) {}
 
+    template<typename>
+    friend class DynamicBuffer;
+
+public:
     [[nodiscard]] handle_ty handle() const noexcept { return view_.handle(); }
     [[nodiscard]] size_t size() const noexcept { return view_.size(); }
     [[nodiscard]] size_t size_in_byte() const noexcept { return view_.size_in_byte(); }
@@ -611,7 +625,6 @@ public:
     [[nodiscard]] bool empty() const noexcept { return view_.empty(); }
 
     [[nodiscard]] ByteBufferView byte_view() const noexcept { return view_.byte_view(); }
-    [[nodiscard]] const RawDynamicBufferView &raw() const noexcept { return view_; }
     [[nodiscard]] DynamicBufferView subview(size_t offset, size_t size = 0u) const noexcept {
         return DynamicBufferView{view_.subview(offset, size)};
     }
@@ -679,18 +692,20 @@ public:
 template<typename T>
 class DynamicBuffer {
 private:
-    RawDynamicBuffer buffer_{};
+    detail::RawDynamicBuffer buffer_{};
 
 public:
     DynamicBuffer() = default;
 
-    explicit DynamicBuffer(RawDynamicBuffer buffer) noexcept
+private:
+    explicit DynamicBuffer(detail::RawDynamicBuffer buffer) noexcept
         : buffer_(std::move(buffer)) {
         OC_ASSERT(buffer_.logical_type() == nullptr || buffer_.logical_type() == Type::of<T>());
     }
 
-    [[nodiscard]] RawDynamicBuffer &raw() noexcept { return buffer_; }
-    [[nodiscard]] const RawDynamicBuffer &raw() const noexcept { return buffer_; }
+    friend class Device;
+
+public:
     [[nodiscard]] bool valid() const noexcept { return buffer_.valid(); }
     [[nodiscard]] handle_ty handle() const noexcept { return buffer_.handle(); }
     [[nodiscard]] Device::Impl *device() const noexcept { return buffer_.device(); }
@@ -850,7 +865,7 @@ public:
     }
 };
 
-inline RawDynamicBufferView::RawDynamicBufferView(const RawDynamicBuffer &buffer) noexcept
+inline detail::RawDynamicBufferView::RawDynamicBufferView(const detail::RawDynamicBuffer &buffer) noexcept
     : RawDynamicBufferView(buffer.byte_view(),
                            0u,
                            buffer.size(),

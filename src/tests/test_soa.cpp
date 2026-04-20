@@ -36,6 +36,11 @@ struct PaddedPolicyRecord {
     float wide{};
 };
 
+struct PaddedAtomicRecord {
+    uint narrow{};
+    ulong wide{};
+};
+
 struct DynamicRealRecord {
     real value{};
     Vector<real, 3> direction{};
@@ -48,6 +53,9 @@ OC_STRUCT(, PolicyRecord, lhs, rhs) {
 };
 
 OC_STRUCT(, PaddedPolicyRecord, narrow, wide) {
+};
+
+OC_STRUCT(, PaddedAtomicRecord, narrow, wide) {
 };
 
 OC_STRUCT(, DynamicRealRecord, value, direction, weights, basis, extra) {
@@ -142,6 +150,32 @@ static TestRecord make_test_record(uint index) {
         make_float4(-value - 0.5f, -value - 1.5f, -value - 2.5f, -value - 3.5f)};
 }
 
+static PaddedPolicyRecord make_padded_policy_record(uint index) {
+    float value = static_cast<float>(index * 10u);
+    return {
+        .narrow = real{value + 0.5f},
+        .wide = value + 1.25f,
+    };
+}
+
+static bool equal_padded_policy_record(const PaddedPolicyRecord &lhs,
+                                       const PaddedPolicyRecord &rhs,
+                                       float eps) {
+    return close_real(lhs.narrow, rhs.narrow, eps) && std::abs(lhs.wide - rhs.wide) < eps;
+}
+
+static PaddedAtomicRecord make_padded_atomic_record(uint index) {
+    return {
+        .narrow = 100u + index * 7u,
+        .wide = 1000ull + static_cast<ulong>(index) * 11ull,
+    };
+}
+
+static bool equal_padded_atomic_record(const PaddedAtomicRecord &lhs,
+                                       const PaddedAtomicRecord &rhs) {
+    return lhs.narrow == rhs.narrow && lhs.wide == rhs.wide;
+}
+
 static vector<std::byte> pack_records_soa(const vector<TestRecord> &records) {
     size_t count = records.size();
     vector<std::byte> bytes(count * sizeof(TestRecord));
@@ -161,6 +195,65 @@ static vector<TestRecord> unpack_records_soa(const vector<std::byte> &bytes, siz
     for (size_t index = 0; index < count; ++index) {
         std::memcpy(&records[index].lhs, bytes.data() + lhs_offset + index * sizeof(float4), sizeof(float4));
         std::memcpy(&records[index].rhs, bytes.data() + rhs_offset + index * sizeof(float4), sizeof(float4));
+    }
+    return records;
+}
+
+static vector<std::byte> pack_padded_policy_records_soa(const vector<PaddedPolicyRecord> &records) {
+    constexpr size_t narrow_size = sizeof(uint16_t);
+    constexpr size_t wide_size = sizeof(float);
+    size_t count = records.size();
+    vector<std::byte> bytes(count * (narrow_size + wide_size));
+    size_t narrow_offset = 0u;
+    size_t wide_offset = count * narrow_size;
+    for (size_t index = 0; index < count; ++index) {
+        uint16_t narrow = float_to_half(static_cast<float>(records[index].narrow));
+        std::memcpy(bytes.data() + narrow_offset + index * narrow_size, &narrow, narrow_size);
+        std::memcpy(bytes.data() + wide_offset + index * wide_size, &records[index].wide, wide_size);
+    }
+    return bytes;
+}
+
+static vector<PaddedPolicyRecord> unpack_padded_policy_records_soa(const vector<std::byte> &bytes,
+                                                                    size_t count) {
+    constexpr size_t narrow_size = sizeof(uint16_t);
+    constexpr size_t wide_size = sizeof(float);
+    vector<PaddedPolicyRecord> records(count);
+    size_t narrow_offset = 0u;
+    size_t wide_offset = count * narrow_size;
+    for (size_t index = 0; index < count; ++index) {
+        uint16_t narrow_bits = 0u;
+        std::memcpy(&narrow_bits, bytes.data() + narrow_offset + index * narrow_size, narrow_size);
+        records[index].narrow = real{half_to_float(narrow_bits)};
+        std::memcpy(&records[index].wide, bytes.data() + wide_offset + index * wide_size, wide_size);
+    }
+    return records;
+}
+
+static vector<std::byte> pack_padded_atomic_records_soa(const vector<PaddedAtomicRecord> &records) {
+    constexpr size_t narrow_size = sizeof(uint);
+    constexpr size_t wide_size = sizeof(ulong);
+    size_t count = records.size();
+    vector<std::byte> bytes(count * (narrow_size + wide_size));
+    size_t narrow_offset = 0u;
+    size_t wide_offset = count * narrow_size;
+    for (size_t index = 0; index < count; ++index) {
+        std::memcpy(bytes.data() + narrow_offset + index * narrow_size, &records[index].narrow, narrow_size);
+        std::memcpy(bytes.data() + wide_offset + index * wide_size, &records[index].wide, wide_size);
+    }
+    return bytes;
+}
+
+static vector<PaddedAtomicRecord> unpack_padded_atomic_records_soa(const vector<std::byte> &bytes,
+                                                                    size_t count) {
+    constexpr size_t narrow_size = sizeof(uint);
+    constexpr size_t wide_size = sizeof(ulong);
+    vector<PaddedAtomicRecord> records(count);
+    size_t narrow_offset = 0u;
+    size_t wide_offset = count * narrow_size;
+    for (size_t index = 0; index < count; ++index) {
+        std::memcpy(&records[index].narrow, bytes.data() + narrow_offset + index * narrow_size, narrow_size);
+        std::memcpy(&records[index].wide, bytes.data() + wide_offset + index * wide_size, wide_size);
     }
     return records;
 }
@@ -250,12 +343,15 @@ static int test_dynamic_buffer_real_layout(Device &device) {
             }
         }
 
-        RawDynamicBuffer buffer = device.create_raw_dynamic_buffer(Type::of<DynamicRealRecord>(),
-                                                                   storage_policy,
-                                                                   records.size(),
-                                                                   std::string{"test_soa_dynamic_buffer_"} +
-                                                                       policy_suffix(policy));
-        buffer.upload_immediately(host.bytes());
+        auto buffer = device.create_dynamic_buffer<DynamicRealRecord>(storage_policy,
+                                                                      records.size(),
+                                                                      std::string{"test_soa_dynamic_buffer_"} +
+                                                                          policy_suffix(policy));
+        auto stats = buffer.sync_immediately(host);
+        if (!stats.full_upload) {
+            std::cerr << "  FAIL: expected full sync upload for policy " << policy_suffix(policy) << std::endl;
+            ++failures;
+        }
 
         if (buffer.logical_type() != Type::of<DynamicRealRecord>()) {
             std::cerr << "  FAIL: logical type mismatch for policy " << policy_suffix(policy) << std::endl;
@@ -275,7 +371,8 @@ static int test_dynamic_buffer_real_layout(Device &device) {
         }
 
         vector<std::byte> downloaded(host.bytes().size());
-        buffer.download_immediately(downloaded.data());
+        ByteBuffer byte_buffer{buffer.byte_view()};
+        byte_buffer.download_immediately(downloaded.data());
         if (!equal_bytes(host.bytes(), downloaded)) {
             std::cerr << "  FAIL: raw dynamic buffer byte roundtrip mismatch for policy "
                       << policy_suffix(policy) << std::endl;
@@ -469,6 +566,71 @@ static int test_soa_view_var_read_write(Device &device, Stream &stream) {
     return failures;
 }
 
+static int test_soa_view_var_compact_padded_struct(Device &device, Stream &stream) {
+    std::cout << "=== test_soa_view_var_compact_padded_struct ===" << std::endl;
+    int failures = 0;
+
+    constexpr uint count = 16u;
+    constexpr size_t compact_stride = sizeof(uint) + sizeof(ulong);
+
+    static_assert(sizeof(PaddedAtomicRecord) > compact_stride,
+                  "PaddedAtomicRecord must contain AoS padding so the SOA compactness test is meaningful");
+
+    if (resolved_soa_type_size<PaddedAtomicRecord>() != compact_stride) {
+        std::cerr << "  FAIL: resolved SOA type size should ignore AoS padding for PaddedAtomicRecord" << std::endl;
+        ++failures;
+    }
+    if (resolved_soa_stride<PaddedAtomicRecord>() != compact_stride) {
+        std::cerr << "  FAIL: resolved SOA stride should match compact member sum for PaddedAtomicRecord" << std::endl;
+        ++failures;
+    }
+
+    auto src = device.create_byte_buffer(count * compact_stride, "test_soa_compact_padded_src");
+    auto dst = device.create_byte_buffer(count * compact_stride, "test_soa_compact_padded_dst");
+
+    vector<PaddedAtomicRecord> host_records(count);
+    for (uint index = 0; index < count; ++index) {
+        host_records[index] = make_padded_atomic_record(index);
+    }
+    vector<std::byte> host_src = pack_padded_atomic_records_soa(host_records);
+    vector<std::byte> host_dst(count * compact_stride);
+    src.upload_immediately(host_src.data());
+
+    Kernel kernel = [&](ByteBufferVar input, ByteBufferVar output, Uint n) {
+        Uint index = dispatch_id();
+        $if(index < n) {
+            auto src_view = make_soa_view_var<PaddedAtomicRecord>(input);
+            auto dst_view = make_soa_view_var<PaddedAtomicRecord>(output);
+            Var<PaddedAtomicRecord> value = src_view.read(index);
+            dst_view.write(index, value);
+        };
+    };
+
+    auto shader = device.compile(kernel, "test_soa_view_var_compact_padded_struct");
+    stream << shader(src, dst, count).dispatch(count)
+           << dst.download(host_dst.data())
+           << synchronize()
+           << commit();
+
+    if (!equal_bytes(host_src, host_dst)) {
+        std::cerr << "  FAIL: SOA byte layout is not compact for padded struct" << std::endl;
+        ++failures;
+    }
+
+    vector<PaddedAtomicRecord> unpacked = unpack_padded_atomic_records_soa(host_dst, count);
+    for (uint index = 0; index < count; ++index) {
+        if (!equal_padded_atomic_record(unpacked[index], host_records[index])) {
+            std::cerr << "  FAIL: unpacked record mismatch at index " << index << std::endl;
+            ++failures;
+        }
+    }
+
+    if (failures == 0) {
+        std::cout << "  PASSED" << std::endl;
+    }
+    return failures;
+}
+
 int main(int argc, char *argv[]) {
     int total_failures = 0;
 
@@ -486,6 +648,7 @@ int main(int argc, char *argv[]) {
     total_failures += test_byte_buffer_read_write(device, stream);
     total_failures += test_aos_view_var_read_write(device, stream);
     total_failures += test_soa_view_var_read_write(device, stream);
+    total_failures += test_soa_view_var_compact_padded_struct(device, stream);
 
     std::cout << "\n==================" << std::endl;
     if (total_failures == 0) {

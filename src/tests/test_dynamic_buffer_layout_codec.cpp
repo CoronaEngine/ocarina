@@ -42,6 +42,16 @@ OC_MAKE_STORAGE_TYPE(CodecRealArray, samples, weight)
 OC_MAKE_STRUCT_DESC(CodecRealArray, samples, weight)
 OC_MAKE_STRUCT_IS_DYNAMIC(CodecRealArray, samples, weight)
 
+struct CodecPaddedRecord {
+    real narrow;
+    float wide;
+};
+
+OC_MAKE_STRUCT_REFLECTION(CodecPaddedRecord, narrow, wide)
+OC_MAKE_STORAGE_TYPE(CodecPaddedRecord, narrow, wide)
+OC_MAKE_STRUCT_DESC(CodecPaddedRecord, narrow, wide)
+OC_MAKE_STRUCT_IS_DYNAMIC(CodecPaddedRecord, narrow, wide)
+
 namespace {
 
 [[nodiscard]] bool check_impl(bool condition, const char *expr) {
@@ -98,6 +108,12 @@ template<typename T, size_t N>
     return close_float(lhs.weight, rhs.weight, eps);
 }
 
+[[nodiscard]] bool equal_padded_record(const CodecPaddedRecord &lhs,
+                                       const CodecPaddedRecord &rhs,
+                                       float eps = 1e-3f) {
+    return equal_real(lhs.narrow, rhs.narrow, eps) && close_float(lhs.wide, rhs.wide, eps);
+}
+
 [[nodiscard]] CodecRealLeaf make_leaf(uint index) {
     float value = static_cast<float>(index);
     return {
@@ -120,6 +136,13 @@ template<typename T, size_t N>
         .weight = value + 4.5f};
 }
 
+[[nodiscard]] CodecPaddedRecord make_padded_record(uint index) {
+    float value = static_cast<float>(index * 10u);
+    return {
+        .narrow = real{value + 0.5f},
+        .wide = value + 1.25f};
+}
+
 [[nodiscard]] StoragePrecisionPolicy make_policy(PrecisionPolicy policy) {
     return StoragePrecisionPolicy{.policy = policy, .allow_real_in_storage = true};
 }
@@ -137,7 +160,7 @@ template<typename T>
 [[nodiscard]] bool test_shared_compile_time_layout_helpers(StoragePrecisionPolicy policy) {
     CHECK(detail::compile_time_resolved_layout_size<T>(policy) ==
           DynamicBufferLayoutCodec<T>::storage_bytes(1u, policy, DynamicBufferLayout::AOS));
-    CHECK(detail::compile_time_soa_stride<T>(policy) == detail::compile_time_resolved_layout_size<T>(policy));
+    CHECK(detail::compile_time_soa_stride<T>(policy) == detail::compile_time_soa_storage_bytes<T>(1u, policy));
     CHECK(detail::compile_time_soa_storage_bytes<T>(3u, policy) ==
           DynamicBufferLayoutCodec<T>::storage_bytes(3u, policy, DynamicBufferLayout::SOA));
     return true;
@@ -284,6 +307,37 @@ template<typename T>
     return true;
 }
 
+[[nodiscard]] bool test_half_soa_struct_packs_members_without_padding() {
+    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f16);
+    vector<CodecPaddedRecord> src(3u);
+    vector<CodecPaddedRecord> dst(3u);
+    for (uint index = 0; index < src.size(); ++index) {
+        src[index] = make_padded_record(index);
+    }
+
+    CHECK(detail::compile_time_resolved_layout_size<CodecPaddedRecord>(policy) == 8u);
+    CHECK(detail::compile_time_soa_storage_bytes<CodecPaddedRecord>(1u, policy) == 6u);
+    CHECK(DynamicBufferLayoutCodec<CodecPaddedRecord>::storage_bytes(3u, policy, DynamicBufferLayout::AOS) == 24u);
+    CHECK(DynamicBufferLayoutCodec<CodecPaddedRecord>::storage_bytes(3u, policy, DynamicBufferLayout::SOA) == 18u);
+
+    HostByteBuffer bytes;
+    DynamicBufferLayoutCodec<CodecPaddedRecord>::encode(src.data(), src.size(), bytes, policy, DynamicBufferLayout::SOA);
+    CHECK(bytes.size() == 18u);
+
+    CHECK(bytes.load<uint16_t>(0u) == float_to_half(0.5f));
+    CHECK(bytes.load<uint16_t>(2u) == float_to_half(10.5f));
+    CHECK(bytes.load<uint16_t>(4u) == float_to_half(20.5f));
+    CHECK(close_float(bytes.load<float>(6u), 1.25f, 1e-6f));
+    CHECK(close_float(bytes.load<float>(10u), 11.25f, 1e-6f));
+    CHECK(close_float(bytes.load<float>(14u), 21.25f, 1e-6f));
+
+    DynamicBufferLayoutCodec<CodecPaddedRecord>::decode(bytes, dst.size(), dst.data(), policy, DynamicBufferLayout::SOA);
+    for (size_t index = 0; index < src.size(); ++index) {
+        CHECK(equal_padded_record(src[index], dst[index], 1e-2f));
+    }
+    return true;
+}
+
 }// namespace
 
 int main() {
@@ -301,6 +355,7 @@ int main() {
     passed = test_half_aos_round_trip() && passed;
     passed = test_half_soa_round_trip() && passed;
     passed = test_float_soa_array_round_trip() && passed;
+    passed = test_half_soa_struct_packs_members_without_padding() && passed;
 
     if (!passed) {
         std::cerr << "dynamic buffer layout codec test failed" << std::endl;

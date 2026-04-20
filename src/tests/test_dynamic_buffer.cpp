@@ -229,9 +229,10 @@ using kernel_record_t = storage_t<DynamicKernelLogicalRecord, policy>;
     vector<DynamicLogicalRecord> records = {make_logical_record(0.f), make_logical_record(20.f), make_logical_record(40.f)};
     host.write_all(span<const DynamicLogicalRecord>(records.data(), records.size()));
 
-    RawDynamicBuffer buffer = device.create_raw_dynamic_buffer(Type::of<DynamicLogicalRecord>(), policy, 0u,
-                                                               "test_dynamic_buffer_host_bytes");
-    buffer.upload_immediately(host.bytes());
+    auto buffer = device.create_dynamic_buffer<DynamicLogicalRecord>(policy, 0u,
+                                                                     "test_dynamic_buffer_host_bytes");
+    auto stats = buffer.sync_immediately(host);
+    CHECK(stats.full_upload);
 
     CHECK(buffer.logical_type() == Type::of<DynamicLogicalRecord>());
     CHECK(buffer.resolved_type() == host.layout_plan().resolved_type());
@@ -244,7 +245,7 @@ using kernel_record_t = storage_t<DynamicKernelLogicalRecord, policy>;
     CHECK(buffer.capacity() == host.element_count());
     CHECK(buffer.capacity_in_byte() == host.storage_size_bytes());
 
-    RawDynamicBufferView middle = buffer.view(1u, 1u);
+    auto middle = buffer.view(1u, 1u);
     CHECK(middle.offset() == 1u);
     CHECK(middle.size() == 1u);
     CHECK(middle.size_in_byte() == buffer.element_stride());
@@ -252,7 +253,8 @@ using kernel_record_t = storage_t<DynamicKernelLogicalRecord, policy>;
     CHECK(middle.total_size_in_byte() == buffer.size_in_byte());
 
     vector<std::byte> downloaded(buffer.size_in_byte());
-    buffer.download_immediately(downloaded.data());
+    ByteBuffer byte_buffer{buffer.byte_view()};
+    byte_buffer.download_immediately(downloaded.data());
     CHECK(equal_bytes(host.bytes(), downloaded));
     return true;
 }
@@ -703,8 +705,8 @@ template<PrecisionPolicy precision>
     vector<DynamicLogicalRecord> records = {make_logical_record(5.f), make_logical_record(25.f), make_logical_record(45.f)};
     host.write_all(span<const DynamicLogicalRecord>(records.data(), records.size()));
 
-    RawDynamicBuffer buffer = device.create_raw_dynamic_buffer(Type::of<DynamicLogicalRecord>(), policy, 0u,
-                                                               "test_dynamic_buffer_direct_host_sync");
+    auto buffer = device.create_dynamic_buffer<DynamicLogicalRecord>(policy, 0u,
+                                                                     "test_dynamic_buffer_direct_host_sync");
     auto first_stats = buffer.sync_immediately(host);
     CHECK(first_stats.full_upload);
     CHECK(first_stats.uploaded_segment_count == 1u);
@@ -730,7 +732,8 @@ template<PrecisionPolicy precision>
     CHECK(!host.dirty_range().dirty);
 
     vector<std::byte> downloaded(buffer.size_in_byte());
-    buffer.download_immediately(downloaded.data());
+    ByteBuffer byte_buffer{buffer.byte_view()};
+    byte_buffer.download_immediately(downloaded.data());
     CHECK(equal_bytes(host.bytes(), downloaded));
     return true;
 }

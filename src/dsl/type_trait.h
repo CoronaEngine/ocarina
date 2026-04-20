@@ -431,13 +431,16 @@ template<typename T>
 class BufferView;
 
 class ByteBuffer;
+
+namespace detail {
 class RawDynamicBuffer;
+class RawDynamicBufferView;
+}
 
 template<typename T>
 class DynamicBuffer;
 
 class ByteBufferView;
-class RawDynamicBufferView;
 
 template<typename T>
 class DynamicBufferView;
@@ -466,7 +469,7 @@ template<>
 struct is_buffer_impl<ByteBuffer> : std::true_type {};
 
 template<>
-struct is_buffer_impl<RawDynamicBuffer> : std::true_type {};
+struct is_buffer_impl<detail::RawDynamicBuffer> : std::true_type {};
 
 template<typename T>
 struct is_buffer_impl<DynamicBuffer<T>> : std::true_type {};
@@ -481,7 +484,7 @@ template<>
 struct is_buffer_view_impl<ByteBufferView> : std::true_type {};
 
 template<>
-struct is_buffer_view_impl<RawDynamicBufferView> : std::true_type {};
+struct is_buffer_view_impl<detail::RawDynamicBufferView> : std::true_type {};
 
 template<typename T>
 struct is_buffer_view_impl<DynamicBufferView<T>> : std::true_type {};
@@ -502,12 +505,12 @@ struct buffer_element_impl<BufferView<T>> {
 };
 
 template<>
-struct buffer_element_impl<RawDynamicBuffer> {
+struct buffer_element_impl<detail::RawDynamicBuffer> {
     using type = std::byte;
 };
 
 template<>
-struct buffer_element_impl<RawDynamicBufferView> {
+struct buffer_element_impl<detail::RawDynamicBufferView> {
     using type = std::byte;
 };
 
@@ -528,7 +531,7 @@ template<>
 struct is_byte_buffer_view<ByteBufferView> : public std::true_type {};
 
 template<>
-struct is_byte_buffer_view<RawDynamicBufferView> : public std::true_type {};
+struct is_byte_buffer_view<detail::RawDynamicBufferView> : public std::true_type {};
 
 template<typename T>
 struct is_byte_buffer_view<DynamicBufferView<T>> : public std::true_type {};
