@@ -253,8 +253,7 @@ using kernel_record_t = storage_t<DynamicKernelLogicalRecord, policy>;
     CHECK(middle.total_size_in_byte() == buffer.size_in_byte());
 
     vector<std::byte> downloaded(buffer.size_in_byte());
-    ByteBuffer byte_buffer{buffer.byte_view()};
-    byte_buffer.download_immediately(downloaded.data());
+    buffer.byte_view().download(downloaded.data(), 0u, false)->accept(*buffer.device()->command_visitor());
     CHECK(equal_bytes(host.bytes(), downloaded));
     return true;
 }
@@ -489,6 +488,111 @@ template<PrecisionPolicy precision>
             return test_dynamic_buffer_capture_aos_access_impl<PrecisionPolicy::force_f16>(device);
         case PrecisionPolicy::force_f32:
             return test_dynamic_buffer_capture_aos_access_impl<PrecisionPolicy::force_f32>(device);
+    }
+    return false;
+}
+
+[[nodiscard]] bool test_dynamic_buffer_capture_direct_resolved_access(Device &device) {
+    constexpr uint count = 8u;
+    StoragePrecisionPolicy policy = make_policy(PrecisionPolicy::force_f32);
+    auto src = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
+                                                                   count,
+                                                                   "test_dynamic_buffer_capture_direct_resolved_src");
+    auto dst = device.create_dynamic_buffer<DynamicResolvedRecord>(policy,
+                                                                   count,
+                                                                   "test_dynamic_buffer_capture_direct_resolved_dst");
+
+    vector<DynamicResolvedRecord> host_src(count);
+    vector<DynamicResolvedRecord> host_dst(count);
+    for (uint index = 0u; index < count; ++index) {
+        host_src[index] = make_resolved_record(index + 90u);
+    }
+    src.upload_immediately(host_src.data(), host_src.size());
+
+    Kernel kernel = [&]() {
+        Uint index = dispatch_id();
+        $if(index < count) {
+            Var<DynamicResolvedRecord> value = src.read(index);
+            value.lhs += make_float4(2.f, 4.f, 6.f, 8.f);
+            value.rhs -= make_float4(1.f, 3.f, 5.f, 7.f);
+            dst.write(index, value);
+        };
+    };
+
+    Stream stream = device.create_stream();
+    auto shader = device.compile(kernel, "test_dynamic_buffer_capture_direct_resolved_access");
+    stream << shader().dispatch(count)
+           << dst.download(host_dst.data())
+           << synchronize()
+           << commit();
+
+    for (uint index = 0u; index < count; ++index) {
+        CHECK(equal_resolved_record(host_dst[index], transform_resolved_record(host_src[index])));
+    }
+    return true;
+}
+
+template<PrecisionPolicy precision>
+[[nodiscard]] bool test_dynamic_buffer_capture_direct_logical_access_impl(Device &device) {
+    constexpr uint count = 8u;
+    StoragePrecisionPolicy policy = make_policy(precision);
+    string suffix = precision_suffix(precision);
+    auto src = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_capture_direct_logical_src_" + suffix);
+    auto dst = device.create_dynamic_buffer<DynamicKernelLogicalRecord>(policy,
+                                                                        count,
+                                                                        "test_dynamic_buffer_capture_direct_logical_dst_" + suffix);
+
+    vector<DynamicKernelLogicalRecord> host_src(count);
+    vector<DynamicKernelLogicalRecord> host_dst(count);
+    for (uint index = 0u; index < count; ++index) {
+        host_src[index] = make_kernel_logical_record(index + 120u);
+    }
+    src.upload_immediately(host_src.data(), host_src.size());
+
+    StoragePrecisionPolicy previous_policy = global_storage_policy();
+    set_global_storage_policy(policy);
+
+    Kernel kernel = [&]() {
+        Uint index = dispatch_id();
+        $if(index < count) {
+            Var<DynamicKernelLogicalRecord> value = src.read(index);
+            value.lhs[0] = value.lhs[0] + real{2.0f};
+            value.lhs[1] = value.lhs[1] + real{4.0f};
+            value.lhs[2] = value.lhs[2] + real{6.0f};
+            value.lhs[3] = value.lhs[3] + real{8.0f};
+            value.rhs[0] = value.rhs[0] - real{1.0f};
+            value.rhs[1] = value.rhs[1] - real{3.0f};
+            value.rhs[2] = value.rhs[2] - real{5.0f};
+            value.rhs[3] = value.rhs[3] - real{7.0f};
+            dst.write(index, value);
+        };
+    };
+
+    Stream stream = device.create_stream();
+    auto shader = device.compile(kernel, string{"test_dynamic_buffer_capture_direct_logical_access_"} + suffix);
+    stream << shader().dispatch(count)
+           << dst.download(host_dst.data())
+           << synchronize()
+           << commit();
+
+    set_global_storage_policy(previous_policy);
+
+    for (uint index = 0u; index < count; ++index) {
+        CHECK(equal_kernel_logical_record(host_dst[index],
+                                          transform_kernel_logical_record(host_src[index]),
+                                          precision_epsilon(precision)));
+    }
+    return true;
+}
+
+[[nodiscard]] bool test_dynamic_buffer_capture_direct_logical_access(Device &device, PrecisionPolicy precision) {
+    switch (precision) {
+        case PrecisionPolicy::force_f16:
+            return test_dynamic_buffer_capture_direct_logical_access_impl<PrecisionPolicy::force_f16>(device);
+        case PrecisionPolicy::force_f32:
+            return test_dynamic_buffer_capture_direct_logical_access_impl<PrecisionPolicy::force_f32>(device);
     }
     return false;
 }
@@ -732,8 +836,7 @@ template<PrecisionPolicy precision>
     CHECK(!host.dirty_range().dirty);
 
     vector<std::byte> downloaded(buffer.size_in_byte());
-    ByteBuffer byte_buffer{buffer.byte_view()};
-    byte_buffer.download_immediately(downloaded.data());
+    buffer.byte_view().download(downloaded.data(), 0u, false)->accept(*buffer.device()->command_visitor());
     CHECK(equal_bytes(host.bytes(), downloaded));
     return true;
 }
@@ -751,10 +854,12 @@ int main() {
     passed = test_typed_dynamic_buffer_view_aos_round_trip(device) && passed;
     passed = test_typed_dynamic_buffer_view_soa_round_trip(device) && passed;
     passed = test_typed_dynamic_buffer_soa_uses_physical_soa_bytes(device) && passed;
+    passed = test_dynamic_buffer_capture_direct_resolved_access(device) && passed;
     for (auto precision : kernel_precisions) {
         passed = test_dynamic_buffer_param_aos_access(device, precision) && passed;
         passed = test_dynamic_buffer_param_aos_logical_access(device, precision) && passed;
         passed = test_dynamic_buffer_capture_aos_access(device, precision) && passed;
+        passed = test_dynamic_buffer_capture_direct_logical_access(device, precision) && passed;
         passed = test_dynamic_buffer_capture_soa_access(device, precision) && passed;
         passed = test_dynamic_buffer_bindless_aos_access(device, precision) && passed;
     }

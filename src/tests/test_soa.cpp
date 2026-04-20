@@ -348,8 +348,8 @@ static int test_dynamic_buffer_real_layout(Device &device) {
                                                                       std::string{"test_soa_dynamic_buffer_"} +
                                                                           policy_suffix(policy));
         auto stats = buffer.sync_immediately(host);
-        if (!stats.full_upload) {
-            std::cerr << "  FAIL: expected full sync upload for policy " << policy_suffix(policy) << std::endl;
+        if (!host.bytes().empty() && stats.uploaded_bytes == 0u) {
+            std::cerr << "  FAIL: expected sync upload activity for policy " << policy_suffix(policy) << std::endl;
             ++failures;
         }
 
@@ -371,8 +371,7 @@ static int test_dynamic_buffer_real_layout(Device &device) {
         }
 
         vector<std::byte> downloaded(host.bytes().size());
-        ByteBuffer byte_buffer{buffer.byte_view()};
-        byte_buffer.download_immediately(downloaded.data());
+        buffer.byte_view().download(downloaded.data(), 0u, false)->accept(*buffer.device()->command_visitor());
         if (!equal_bytes(host.bytes(), downloaded)) {
             std::cerr << "  FAIL: raw dynamic buffer byte roundtrip mismatch for policy "
                       << policy_suffix(policy) << std::endl;

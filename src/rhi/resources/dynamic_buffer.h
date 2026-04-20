@@ -693,6 +693,7 @@ template<typename T>
 class DynamicBuffer {
 private:
     detail::RawDynamicBuffer buffer_{};
+    mutable BufferDesc<T> descriptor_{};
 
 public:
     DynamicBuffer() = default;
@@ -724,6 +725,30 @@ public:
     [[nodiscard]] size_t capacity_in_byte() const noexcept { return buffer_.capacity_in_byte(); }
     [[nodiscard]] uint offset_in_byte() const noexcept { return buffer_.offset_in_byte(); }
 
+    const BufferDesc<T> &descriptor() const noexcept {
+        OC_ASSERT(layout() == DynamicBufferLayout::AOS);
+        descriptor_.handle = reinterpret_cast<T *>(handle());
+        descriptor_.offset = 0u;
+        descriptor_.size = size();
+        return descriptor_;
+    }
+
+    const BufferDesc<T> *descriptor_ptr() const noexcept {
+        return &descriptor();
+    }
+
+    [[nodiscard]] size_t data_alignment() const noexcept {
+        return alignof(decltype(descriptor_));
+    }
+
+    [[nodiscard]] size_t data_size() const noexcept {
+        return sizeof(descriptor_);
+    }
+
+    [[nodiscard]] MemoryBlock memory_block() const noexcept {
+        return {descriptor_ptr(), data_size(), data_alignment(), sizeof(handle_ty)};
+    }
+
     void destroy() noexcept { buffer_.destroy(); }
     void reserve(size_t element_capacity) noexcept { buffer_.reserve(element_capacity); }
 
@@ -741,6 +766,56 @@ public:
 
     [[nodiscard]] const Expression *expression() const noexcept { return buffer_.expression(); }
     [[nodiscard]] Expr<ByteBuffer> expr() const noexcept { return buffer_.expr(); }
+
+    auto operator[](int i) { return T{}; }
+
+    [[nodiscard]] const Expression *buffer_expression() const noexcept {
+        OC_ASSERT(layout() == DynamicBufferLayout::AOS);
+        const CapturedResource &captured_resource = Function::current()->get_captured_resource(Type::of<Buffer<T>>(),
+                                                                                               Variable::Tag::BUFFER,
+                                                                                               memory_block());
+        return captured_resource.expression();
+    }
+
+    template<typename Index>
+    requires concepts::all_integral<expr_value_t<Index>>
+    [[nodiscard]] auto at(Index &&index) const noexcept {
+        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        return expr.at(OC_FORWARD(index));
+    }
+
+    template<typename Index>
+    requires concepts::all_integral<expr_value_t<Index>>
+    [[nodiscard]] auto &at(Index &&index) noexcept {
+        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        return expr.at(OC_FORWARD(index));
+    }
+
+    template<typename Index>
+    requires concepts::all_integral<expr_value_t<Index>>
+    [[nodiscard]] auto read(Index &&index, bool check_boundary = true) const {
+        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        return expr.read(OC_FORWARD(index), check_boundary);
+    }
+
+    template<typename... Index>
+    requires concepts::all_integral<expr_value_t<Index>...>
+    [[nodiscard]] auto read_multi(Index &&...index) const {
+        return make_expr<Buffer<T>>(buffer_expression()).read_multi(OC_FORWARD(index)...);
+    }
+
+    template<typename Index, typename Val>
+    requires concepts::integral<expr_value_t<Index>> && concepts::static_convertible<T, expr_value_t<Val>>
+    void write(Index &&index, Val &&elm, bool check_boundary = true) {
+        auto expr = make_expr<Buffer<T>>(buffer_expression());
+        expr.write(OC_FORWARD(index), OC_FORWARD(elm), check_boundary);
+    }
+
+    template<typename Index>
+    requires concepts::integral<expr_value_t<Index>>
+    [[nodiscard]] detail::AtomicRef<T> atomic(Index &&index) const noexcept {
+        return make_expr<Buffer<T>>(buffer_expression()).atomic(OC_FORWARD(index));
+    }
 
     template<typename Target, typename Offset>
     requires is_integral_expr_v<Offset>
