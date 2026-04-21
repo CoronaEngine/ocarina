@@ -12,10 +12,6 @@ add_subdirectory(generator)
 add_subdirectory(rhi)
 add_subdirectory(backends)
 
-if (${OCARINA_PY})
-    add_subdirectory(pyexporter)
-endif ()
-
 add_library(ocarina-native INTERFACE)
 target_link_libraries(ocarina-native INTERFACE
         ocarina-ext
