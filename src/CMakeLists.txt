@@ -11,7 +11,6 @@ add_subdirectory(dsl)
 add_subdirectory(generator)
 add_subdirectory(rhi)
 add_subdirectory(backends)
-add_subdirectory(framework)
 
 if (${OCARINA_PY})
     add_subdirectory(pyexporter)
@@ -20,14 +19,13 @@ endif ()
 add_library(ocarina-native INTERFACE)
 target_link_libraries(ocarina-native INTERFACE
         ocarina-ext
-    ocarina-math
+        ocarina-math
         ocarina-dsl
         ocarina-ast
         ocarina-generator
         ocarina-backend
         ocarina-rhi
-        ocarina-core
-        ocarina-framework)
+        ocarina-core)
 
 add_library(ocarina SHARED main.cpp)
 target_link_libraries(ocarina ocarina-native)
@@ -35,9 +33,9 @@ target_link_libraries(ocarina ocarina-native)
 
 option(OCARINA_BUILD_TESTS "Build tests" ${PROJECT_IS_TOP_LEVEL})
 
-if(${OCARINA_BUILD_TESTS})
+if (${OCARINA_BUILD_TESTS})
     add_subdirectory(tests)
-endif()
+endif ()
 
 set_target_properties(ocarina PROPERTIES
         PUBLIC_HEADER "${HEADER_FILES}"
