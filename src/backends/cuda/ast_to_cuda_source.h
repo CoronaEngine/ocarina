@@ -7,7 +7,7 @@
 #include "generator/ast_to_cpp_source.h"
 
 namespace ocarina {
-class AstToCudaSource final : public AstToCppSource {
+class AstToCudaSource : public AstToCppSource {
 protected:
     void _emit_raytracing_param(const Function &f) noexcept override;
     void visit(const MemberExpr *expr) noexcept override;

@@ -6,6 +6,8 @@
 #include "cuda_device.h"
 #include "ast/function.h"
 #include "ast_to_cuda_source.h"
+#include "ir_to_cuda_source.h"
+#include "generator/ast_to_ir.h"
 #include "rhi/context.h"
 #include "core/util/util.h"
 #include "dsl/dsl.h"
@@ -14,6 +16,34 @@ namespace ocarina {
 
 namespace {
 constexpr unsigned ast_to_cuda_source_cache_version = 1u;
+
+[[nodiscard]] unsigned shader_codegen_path_version(ShaderCodegenPath path) noexcept {
+    switch (path) {
+        case ShaderCodegenPath::EAstToSource:
+            return 1u;
+        case ShaderCodegenPath::EAstToIR:
+            return 2u;
+    }
+    return 0u;
+}
+
+[[nodiscard]] string emit_cuda_source(const Function &function) noexcept {
+    switch (Env::shader_codegen_path()) {
+        case ShaderCodegenPath::EAstToSource: {
+            AstToCudaSource emitter{Env::code_obfuscation()};
+            emitter.emit(function);
+            return emitter.scratch().c_str();
+        }
+        case ShaderCodegenPath::EAstToIR: {
+            AstToIR lowering;
+            IRModule module = lowering.lower(function);
+            IRToCudaSource emitter{Env::code_obfuscation()};
+            emitter.emit(module);
+            return emitter.scratch().c_str();
+        }
+    }
+    return {};
+}
 }// namespace
 
 std::string get_cuda_path() {
@@ -107,7 +137,8 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
 
     uint64_t ext_hash = hash64(hash64_list(compile_option),
                                hash64_list(header_sources_ptr),
-                               ast_to_cuda_source_cache_version);
+                               ast_to_cuda_source_cache_version,
+                               shader_codegen_path_version(Env::shader_codegen_path()));
 
     auto compile = [&](const string &cu, const string &fn, int sm) -> string {
         TIMER_TAG(compile, "compile " + fn);
@@ -145,9 +176,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
     if (!context->is_exist_cache(ptx_fn)) {
         OC_INFO_FORMAT("miss ptx file {}", ptx_fn);
         if (!context->is_exist_cache(cu_fn)) {
-            AstToCudaSource codegen{Env::code_obfuscation()};
-            codegen.emit(function);
-            const ocarina::string &cu = codegen.scratch().c_str();
+            const ocarina::string cu = emit_cuda_source(function);
             context->write_global_cache(cu_fn, cu);
             ptx = compile(cu, cu_fn, ptx_sm);
             context->write_global_cache(ptx_fn, ptx);

@@ -2,8 +2,10 @@
 #include <string_view>
 
 #include "backends/cuda/ast_to_cuda_source.h"
+#include "backends/cuda/ir_to_cuda_source.h"
 #include "core/type_system/precision_policy.h"
 #include "dsl/dsl.h"
+#include "generator/ast_to_ir.h"
 #include "generator/ast_to_cpp_source.h"
 #include "math/real.h"
 
@@ -57,6 +59,32 @@ namespace {
     return source.find(needle) != std::string_view::npos;
 }
 
+[[nodiscard]] std::string trim_trailing_space(std::string_view source) {
+    size_t end = source.size();
+    while (end > 0u) {
+        char ch = source[end - 1u];
+        if (ch != ' ' && ch != '\n' && ch != '\r' && ch != '\t') {
+            break;
+        }
+        end -= 1u;
+    }
+    return std::string(source.substr(0u, end));
+}
+
+[[nodiscard]] bool expect_same_source(std::string_view label, std::string_view lhs, std::string_view rhs) {
+    std::string lhs_trimmed = trim_trailing_space(lhs);
+    std::string rhs_trimmed = trim_trailing_space(rhs);
+    if (lhs_trimmed == rhs_trimmed) {
+        return true;
+    }
+    std::cerr << "FAILED: source mismatch for " << label << std::endl;
+    std::cerr << "---- ast ----" << std::endl;
+    std::cerr << lhs_trimmed << std::endl;
+    std::cerr << "---- ir ----" << std::endl;
+    std::cerr << rhs_trimmed << std::endl;
+    return false;
+}
+
 [[nodiscard]] const Type *resolved_type(const Type *type, PrecisionPolicy precision) {
     return Type::resolve(type, make_policy(precision));
 }
@@ -70,6 +98,14 @@ namespace {
 [[nodiscard]] std::string emit_cuda_source(const Function &function) {
     AstToCudaSource emitter(false);
     emitter.emit(function);
+    return std::string(emitter.scratch().view());
+}
+
+[[nodiscard]] std::string emit_cuda_source_via_ir(const Function &function) {
+    AstToIR lowering;
+    IRModule module = lowering.lower(function);
+    IRToCudaSource emitter(false);
+    emitter.emit(module);
     return std::string(emitter.scratch().view());
 }
 
@@ -179,6 +215,17 @@ template<PrecisionPolicy precision>
 }
 
 template<PrecisionPolicy precision>
+[[nodiscard]] bool test_cuda_ir_path_matches_ast_source() {
+    auto callable = make_callable_function<precision>();
+    auto kernel = make_kernel_function<precision>();
+    auto nested_kernel = make_nested_kernel_function<precision>();
+    CHECK(expect_same_source("callable", emit_cuda_source(*callable), emit_cuda_source_via_ir(*callable)));
+    CHECK(expect_same_source("kernel", emit_cuda_source(*kernel), emit_cuda_source_via_ir(*kernel)));
+    CHECK(expect_same_source("nested_kernel", emit_cuda_source(*nested_kernel), emit_cuda_source_via_ir(*nested_kernel)));
+    return true;
+}
+
+template<PrecisionPolicy precision>
 [[nodiscard]] bool test_nested_kernel_ast_and_cuda_source() {
     auto function = make_nested_kernel_function<precision>();
     const Type *resolved_record = resolved_type(Type::of<CodegenNestedRecord>(), precision);
@@ -217,12 +264,16 @@ template<PrecisionPolicy precision>
 
 int main() {
     bool passed = true;
+    passed = check_impl(Env::shader_codegen_path() == ShaderCodegenPath::EAstToSource,
+                        "Env::shader_codegen_path() == ShaderCodegenPath::EAstToSource") && passed;
     passed = test_callable_ast_types<PrecisionPolicy::force_f16>() && passed;
     passed = test_callable_ast_types<PrecisionPolicy::force_f32>() && passed;
     passed = test_callable_ast_to_cuda_source<PrecisionPolicy::force_f16>() && passed;
     passed = test_callable_ast_to_cuda_source<PrecisionPolicy::force_f32>() && passed;
     passed = test_kernel_ast_to_cuda_source<PrecisionPolicy::force_f16>() && passed;
     passed = test_kernel_ast_to_cuda_source<PrecisionPolicy::force_f32>() && passed;
+    passed = test_cuda_ir_path_matches_ast_source<PrecisionPolicy::force_f16>() && passed;
+    passed = test_cuda_ir_path_matches_ast_source<PrecisionPolicy::force_f32>() && passed;
     passed = test_nested_kernel_ast_and_cuda_source<PrecisionPolicy::force_f16>() && passed;
     passed = test_nested_kernel_ast_and_cuda_source<PrecisionPolicy::force_f32>() && passed;
     if (!passed) {
