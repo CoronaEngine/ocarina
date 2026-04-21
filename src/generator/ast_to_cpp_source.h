@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include "source_emitter_base.h"
+#include "source_emitter.h"
 #include "ast/expression.h"
 #include "ast/statement.h"
 #include "core/type.h"
 
 namespace ocarina {
 
-class OC_GENERATOR_API AstToCppSource : public SourceEmitterBase, protected ExprVisitor, protected StmtVisitor, protected TypeVisitor {
+class OC_GENERATOR_API AstToCppSource : public SourceEmitter, protected ExprVisitor, protected StmtVisitor, protected TypeVisitor {
 protected:
     ocarina::set<uint64_t> generated_func_;
     ocarina::set<const Type *> generated_struct_;
@@ -65,7 +65,7 @@ protected:
     virtual void _emit_statements(ocarina::span<const Statement *const> stmts) noexcept;
 
 public:
-    explicit AstToCppSource(bool obfuscation): SourceEmitterBase(obfuscation) {}
+    explicit AstToCppSource(bool obfuscation): SourceEmitter(obfuscation) {}
     void emit(const Function &func) noexcept override;
 };
 

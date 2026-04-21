@@ -506,7 +506,7 @@ void AstToCudaSource::_emit_struct_name(const Type *type) noexcept {
     if (type->is_builtin_struct()) {
         current_scratch() << type->simple_cname();
     } else {
-        SourceEmitterBase::_emit_struct_name(type);
+        SourceEmitter::_emit_struct_name(type);
     }
 }
 

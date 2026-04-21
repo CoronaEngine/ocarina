@@ -10,7 +10,7 @@ namespace ocarina {
 
 namespace detail {
 struct LiteralPrinter {
-    using Scratch = SourceEmitterBase::Scratch;
+    using Scratch = SourceEmitter::Scratch;
     Scratch &scratch;
     const Type *type_{nullptr};
     explicit LiteralPrinter(Scratch &scratch, const Type *type = nullptr) : scratch(scratch), type_(type) {}
