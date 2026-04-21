@@ -5,10 +5,10 @@
 #pragma once
 
 #include "math/basic_traits.h"
-#include "dsl/operators.h"
-#include "dsl/struct.h"
-#include "dsl/func.h"
-#include "ref.h"
+#include "../api/operators.h"
+#include "struct.h"
+#include "../api/func.h"
+#include "../core/ref.h"
 
 namespace ocarina {
 

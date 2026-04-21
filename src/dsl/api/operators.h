@@ -6,7 +6,7 @@
 
 #include "core/stl.h"
 #include "math/basic_types.h"
-#include "dsl/expr.h"
+#include "../core/expr.h"
 #include "ast/function.h"
 #include "ast/op.h"
 

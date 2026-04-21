@@ -3,7 +3,7 @@
 //
 
 #include "dsl/dsl.h"
-#include "dsl/func.h"
+#include "dsl/api/func.h"
 #include "ast/function.h"
 #include "ast/expression.h"
 

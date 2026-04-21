@@ -5,7 +5,7 @@
 #pragma once
 
 #include "core/type_system/type_desc.h"
-#include "var.h"
+#include "../core/var.h"
 #include "soa.h"
 
 #define OC_STRUCT_ALIAS(NS, S)      \

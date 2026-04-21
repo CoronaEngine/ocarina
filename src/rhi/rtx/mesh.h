@@ -6,7 +6,7 @@
 
 #include "rhi/resources/resource.h"
 #include "rhi/command.h"
-#include "dsl/struct.h"
+#include "dsl/types/struct.h"
 #include "../resources/buffer.h"
 
 namespace ocarina {

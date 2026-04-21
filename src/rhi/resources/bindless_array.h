@@ -5,8 +5,8 @@
 #pragma once
 
 #include "resource.h"
-#include "dsl/type_trait.h"
-#include "dsl/var.h"
+#include "dsl/core/type_trait.h"
+#include "dsl/core/var.h"
 #include "rhi/command.h"
 #include "rhi/command_queue.h"
 #include "rhi/device.h"

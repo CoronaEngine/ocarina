@@ -6,8 +6,8 @@
 
 #include "constants.h"
 #include "scalar_func.h"
-#include "dsl/operators.h"
-#include "dsl/type_trait.h"
+#include "dsl/api/operators.h"
+#include "dsl/core/type_trait.h"
 
 #define MAKE_VECTOR_OP(op)                                                           \
     template<typename T>                                                             \

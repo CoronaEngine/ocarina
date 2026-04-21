@@ -2,9 +2,9 @@
 // Created by Zero on 14/01/2023.
 //
 
-#include "rtx_type.h"
-#include "stmt_builder.h"
-#include "printer.h"
+#include "../types/rtx.h"
+#include "../api/stmt_builder.h"
+#include "../diagnostics/printer.h"
 
 namespace ocarina::detail {
 

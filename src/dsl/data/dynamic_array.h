@@ -5,10 +5,10 @@
 #pragma once
 
 #include "core/stl.h"
-#include "ref.h"
+#include "../core/ref.h"
 #include "core/util/string_util.h"
 #include "core/type_system/type_desc.h"
-#include "syntax.h"
+#include "../api/syntax.h"
 
 namespace ocarina {
 
@@ -158,7 +158,7 @@ public:
         return (*this)[OC_FORWARD(index)];
     }
 
-#include "swizzle_inl/dynamic_array_swizzle.inl.h"
+#include "../detail/swizzle/dynamic_array_swizzle.inl.h"
 
     DynamicArray &operator=(const DynamicArray &rhs) noexcept {
         OC_ASSERT(size_ == rhs.size_ || rhs.size_ == 1);

@@ -5,12 +5,12 @@
 #pragma once
 
 #include "math/basic_types.h"
-#include "dsl/type_trait.h"
-#include "var.h"
-#include "builtin.h"
+#include "../core/type_trait.h"
+#include "../core/var.h"
+#include "../api/builtin.h"
 #include "rhi/resources/managed.h"
 #include "math/box.h"
-#include "stmt_builder.h"
+#include "../api/stmt_builder.h"
 
 namespace ocarina {
 struct DebugData {

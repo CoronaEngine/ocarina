@@ -7,10 +7,10 @@
 #include "basic_types.h"
 #include "interval.h"
 #include "math/base.h"
-#include "dsl/var.h"
+#include "dsl/core/var.h"
 #include "core/type_system/type_desc.h"
-#include "dsl/struct.h"
-#include "dsl/builtin.h"
+#include "dsl/types/struct.h"
+#include "dsl/api/builtin.h"
 
 namespace ocarina::inline math {
 template<typename T, size_t N>

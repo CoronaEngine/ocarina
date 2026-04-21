@@ -177,7 +177,7 @@ public:
     [[nodiscard]] Var<Vector<T, 2>> as_vec2() const noexcept { return as_vec<2>(); }
     [[nodiscard]] Var<Vector<T, 3>> as_vec3() const noexcept { return as_vec<3>(); }
     [[nodiscard]] Var<Vector<T, 4>> as_vec4() const noexcept { return as_vec<4>(); }
-#include "swizzle_inl/array_swizzle.inl.h"
+#include "../detail/swizzle/array_swizzle.inl.h"
 };
 
 template<typename T, size_t N>

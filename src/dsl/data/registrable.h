@@ -6,7 +6,7 @@
 
 #include "encodable.h"
 #include "rhi/resources/managed.h"
-#include "dsl/printer.h"
+#include "../diagnostics/printer.h"
 #include "core/runtime/platform.h"
 #include "rhi/resources/byte_buffer.h"
 

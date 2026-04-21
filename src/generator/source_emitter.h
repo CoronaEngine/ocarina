@@ -6,7 +6,7 @@
 
 #include "core/header.h"
 #include "core/stl.h"
-#include "dsl/func.h"
+#include "dsl/api/func.h"
 #include "core/util/logging.h"
 #include "ast/variable.h"
 #include "ast/symbol_name.h"

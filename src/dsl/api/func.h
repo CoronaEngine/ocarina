@@ -5,14 +5,14 @@
 #pragma once
 
 #include <utility>
-#include "func_traits.h"
+#include "../core/func_traits.h"
 #include "core/stl.h"
 #include "math/basic_types.h"
-#include "var.h"
+#include "../core/var.h"
 #include "builtin.h"
-#include "expr.h"
+#include "../core/expr.h"
 #include "stmt_builder.h"
-#include "type_trait.h"
+#include "../core/type_trait.h"
 
 namespace ocarina {
 

@@ -5,7 +5,7 @@
 #pragma once
 
 #include "core/util/util.h"
-#include "dsl/type_trait.h"
+#include "../core/type_trait.h"
 #include "dynamic_array.h"
 
 namespace ocarina {

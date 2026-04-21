@@ -9,11 +9,11 @@
 #include <ast/function.h>
 #include "core/util/util.h"
 #include "rhi/resources/managed.h"
-#include <dsl/ref.h>
-#include <dsl/var.h>
-#include <dsl/stmt_builder.h>
-#include <dsl/builtin.h>
-#include <dsl/operators.h>
+#include "../core/ref.h"
+#include "../core/var.h"
+#include "../api/stmt_builder.h"
+#include "../api/builtin.h"
+#include "../api/operators.h"
 
 namespace ocarina {
 

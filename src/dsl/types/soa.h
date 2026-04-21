@@ -11,10 +11,10 @@
 #include "core/dynamic_buffer/dynamic_buffer_layout_common.h"
 #include "core/dynamic_buffer/dynamic_buffer_layout_codec.h"
 #include "core/type_system/precision_policy.h"
-#include "builtin.h"
-#include "var.h"
-#include "type_trait.h"
-#include "func.h"
+#include "../api/builtin.h"
+#include "../core/var.h"
+#include "../core/type_trait.h"
+#include "../api/func.h"
 
 namespace ocarina {
 

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "func_traits.h"
-#include "var.h"
-#include "expr.h"
+#include "../core/func_traits.h"
+#include "../core/var.h"
+#include "../core/expr.h"
 #include "ast/function.h"
 #include "operators.h"
 

@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include "type_trait.h"
-#include "stmt_builder.h"
+#include "../core/type_trait.h"
+#include "../api/stmt_builder.h"
 #include "core/stl.h"
 #include "core/util/util.h"
-#include "encodable.h"
+#include "../data/encodable.h"
 #include "core/util/hash.h"
-#include "registrable.h"
-#include "env.h"
+#include "../data/registrable.h"
+#include "../diagnostics/env.h"
 
 namespace ocarina {
 

@@ -7,7 +7,7 @@
 #include "rhi/resources/resource.h"
 #include "rhi/command.h"
 #include "mesh.h"
-#include "dsl/var.h"
+#include "dsl/core/var.h"
 
 namespace ocarina {
 class OC_RHI_API Accel : public RHIResource {
