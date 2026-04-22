@@ -8,6 +8,13 @@ namespace ocarina {
 
 namespace {
 
+/**
+ * Recover the decodable log span from the downloaded host buffer.
+ *
+ * The trailing used-word counter can occasionally lag behind the actual
+ * record writes, so we start from the declared length and then conservatively
+ * scan forward only while full log records are still recognizable.
+ */
 [[nodiscard]] uint recover_log_length(const Managed<uint> &buffer,
                                       const vector<Printer::Item> &items) noexcept {
     const auto &host = buffer.host_buffer();
@@ -19,10 +26,12 @@ namespace {
     while (length < capacity) {
         const uint *data = host.data() + length;
         uint item_index = data[0];
+        /** Stop once the next record header no longer maps to a known log item. */
         if (item_index >= items.size()) {
             break;
         }
         uint item_words = items[item_index].size + 1u;
+        /** Never extend past the downloaded buffer even if the header looks valid. */
         if (item_words == 0u || length + item_words > capacity) {
             break;
         }
@@ -33,6 +42,7 @@ namespace {
                 break;
             }
         }
+        /** Treat an all-zero region as unused capacity rather than another log record. */
         if (!has_non_zero_word) {
             break;
         }
