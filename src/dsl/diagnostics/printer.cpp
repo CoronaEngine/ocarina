@@ -6,10 +6,45 @@
 
 namespace ocarina {
 
+namespace {
+
+[[nodiscard]] uint recover_log_length(const Managed<uint> &buffer,
+                                      const vector<Printer::Item> &items) noexcept {
+    const auto &host = buffer.host_buffer();
+    if (host.empty()) {
+        return 0u;
+    }
+    uint capacity = static_cast<uint>(host.size() - 1u);
+    uint length = std::min(capacity, host.back());
+    while (length < capacity) {
+        const uint *data = host.data() + length;
+        uint item_index = data[0];
+        if (item_index >= items.size()) {
+            break;
+        }
+        uint item_words = items[item_index].size + 1u;
+        if (item_words == 0u || length + item_words > capacity) {
+            break;
+        }
+        bool has_non_zero_word = false;
+        for (uint index = 0u; index < item_words; ++index) {
+            if (data[index] != 0u) {
+                has_non_zero_word = true;
+                break;
+            }
+        }
+        if (!has_non_zero_word) {
+            break;
+        }
+        length += item_words;
+    }
+    return length;
+}
+
+}// namespace
+
 void Printer::output_log(const OutputFunc &func) noexcept {
-    uint length = std::min(
-        static_cast<uint>(buffer_.host_buffer().size() - 1u),
-        buffer_.back());
+    uint length = recover_log_length(buffer_, items_);
     bool truncated = buffer_.host_buffer().back() > length;
     uint offset = 0u;
     while (offset < length) {

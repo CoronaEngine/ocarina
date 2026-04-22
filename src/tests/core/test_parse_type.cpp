@@ -235,9 +235,9 @@ static bool test_vector_and_matrix_types() {
     CHECK(matrix_type != nullptr);
     CHECK(matrix_type->is_matrix());
     CHECK(matrix_type->tag() == Type::Tag::MATRIX);
-    CHECK(matrix_type->dimension() == 3);
+    CHECK(matrix_type->dimension() == 4);
     CHECK(matrix_type->members().size() == 1);
-    CHECK(matrix_type->element() == float4_type);
+    CHECK(matrix_type->element() == float3_type);
     CHECK(matrix_type->size() == sizeof(Float3x4));
     CHECK(matrix_type->alignment() == alignof(Float3x4));
     CHECK(matrix_type->name() == "float3x4");
