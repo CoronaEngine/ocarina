@@ -6,5 +6,6 @@
 
 #include "common.h"
 #include "gemm.h"
+#include "gemm_runtime.h"
 #include "conv.h"
 #include "pool.h"

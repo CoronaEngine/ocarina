@@ -62,6 +62,7 @@ ocarina_add_test(test-swizzle CATEGORY math SOURCES math/test_swizzle.cpp)
 ocarina_add_test(test-accel-update CATEGORY runtime SOURCES runtime/test_accel_update.cpp)
 ocarina_add_test(test-launch-latency CATEGORY runtime SOURCES runtime/test_launch_latency.cpp)
 ocarina_add_test(test-atomic CATEGORY runtime SOURCES runtime/test_atomic.cpp)
+ocarina_add_test(test-tensor-gemm CATEGORY runtime SOURCES runtime/test_tensor_gemm.cpp)
 
 # Debug and diagnostic tests.
 ocarina_add_test(test-printer CATEGORY debug SOURCES debug/test_printer.cpp)
