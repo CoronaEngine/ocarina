@@ -142,7 +142,7 @@ OC_NODISCARD Var<Ray> make_ray(const Org &org, const Dir &dir, const T &t_max) n
 template<typename Pos, typename Normal>
 requires(is_all_float_vector3_v<expr_value_t<Pos>, expr_value_t<Normal>> && any_dsl_v<Pos, Normal>)
 OC_NODISCARD Var<float3> offset_ray_origin(const Pos &p_in, const Normal &n_in) noexcept {
-    auto expr = Function::current()->call_builtin(Type::of<Ray>(), CallOp::RAY_OFFSET_ORIGIN,
+    auto expr = Function::current()->call_builtin(Type::of<float3>(), CallOp::RAY_OFFSET_ORIGIN,
                                                   {OC_EXPR(p_in), OC_EXPR(n_in)});
     return eval<float3>(expr);
 }

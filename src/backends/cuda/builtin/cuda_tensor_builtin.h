@@ -6,5 +6,5 @@
 
 #include <cuda_device_vector.h>
 
-template<uint Id>
+template<oc_uint Id>
 OC_DEVICE_FLAG inline void oc_tensor_gemm() {}

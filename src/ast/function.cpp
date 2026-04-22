@@ -432,8 +432,6 @@ const CallExpr *Function::call_builtin(const Type *type, CallOp op,
                                        ocarina::list<CallExpr::Template> t_args) noexcept {
     if (op == CallOp::TRACE_CLOSEST || op == CallOp::TRACE_OCCLUSION) {
         set_raytracing(true);
-    } else if (to_underlying(op) >= to_underlying(CallOp::SYNCHRONIZE_BLOCK)) {
-        set_raytracing(false);
     }
     return create_expression<CallExpr>(resolve_ast_type(type), op, std::move(args), resolve_ast_templates(std::move(t_args)));
 }
