@@ -1,13 +1,12 @@
 #include <iostream>
+#include <optional>
 #include <string_view>
 
-#include "backends/cuda/ast_to_cuda_source.h"
-#include "backends/cuda/ir_to_cuda_source.h"
 #include "core/type_system/precision_policy.h"
 #include "dsl/dsl.h"
-#include "generator/ast_to_ir.h"
 #include "generator/ast_to_cpp_source.h"
 #include "math/real.h"
+#include "rhi/context.h"
 
 using namespace ocarina;
 
@@ -95,18 +94,46 @@ namespace {
     return std::string(emitter.scratch().view());
 }
 
-[[nodiscard]] std::string emit_cuda_source(const Function &function) {
-    AstToCudaSource emitter(false);
-    emitter.emit(function);
-    return std::string(emitter.scratch().view());
+[[nodiscard]] const char *precision_suffix(PrecisionPolicy policy) {
+    return policy == PrecisionPolicy::force_f16 ? "f16" : "f32";
 }
 
-[[nodiscard]] std::string emit_cuda_source_via_ir(const Function &function) {
-    AstToIR lowering;
-    IRModule module = lowering.lower(function);
-    IRToCudaSource emitter(false);
-    emitter.emit(module);
-    return std::string(emitter.scratch().view());
+[[nodiscard]] std::optional<fs::path> find_cached_cuda_source(const RHIContext &context,
+                                                              std::string_view shader_desc) {
+    if (!fs::exists(context.cache_directory())) {
+        return std::nullopt;
+    }
+    for (const auto &entry: fs::directory_iterator(context.cache_directory())) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        fs::path path = entry.path();
+        if (path.extension() == ".cu" && contains(path.filename().string(), shader_desc)) {
+            return path;
+        }
+    }
+    return std::nullopt;
+}
+
+template<typename T>
+[[nodiscard]] std::string compile_and_read_cuda_source(Device &device,
+                                                       RHIContext &context,
+                                                       const Kernel<T> &kernel,
+                                                       std::string_view shader_desc,
+                                                       ShaderCodegenPath path) {
+    ShaderCodegenPath previous_path = Env::shader_codegen_path();
+    Env::set_shader_codegen_path(path);
+    context.clear_cache();
+    RHIContext::create_directory_if_necessary(context.cache_directory());
+    auto shader = device.compile(kernel, string(shader_desc));
+    (void)shader;
+    Env::set_shader_codegen_path(previous_path);
+    auto cached_source = find_cached_cuda_source(context, shader_desc);
+    if (!cached_source.has_value()) {
+        std::cerr << "FAILED: generated cuda source not found for " << shader_desc << std::endl;
+        return {};
+    }
+    return RHIContext::read_file(*cached_source);
 }
 
 template<PrecisionPolicy precision>
@@ -135,6 +162,70 @@ template<PrecisionPolicy precision>
     auto function = kernel.function();
     set_global_storage_policy(previous_policy);
     return function;
+}
+
+template<PrecisionPolicy precision>
+[[nodiscard]] std::string compile_callable_kernel_cuda_source(Device &device,
+                                                              RHIContext &context,
+                                                              ShaderCodegenPath path) {
+    StoragePrecisionPolicy previous_policy = global_storage_policy();
+    set_global_storage_policy(make_policy(precision));
+
+    Callable callable = [](Var<CodegenPolicyRecord> record, Var<real> bias) {
+        return record.weight + bias + record.uv.x;
+    };
+    callable.function()->set_description("callable_" + string(precision_suffix(precision)));
+
+    Kernel kernel = [&](Var<CodegenPolicyRecord> record, Var<real> bias) {
+        Var<real> sum = callable(record, bias);
+        comment("resolved type callable kernel body");
+        sum = sum + cast<real>(1.0f);
+    };
+
+    string shader_desc = "test_ast_to_cuda_source_callable_" + string(precision_suffix(precision));
+    std::string source = compile_and_read_cuda_source(device, context, kernel, shader_desc, path);
+    set_global_storage_policy(previous_policy);
+    return source;
+}
+
+template<PrecisionPolicy precision>
+[[nodiscard]] std::string compile_kernel_cuda_source(Device &device,
+                                                     RHIContext &context,
+                                                     ShaderCodegenPath path) {
+    StoragePrecisionPolicy previous_policy = global_storage_policy();
+    set_global_storage_policy(make_policy(precision));
+
+    Kernel kernel = [](Var<real> bias, Var<CodegenPolicyRecord> record) {
+        Var<real> sum = record.weight + bias + record.uv.y;
+        comment("resolved type kernel body");
+        sum = sum + cast<real>(1.0f);
+    };
+
+    string shader_desc = "test_ast_to_cuda_source_kernel_" + string(precision_suffix(precision));
+    std::string source = compile_and_read_cuda_source(device, context, kernel, shader_desc, path);
+    set_global_storage_policy(previous_policy);
+    return source;
+}
+
+template<PrecisionPolicy precision>
+[[nodiscard]] std::string compile_nested_kernel_cuda_source(Device &device,
+                                                            RHIContext &context,
+                                                            ShaderCodegenPath path) {
+    StoragePrecisionPolicy previous_policy = global_storage_policy();
+    set_global_storage_policy(make_policy(precision));
+
+    Kernel kernel = [](Var<real> bias, Var<CodegenNestedRecord> record) {
+        Var<CodegenNestedRecord> local_record = record;
+        Var<CodegenNestedInner> local_inner = local_record.inner;
+        Var<real> sum = local_inner.weight + local_record.gain + bias + local_inner.uv.x;
+        comment("resolved nested kernel body");
+        sum = sum + cast<real>(1.0f);
+    };
+
+    string shader_desc = "test_ast_to_cuda_source_nested_kernel_" + string(precision_suffix(precision));
+    std::string source = compile_and_read_cuda_source(device, context, kernel, shader_desc, path);
+    set_global_storage_policy(previous_policy);
+    return source;
 }
 
 template<PrecisionPolicy precision>
@@ -181,14 +272,11 @@ template<PrecisionPolicy precision>
 }
 
 template<PrecisionPolicy precision>
-[[nodiscard]] bool test_callable_ast_to_cuda_source() {
+[[nodiscard]] bool test_callable_cpp_source() {
     auto function = make_callable_function<precision>();
     std::string cpp_source = emit_cpp_source(*function);
-    std::string cuda_source = emit_cuda_source(*function);
     CHECK(contains(cpp_source, precision == PrecisionPolicy::force_f16 ? "callable_f16" : "callable_f32"));
-    CHECK(contains(cuda_source, "__device__"));
     CHECK(expect_cpp_markers(cpp_source, precision));
-    CHECK(expect_cuda_markers(cuda_source, precision));
     return true;
 }
 
@@ -203,30 +291,59 @@ template<PrecisionPolicy precision>
 }
 
 template<PrecisionPolicy precision>
-[[nodiscard]] bool test_kernel_ast_to_cuda_source() {
+[[nodiscard]] bool test_kernel_cpp_source() {
     auto function = make_kernel_function<precision>();
     std::string cpp_source = emit_cpp_source(*function);
-    std::string cuda_source = emit_cuda_source(*function);
     CHECK(contains(cpp_source, precision == PrecisionPolicy::force_f16 ? "kernel_f16" : "kernel_f32"));
-    CHECK(contains(cuda_source, "extern \"C\" __global__"));
     CHECK(expect_cpp_markers(cpp_source, precision));
+    return true;
+}
+
+template<PrecisionPolicy precision>
+[[nodiscard]] bool test_callable_cuda_source(Device &device, RHIContext &context) {
+    std::string cuda_source = compile_callable_kernel_cuda_source<precision>(device,
+                                                                             context,
+                                                                             ShaderCodegenPath::EAstToSource);
+    CHECK(contains(cuda_source, "test_ast_to_cuda_source_callable_" + string(precision_suffix(precision))));
+    CHECK(contains(cuda_source, precision == PrecisionPolicy::force_f16 ? "callable_f16" : "callable_f32"));
+    CHECK(contains(cuda_source, "__device__"));
+    CHECK(contains(cuda_source, "extern \"C\" __global__"));
     CHECK(expect_cuda_markers(cuda_source, precision));
     return true;
 }
 
 template<PrecisionPolicy precision>
-[[nodiscard]] bool test_cuda_ir_path_matches_ast_source() {
-    auto callable = make_callable_function<precision>();
-    auto kernel = make_kernel_function<precision>();
-    auto nested_kernel = make_nested_kernel_function<precision>();
-    CHECK(expect_same_source("callable", emit_cuda_source(*callable), emit_cuda_source_via_ir(*callable)));
-    CHECK(expect_same_source("kernel", emit_cuda_source(*kernel), emit_cuda_source_via_ir(*kernel)));
-    CHECK(expect_same_source("nested_kernel", emit_cuda_source(*nested_kernel), emit_cuda_source_via_ir(*nested_kernel)));
+[[nodiscard]] bool test_kernel_cuda_source(Device &device, RHIContext &context) {
+    std::string cuda_source = compile_kernel_cuda_source<precision>(device,
+                                                                    context,
+                                                                    ShaderCodegenPath::EAstToSource);
+    CHECK(contains(cuda_source, "test_ast_to_cuda_source_kernel_" + string(precision_suffix(precision))));
+    CHECK(contains(cuda_source, "extern \"C\" __global__"));
+    CHECK(expect_cuda_markers(cuda_source, precision));
     return true;
 }
 
 template<PrecisionPolicy precision>
-[[nodiscard]] bool test_nested_kernel_ast_and_cuda_source() {
+[[nodiscard]] bool test_cuda_ir_path_matches_ast_source(Device &device, RHIContext &context) {
+    CHECK(expect_same_source("kernel",
+                             compile_kernel_cuda_source<precision>(device,
+                                                                   context,
+                                                                   ShaderCodegenPath::EAstToSource),
+                             compile_kernel_cuda_source<precision>(device,
+                                                                   context,
+                                                                   ShaderCodegenPath::EAstToIR)));
+    CHECK(expect_same_source("nested_kernel",
+                             compile_nested_kernel_cuda_source<precision>(device,
+                                                                          context,
+                                                                          ShaderCodegenPath::EAstToSource),
+                             compile_nested_kernel_cuda_source<precision>(device,
+                                                                          context,
+                                                                          ShaderCodegenPath::EAstToIR)));
+    return true;
+}
+
+template<PrecisionPolicy precision>
+[[nodiscard]] bool test_nested_kernel_ast_and_cpp_source() {
     auto function = make_nested_kernel_function<precision>();
     const Type *resolved_record = resolved_type(Type::of<CodegenNestedRecord>(), precision);
     const Type *resolved_inner = resolved_type(Type::of<CodegenNestedInner>(), precision);
@@ -252,30 +369,48 @@ template<PrecisionPolicy precision>
     CHECK(saw_inner);
 
     std::string cpp_source = emit_cpp_source(*function);
-    std::string cuda_source = emit_cuda_source(*function);
     CHECK(contains(cpp_source, precision == PrecisionPolicy::force_f16 ? "nested_kernel_f16" : "nested_kernel_f32"));
-    CHECK(contains(cuda_source, "extern \"C\" __global__"));
     CHECK(expect_cpp_markers(cpp_source, precision));
+    return true;
+}
+
+template<PrecisionPolicy precision>
+[[nodiscard]] bool test_nested_kernel_cuda_source(Device &device, RHIContext &context) {
+    std::string cuda_source = compile_nested_kernel_cuda_source<precision>(device,
+                                                                           context,
+                                                                           ShaderCodegenPath::EAstToSource);
+    CHECK(contains(cuda_source, "test_ast_to_cuda_source_nested_kernel_" + string(precision_suffix(precision))));
+    CHECK(contains(cuda_source, "extern \"C\" __global__"));
     CHECK(expect_cuda_markers(cuda_source, precision));
     return true;
 }
 
 }// namespace
 
-int main() {
+int main(int argc, char *argv[]) {
+    fs::path path(argv[0]);
+    RHIContext &context = RHIContext::instance();
+    Device device = context.create_device("cuda");
+
     bool passed = true;
     passed = check_impl(Env::shader_codegen_path() == ShaderCodegenPath::EAstToSource,
                         "Env::shader_codegen_path() == ShaderCodegenPath::EAstToSource") && passed;
     passed = test_callable_ast_types<PrecisionPolicy::force_f16>() && passed;
     passed = test_callable_ast_types<PrecisionPolicy::force_f32>() && passed;
-    passed = test_callable_ast_to_cuda_source<PrecisionPolicy::force_f16>() && passed;
-    passed = test_callable_ast_to_cuda_source<PrecisionPolicy::force_f32>() && passed;
-    passed = test_kernel_ast_to_cuda_source<PrecisionPolicy::force_f16>() && passed;
-    passed = test_kernel_ast_to_cuda_source<PrecisionPolicy::force_f32>() && passed;
-    passed = test_cuda_ir_path_matches_ast_source<PrecisionPolicy::force_f16>() && passed;
-    passed = test_cuda_ir_path_matches_ast_source<PrecisionPolicy::force_f32>() && passed;
-    passed = test_nested_kernel_ast_and_cuda_source<PrecisionPolicy::force_f16>() && passed;
-    passed = test_nested_kernel_ast_and_cuda_source<PrecisionPolicy::force_f32>() && passed;
+    passed = test_callable_cpp_source<PrecisionPolicy::force_f16>() && passed;
+    passed = test_callable_cpp_source<PrecisionPolicy::force_f32>() && passed;
+    passed = test_callable_cuda_source<PrecisionPolicy::force_f16>(device, context) && passed;
+    passed = test_callable_cuda_source<PrecisionPolicy::force_f32>(device, context) && passed;
+    passed = test_kernel_cpp_source<PrecisionPolicy::force_f16>() && passed;
+    passed = test_kernel_cpp_source<PrecisionPolicy::force_f32>() && passed;
+    passed = test_kernel_cuda_source<PrecisionPolicy::force_f16>(device, context) && passed;
+    passed = test_kernel_cuda_source<PrecisionPolicy::force_f32>(device, context) && passed;
+    passed = test_cuda_ir_path_matches_ast_source<PrecisionPolicy::force_f16>(device, context) && passed;
+    passed = test_cuda_ir_path_matches_ast_source<PrecisionPolicy::force_f32>(device, context) && passed;
+    passed = test_nested_kernel_ast_and_cpp_source<PrecisionPolicy::force_f16>() && passed;
+    passed = test_nested_kernel_ast_and_cpp_source<PrecisionPolicy::force_f32>() && passed;
+    passed = test_nested_kernel_cuda_source<PrecisionPolicy::force_f16>(device, context) && passed;
+    passed = test_nested_kernel_cuda_source<PrecisionPolicy::force_f32>(device, context) && passed;
     if (!passed) {
         return 1;
     }

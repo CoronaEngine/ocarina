@@ -33,13 +33,8 @@ ocarina_add_test(test-trait CATEGORY core SOURCES core/test_trait.cpp)
 ocarina_add_test(test-shader-argument-pack CATEGORY codegen SOURCES codegen/test_shader_argument_pack.cpp)
 ocarina_add_test(test-shader-parameter-policy CATEGORY codegen SOURCES codegen/test_shader_parameter_policy.cpp)
 ocarina_add_test(test-ast-to-cuda-source-resolved-types CATEGORY codegen SOURCES
-        codegen/test_ast_to_cuda_source_resolved_types.cpp
-        ../backends/cuda/ast_to_cuda_source.cpp
-        ../backends/cuda/ir_to_cuda_source.cpp)
-if (CUDAToolkit_FOUND)
-    target_include_directories(test-codegen-ast-to-cuda-source-resolved-types PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
-endif ()
-target_include_directories(test-codegen-ast-to-cuda-source-resolved-types PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../backends/cuda/builtin/optix)
+    codegen/test_ast_to_cuda_source_resolved_types.cpp)
+ocarina_add_test(test-tensor-gemm-codegen CATEGORY codegen SOURCES codegen/test_tensor_gemm_codegen.cpp)
 
 # Resource and buffer tests.
 ocarina_add_test(test-host-bytebuffer CATEGORY resources SOURCES resources/test_host_byte_buffer.cpp)

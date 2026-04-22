@@ -90,7 +90,7 @@ namespace detail {
             Uint row = linear / n;
             Uint col = linear % n;
             Float accum = 0.f;
-            for_range(k, [&](auto kk, auto, auto) {
+            $for(kk, k) {
                 Uint lhs_index = select(trans_a,
                                         kk * m + row,
                                         row * k + kk);
@@ -98,7 +98,7 @@ namespace detail {
                                         col * k + kk,
                                         kk * n + col);
                 accum += lhs.read(lhs_index) * rhs.read(rhs_index);
-            });
+            };
             Float prev = out.read(linear);
             out.write(linear, alpha * accum + beta * prev);
         };
