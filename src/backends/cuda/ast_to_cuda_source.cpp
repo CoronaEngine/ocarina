@@ -180,6 +180,12 @@ void AstToCudaSource::visit(const CallExpr *expr) noexcept {
         case CallOp::MAKE_FLOAT4X3: OC_GEN_FUNC_NAME(make_float4x3); break;
         case CallOp::MAKE_FLOAT4X4: OC_GEN_FUNC_NAME(make_float4x4); break;
 
+        case CallOp::GEMM: {
+            uint id = std::get<uint>(expr->template_arg(0));
+            current_scratch() << "oc_tensor_gemm<" << id << ">";
+            break;
+        }
+
         case CallOp::ATOMIC_EXCH: OC_GEN_FUNC_NAME(atomicExch); break;
         case CallOp::ATOMIC_ADD: OC_GEN_FUNC_NAME(atomicAdd); break;
         case CallOp::ATOMIC_SUB: OC_GEN_FUNC_NAME(atomicSub); break;

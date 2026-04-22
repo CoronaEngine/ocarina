@@ -78,7 +78,7 @@ ocarina::string CUDACompiler::compile(const Function &function, int sm) const no
     auto nvrtc_option = fmt::format("-DLC_NVRTC_VERSION={}", nvrtc_version);
     auto real_option = fmt::format("-DOCARINA_CUDA_USE_FLOAT32={}", use_float32);
     std::vector header_names{"cuda_device_std.h", "cuda_device_scalar.h", "cuda_device_vector.h",
-                             "cuda_device_matrix.h", "cuda_device_builtin.h", "cuda_vector_func.h",
+                             "cuda_device_matrix.h", "cuda_device_builtin.h", "cuda_tensor_builtin.h", "cuda_vector_func.h",
                              "cuda_device_math.h", "cuda_matrix_func.h", "cuda_device_resource.h"};
     std::vector<string> header_sources;
     std::vector<const char *> header_sources_ptr;

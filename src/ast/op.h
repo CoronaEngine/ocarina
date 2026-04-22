@@ -214,6 +214,8 @@ enum struct CallOp : uint32_t {
     MAKE_HALF4X3,
     MAKE_HALF4X4,
 
+    GEMM,
+
     UNREACHABLE,
 
     ATOMIC_EXCH,
