@@ -13,6 +13,7 @@
 #include "api/syntax.h"
 #include "api/operators.h"
 #include "api/func.h"
+#include "tensor/tensor.h"
 #include "types/soa.h"
 #include "types/struct.h"
 #include "rtx.h"
